@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.cache/
+*.sqlite
+
+# Virtual Environment
+venv/
+.venv/
+data/quant_venv/
+
+# === 機密・個人データ（絶対にコミットしない） ===
+data/portfolio_holdings.json
+data/purchase_log.json
+ai_track_record.json
+latest_evolution_results.json
+data/weekly_summary.txt
+
+# 環境・設定
+.env
+.env.*
+*.secret
+credentials.json
+
+# Streamlit
+.streamlit/
+
+# macOS
+.DS_Store
+*.swp
+
+# ログ
+*.log
+
+# 一時ファイル
+/tmp/

@@ -1,0 +1,244 @@
+2026-03-22 02:24:18 [INFO] ============================================================
+2026-03-22 02:24:18 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 02:24]
+2026-03-22 02:24:18 [INFO] ============================================================
+2026-03-22 02:24:18 [INFO] 対象銘柄: ['NVDA', 'PLTR', 'GLW', 'SOXX', '1489.T', '1328.T']
+2026-03-22 02:24:18 [INFO] 価格データ取得中: ['NVDA', 'PLTR', 'GLW', 'SOXX', '1489.T', '1328.T']
+2026-03-22 02:24:18 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:24:18 [INFO] Failed to create CookieCache, reason: Error creating CookieCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. CookieCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:24:18 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:24:19 [INFO] 取得完了: 260日 x 6銘柄
+2026-03-22 02:24:19 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 02:24:19 [INFO] レジーム: low_vol (KL=0.0228)
+2026-03-22 02:24:19 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 02:24:19 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 02:24:19 [INFO] ============================================================
+2026-03-22 02:24:19 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 02:24:19 [INFO] ============================================================
+2026-03-22 02:25:57 [INFO] 価格データ取得中: ['NVDA', 'PLTR', 'GLW', 'SOXX', '1489.T', '1328.T']
+2026-03-22 02:25:57 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:25:57 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:25:57 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:25:57 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:25:57 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:25:57 [INFO] Failed to create CookieCache, reason: Error creating CookieCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. CookieCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:25:58 [INFO] 取得完了: 260日 x 6銘柄
+2026-03-22 02:35:39 [INFO] ============================================================
+2026-03-22 02:35:39 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 02:35]
+2026-03-22 02:35:39 [INFO] ============================================================
+2026-03-22 02:35:39 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:35:39 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:35:39 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:35:39 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:35:39 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:35:39 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:35:39 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:35:39 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:35:39 [INFO] Failed to create CookieCache, reason: Error creating CookieCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. CookieCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:35:40 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 02:35:40 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 02:35:40 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 02:35:40 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 02:35:40 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 02:35:40 [INFO] ============================================================
+2026-03-22 02:35:40 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 02:35:40 [INFO] ============================================================
+2026-03-22 02:41:34 [INFO] ============================================================
+2026-03-22 02:41:34 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 02:41]
+2026-03-22 02:41:34 [INFO] ============================================================
+2026-03-22 02:41:34 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:41:34 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:41:34 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:41:34 [INFO] Failed to create CookieCache, reason: Error creating CookieCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. CookieCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:41:34 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:41:34 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:41:34 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:41:36 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 02:41:36 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 02:41:36 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 02:41:36 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 02:41:36 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 02:41:36 [INFO] ============================================================
+2026-03-22 02:41:36 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 02:41:36 [INFO] ============================================================
+2026-03-22 02:44:32 [INFO] ============================================================
+2026-03-22 02:44:32 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 02:44]
+2026-03-22 02:44:32 [INFO] ============================================================
+2026-03-22 02:44:32 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:44:32 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:44:34 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 02:44:34 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 02:44:34 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 02:44:34 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 02:44:34 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 02:44:34 [INFO] ============================================================
+2026-03-22 02:44:34 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 02:44:34 [INFO] ============================================================
+2026-03-22 02:51:32 [INFO] ============================================================
+2026-03-22 02:51:32 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 02:51]
+2026-03-22 02:51:32 [INFO] ============================================================
+2026-03-22 02:51:32 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:51:32 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 02:51:32 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:32 [INFO] Failed to create CookieCache, reason: Error creating CookieCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. CookieCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:32 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:32 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:32 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:32 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:32 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:32 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 02:51:33 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 02:51:33 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 02:51:33 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 02:51:33 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 02:51:33 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 02:51:33 [INFO] ============================================================
+2026-03-22 02:51:33 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 02:51:33 [INFO] ============================================================
+2026-03-22 03:11:10 [INFO] ============================================================
+2026-03-22 03:11:10 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 03:11]
+2026-03-22 03:11:10 [INFO] ============================================================
+2026-03-22 03:11:10 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 03:11:10 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 03:11:10 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:11:10 [INFO] Failed to create CookieCache, reason: Error creating CookieCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. CookieCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:11:10 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:11:10 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:11:11 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 03:11:11 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 03:11:11 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 03:11:11 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 03:11:11 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 03:11:11 [INFO] ============================================================
+2026-03-22 03:11:11 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 03:11:11 [INFO] ============================================================
+2026-03-22 03:13:15 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 03:13:15 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:13:15 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:13:15 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:13:15 [INFO] Failed to create CookieCache, reason: Error creating CookieCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 1] Operation not permitted: '/Users/akihome/Library/Caches/py-yfinance'. CookieCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:13:16 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 03:21:08 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 03:21:09 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 03:36:07 [INFO] ============================================================
+2026-03-22 03:36:07 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 03:36]
+2026-03-22 03:36:07 [INFO] ============================================================
+2026-03-22 03:36:07 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 03:36:07 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 03:36:07 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 17] File exists: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:36:07 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 17] File exists: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:36:07 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 17] File exists: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:36:07 [INFO] Failed to create TzCache, reason: Error creating TzCache folder: '/Users/akihome/Library/Caches/py-yfinance' reason: [Errno 17] File exists: '/Users/akihome/Library/Caches/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-03-22 03:36:08 [ERROR] 
+1 Failed download:
+2026-03-22 03:36:08 [ERROR] ['ARM']: OperationalError('database is locked')
+2026-03-22 03:36:08 [INFO] 取得完了: 0日 x 18銘柄
+2026-03-22 03:48:37 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 03:48:38 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 07:00:03 [INFO] ============================================================
+2026-03-22 07:00:03 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 07:00]
+2026-03-22 07:00:03 [INFO] ============================================================
+2026-03-22 07:00:03 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 07:00:03 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 07:00:04 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 07:00:04 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 07:00:04 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 07:00:04 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 07:00:04 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 07:00:04 [INFO] ============================================================
+2026-03-22 07:00:04 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 07:00:04 [INFO] ============================================================
+2026-03-22 09:02:51 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 09:02:52 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 09:56:08 [INFO] ============================================================
+2026-03-22 09:56:08 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 09:56]
+2026-03-22 09:56:08 [INFO] ============================================================
+2026-03-22 09:56:08 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 09:56:08 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 09:56:10 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 09:56:10 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 09:56:10 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 09:56:10 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 09:56:10 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 09:56:10 [INFO] ============================================================
+2026-03-22 09:56:10 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 09:56:10 [INFO] ============================================================
+2026-03-22 10:16:48 [INFO] ============================================================
+2026-03-22 10:16:48 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 10:16]
+2026-03-22 10:16:48 [INFO] ============================================================
+2026-03-22 10:16:48 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 10:16:48 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 10:16:49 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 10:16:49 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 10:16:49 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 10:16:49 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 10:16:49 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 10:16:49 [INFO] ============================================================
+2026-03-22 10:16:49 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 10:16:49 [INFO] ============================================================
+2026-03-22 10:19:37 [INFO] ============================================================
+2026-03-22 10:19:37 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 10:19]
+2026-03-22 10:19:37 [INFO] ============================================================
+2026-03-22 10:19:37 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 10:19:37 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 10:19:38 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 10:19:38 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 10:19:38 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 10:19:38 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 10:19:38 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 10:19:38 [INFO] ============================================================
+2026-03-22 10:19:38 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 10:19:38 [INFO] ============================================================
+2026-03-22 10:34:45 [INFO] ============================================================
+2026-03-22 10:34:45 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-22 10:34]
+2026-03-22 10:34:45 [INFO] ============================================================
+2026-03-22 10:34:45 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 10:34:45 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-22 10:34:47 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-22 10:34:47 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-22 10:34:47 [INFO] レジーム: transition (KL=0.0864)
+2026-03-22 10:34:47 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-22 10:34:47 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-22 10:34:47 [INFO] ============================================================
+2026-03-22 10:34:47 [INFO] 🧬 Daily Evolution 完了
+2026-03-22 10:34:47 [INFO] ============================================================
+2026-03-23 07:00:02 [INFO] ============================================================
+2026-03-23 07:00:02 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-23 07:00]
+2026-03-23 07:00:02 [INFO] ============================================================
+2026-03-23 07:00:02 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-23 07:00:02 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-23 07:00:04 [INFO] 取得完了: 260日 x 18銘柄
+2026-03-23 07:00:04 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-23 07:00:04 [INFO] レジーム: transition (KL=0.0866)
+2026-03-23 07:00:04 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-23 07:00:04 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-23 07:00:04 [INFO] ============================================================
+2026-03-23 07:00:04 [INFO] 🧬 Daily Evolution 完了
+2026-03-23 07:00:04 [INFO] ============================================================
+2026-03-24 11:15:38 [INFO] ============================================================
+2026-03-24 11:15:38 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-24 11:15]
+2026-03-24 11:15:38 [INFO] ============================================================
+2026-03-24 11:15:38 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-24 11:15:38 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-24 11:15:39 [INFO] 取得完了: 261日 x 18銘柄
+2026-03-24 11:15:39 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-24 11:15:39 [INFO] レジーム: transition (KL=0.0624)
+2026-03-24 11:15:39 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-24 11:15:39 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-24 11:15:39 [INFO] ============================================================
+2026-03-24 11:15:39 [INFO] 🧬 Daily Evolution 完了
+2026-03-24 11:15:39 [INFO] ============================================================
+2026-03-24 11:29:03 [INFO] ============================================================
+2026-03-24 11:29:03 [INFO] 🧬 Daily Evolution Engine 起動 [2026-03-24 11:29]
+2026-03-24 11:29:03 [INFO] ============================================================
+2026-03-24 11:29:03 [INFO] 対象銘柄: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-24 11:29:03 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-24 11:29:04 [INFO] 取得完了: 261日 x 18銘柄
+2026-03-24 11:29:04 [INFO] 評価データ不足（0件）、Inner Loop スキップ
+2026-03-24 11:29:04 [INFO] レジーム: transition (KL=0.0625)
+2026-03-24 11:29:04 [INFO] トラックレコード保存完了: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/ai_track_record.json
+2026-03-24 11:29:04 [INFO] 結果保存: /Users/akihome/Documents/akimachome_antigravity/portfolio-bot/latest_evolution_results.json
+2026-03-24 11:29:04 [INFO] ============================================================
+2026-03-24 11:29:04 [INFO] 🧬 Daily Evolution 完了
+2026-03-24 11:29:04 [INFO] ============================================================
+2026-03-24 11:29:40 [INFO] 価格データ取得中: ['VRT', 'VYM', 'ARM', 'COHR', 'DDOG', 'ETN', 'GLD', 'GLW', 'LLY', 'MRVL', 'MSFT', 'NNE', 'NVDA', 'OKLO', 'PLTR', 'TSM', '1489.T', '1328.T']
+2026-03-24 11:29:41 [INFO] 取得完了: 261日 x 18銘柄

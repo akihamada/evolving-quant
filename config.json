@@ -1,0 +1,36 @@
+{
+  "portfolio": {
+    "description": "AHA Investment Portfolio (2026-03-19)",
+    "holdings": [
+      {"ticker": "VRT",    "shares": 27,  "sector": "Data Center / Thermal Mgmt"},
+      {"ticker": "VYM",    "shares": 111, "sector": "High Dividend ETF"},
+      {"ticker": "ARM",    "shares": 7,   "sector": "Semiconductor / IP"},
+      {"ticker": "COHR",   "shares": 2,   "sector": "Photonics / Optical"},
+      {"ticker": "DDOG",   "shares": 7,   "sector": "Software / Observability"},
+      {"ticker": "ETN",    "shares": 3,   "sector": "Electrical / Power Mgmt"},
+      {"ticker": "GLD",    "shares": 11,  "sector": "Gold ETF"},
+      {"ticker": "GLW",    "shares": 5,   "sector": "Materials / Glass"},
+      {"ticker": "LLY",    "shares": 1,   "sector": "Pharmaceuticals"},
+      {"ticker": "MRVL",   "shares": 10,  "sector": "Semiconductor / Networking"},
+      {"ticker": "MSFT",   "shares": 1,   "sector": "Software / Cloud"},
+      {"ticker": "NNE",    "shares": 11,  "sector": "Nuclear Energy"},
+      {"ticker": "NVDA",   "shares": 63,  "sector": "Semiconductor / GPU"},
+      {"ticker": "OKLO",   "shares": 74,  "sector": "Nuclear Energy"},
+      {"ticker": "PLTR",   "shares": 9,   "sector": "Software / AI"},
+      {"ticker": "TSM",    "shares": 9,   "sector": "Semiconductor / Foundry"},
+      {"ticker": "1489.T", "shares": 13,  "sector": "Japan High-Div ETF"},
+      {"ticker": "1328.T", "shares": 4,   "sector": "Japan Gold ETF"}
+    ]
+  },
+  "macro_tickers": ["JPY=X", "^TNX", "^VIX"],
+  "analysis": {
+    "rsi_period": 14,
+    "sma_short": 50,
+    "sma_long": 200,
+    "correlation_period_days": 252,
+    "insider_lookback_months": 3,
+    "earnings_alert_days": 14,
+    "news_count": 3,
+    "session_max_history_days": 30
+  }
+}
