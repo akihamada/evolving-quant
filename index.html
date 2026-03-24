@@ -3,287 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧬 Evolving Quant — Action Dashboard</title>
-<meta name="description" content="AI-powered portfolio action dashboard with BUY/HOLD/SELL recommendations">
+<title>🧬 Evolving Quant Dashboard</title>
+<meta name="description" content="Self-learning AI portfolio dashboard">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg-primary: #0a0e1a;
-    --bg-card: #111827;
-    --bg-card-hover: #1a2332;
-    --border: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --accent-green: #10b981;
-    --accent-green-bg: rgba(16, 185, 129, 0.12);
-    --accent-red: #ef4444;
-    --accent-red-bg: rgba(239, 68, 68, 0.12);
-    --accent-yellow: #f59e0b;
-    --accent-yellow-bg: rgba(245, 158, 11, 0.12);
-    --accent-blue: #3b82f6;
-    --accent-blue-bg: rgba(59, 130, 246, 0.12);
-    --accent-purple: #a855f7;
-    --accent-purple-bg: rgba(168, 85, 247, 0.12);
-    --accent-cyan: #06b6d4;
-    --gradient-gold: linear-gradient(135deg, #f59e0b, #d97706);
-    --gradient-green: linear-gradient(135deg, #10b981, #059669);
-    --gradient-red: linear-gradient(135deg, #ef4444, #dc2626);
-    --gradient-blue: linear-gradient(135deg, #3b82f6, #2563eb);
-  }
+:root {
+  --bg-primary:#0a0e1a;--bg-card:#111827;--bg-card-hover:#1a2332;
+  --border:#1e293b;--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;
+  --accent-green:#10b981;--accent-green-bg:rgba(16,185,129,0.12);
+  --accent-red:#ef4444;--accent-red-bg:rgba(239,68,68,0.12);
+  --accent-yellow:#f59e0b;--accent-yellow-bg:rgba(245,158,11,0.12);
+  --accent-blue:#3b82f6;--accent-blue-bg:rgba(59,130,246,0.12);
+  --accent-purple:#a855f7;--accent-purple-bg:rgba(168,85,247,0.12);
+  --accent-cyan:#06b6d4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.5}
+.container{max-width:1400px;margin:0 auto;padding:24px}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;padding:28px 32px;background:linear-gradient(135deg,#111827,#1a2332);border:1px solid var(--border);border-radius:20px;margin-bottom:24px;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple),var(--accent-cyan))}
+.header h1{font-size:26px;font-weight:800;letter-spacing:-0.5px}
+.header h1 span{background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-meta{text-align:right}
+.header-meta .date{color:var(--text-secondary);font-size:14px}
+.header-meta .confidence{display:inline-flex;align-items:center;gap:6px;background:var(--accent-blue-bg);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:4px 14px;font-size:13px;font-weight:600;color:var(--accent-blue);margin-top:6px}
+.header-meta .confidence .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-blue);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-  body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    min-height: 100vh;
-    line-height: 1.5;
-  }
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;transition:all 0.3s}
+.stat-card:hover{transform:translateY(-2px);border-color:rgba(59,130,246,0.3)}
+.stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.stat-value{font-size:28px;font-weight:800;margin-top:4px;font-family:'JetBrains Mono',monospace}
+.stat-sub{font-size:13px;color:var(--text-secondary);margin-top:2px}
 
-  .container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px;
-  }
+/* Tabs */
+.tab-nav{display:flex;gap:4px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px}
+.tab-btn{padding:10px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px 10px 0 0;color:var(--text-secondary);cursor:pointer;font-size:14px;font-weight:600;white-space:nowrap;transition:all 0.3s;font-family:'Inter',sans-serif}
+.tab-btn:hover{background:var(--bg-card-hover);color:var(--text-primary)}
+.tab-btn.active{background:linear-gradient(135deg,#3b82f6,#6c5ce7);color:#fff;border-color:transparent}
+.tab-content{display:none}
+.tab-content.active{display:block}
 
-  /* Header */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 28px 32px;
-    background: linear-gradient(135deg, #111827 0%, #1a2332 100%);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    margin-bottom: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-  .header::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan));
-  }
-  .header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-  .header h1 span { background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .header-meta { text-align: right; }
-  .header-meta .date { color: var(--text-secondary); font-size: 14px; }
-  .header-meta .confidence {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: var(--accent-blue-bg); border: 1px solid rgba(59,130,246,0.3);
-    border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 600;
-    color: var(--accent-blue); margin-top: 6px;
-  }
-  .header-meta .confidence .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-blue); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+/* Strategy Banner */
+.strategy-banner{background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(168,85,247,0.08));border:1px solid rgba(59,130,246,0.2);border-radius:16px;padding:20px 28px;margin-bottom:24px;font-size:15px;color:var(--text-secondary);line-height:1.7}
+.strategy-banner strong{color:var(--text-primary)}
 
-  /* Stats Row */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px 24px;
-    transition: all 0.3s;
-  }
-  .stat-card:hover { transform: translateY(-2px); border-color: rgba(59,130,246,0.3); }
-  .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-  .stat-value { font-size: 28px; font-weight: 800; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
-  .stat-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
-  .stat-green { color: var(--accent-green); }
-  .stat-blue { color: var(--accent-blue); }
+/* Sections & Cards */
+.section{margin-bottom:28px}
+.section-title{font-size:18px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.section-title .icon{font-size:22px}
 
-  /* Section */
-  .section { margin-bottom: 28px; }
-  .section-title {
-    font-size: 18px; font-weight: 700; margin-bottom: 14px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .section-title .icon { font-size: 22px; }
+.action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.action-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;transition:all 0.3s;overflow:hidden}
+.action-card:hover{transform:translateY(-2px)}
+.action-card.buy{border-left:4px solid var(--accent-green)}
+.action-card.hold{border-left:4px solid var(--accent-yellow)}
+.action-card.sell{border-left:4px solid var(--accent-red)}
+.action-card .card-header{display:flex;justify-content:space-between;align-items:center}
+.action-card .ticker{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.action-badge{font-size:11px;font-weight:700;text-transform:uppercase;padding:4px 12px;border-radius:20px;letter-spacing:0.5px}
+.action-badge.buy{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3)}
+.action-badge.hold{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(245,158,11,0.3)}
+.action-badge.sell{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3)}
+.holdings{display:flex;gap:16px;font-size:13px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace}
+.pnl-positive{color:var(--accent-green)}
+.pnl-negative{color:var(--accent-red)}
+.reason{font-size:13px;color:var(--text-secondary);line-height:1.6;border-top:1px solid var(--border);padding-top:10px}
+.alloc-bar{height:4px;border-radius:2px;background:rgba(255,255,255,0.06);margin-top:auto}
+.alloc-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple))}
+.alloc-label{font-size:11px;color:var(--text-muted);margin-top:2px;font-family:'JetBrains Mono',monospace}
 
-  /* Strategy Banner */
-  .strategy-banner {
-    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(168,85,247,0.08));
-    border: 1px solid rgba(59,130,246,0.2);
-    border-radius: 16px;
-    padding: 20px 28px;
-    margin-bottom: 24px;
-    font-size: 15px;
-    color: var(--text-secondary);
-    line-height: 1.7;
-  }
-  .strategy-banner strong { color: var(--text-primary); }
+.picks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.pick-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;border-left:4px solid var(--accent-purple);transition:all 0.3s}
+.pick-card:hover{transform:translateY(-2px)}
+.pick-ticker{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.pick-sector{font-size:12px;color:var(--accent-purple);font-weight:600;margin-top:2px}
+.pick-reason{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.6}
 
-  /* Action Cards Grid */
-  .action-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 14px;
-  }
-  .action-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-  .action-card:hover { transform: translateY(-2px); }
-  .action-card.buy { border-left: 4px solid var(--accent-green); }
-  .action-card.hold { border-left: 4px solid var(--accent-yellow); }
-  .action-card.sell { border-left: 4px solid var(--accent-red); }
+.tsumitate-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tsumitate-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px 24px}
+.tsumitate-card h4{font-size:15px;font-weight:700;margin-bottom:12px}
+.change-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text-secondary);margin-bottom:8px;line-height:1.5}
+.change-item .arrow{color:var(--accent-yellow);font-weight:700;flex-shrink:0}
 
-  .action-card .card-header {
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .action-card .ticker {
-    font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.5px;
-  }
-  .action-badge {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px;
-  }
-  .action-badge.buy { background: var(--accent-green-bg); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.3); }
-  .action-badge.hold { background: var(--accent-yellow-bg); color: var(--accent-yellow); border: 1px solid rgba(245,158,11,0.3); }
-  .action-badge.sell { background: var(--accent-red-bg); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.3); }
+.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.risk-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
+.risk-card.bull{border-top:3px solid var(--accent-green)}
+.risk-card.base{border-top:3px solid var(--accent-blue)}
+.risk-card.bear{border-top:3px solid var(--accent-red)}
+.risk-prob{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.risk-card.bull .risk-prob{color:var(--accent-green)}
+.risk-card.base .risk-prob{color:var(--accent-blue)}
+.risk-card.bear .risk-prob{color:var(--accent-red)}
+.risk-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--text-muted);margin-top:4px}
+.risk-desc{font-size:13px;color:var(--text-secondary);margin-top:10px;line-height:1.5}
 
-  .action-card .holdings {
-    display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .action-card .pnl-positive { color: var(--accent-green); }
-  .action-card .pnl-negative { color: var(--accent-red); }
+/* Charts */
+.chart-container{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chart-title{font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text-primary)}
 
-  .action-card .reason {
-    font-size: 13px; color: var(--text-secondary); line-height: 1.6;
-    border-top: 1px solid var(--border); padding-top: 10px;
-  }
+/* Meta Prompt */
+.prompt-block{background:#0d1117;border:2px solid var(--accent-purple);border-radius:12px;padding:20px;font-size:12px;font-family:'JetBrains Mono',monospace;color:#c9d1d9;white-space:pre-wrap;word-break:break-all;max-height:500px;overflow-y:auto;line-height:1.6}
 
-  .action-card .alloc-bar {
-    height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06);
-    margin-top: auto;
-  }
-  .action-card .alloc-bar-fill {
-    height: 100%; border-radius: 2px;
-    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
-    transition: width 1s ease;
-  }
-  .action-card .alloc-label {
-    font-size: 11px; color: var(--text-muted); margin-top: 2px;
-    font-family: 'JetBrains Mono', monospace;
-  }
+/* Records */
+.record-row{display:flex;gap:16px;align-items:center;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:13px}
+.record-date{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent-blue);min-width:90px}
+.record-status{min-width:30px}
+.record-conf{color:var(--accent-yellow);font-weight:600;min-width:80px}
+.record-reason{color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-  /* New Picks */
-  .picks-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 14px;
-  }
-  .pick-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 20px;
-    border-left: 4px solid var(--accent-purple);
-    transition: all 0.3s;
-  }
-  .pick-card:hover { transform: translateY(-2px); border-color: rgba(168,85,247,0.4); }
-  .pick-card .pick-ticker { font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
-  .pick-card .pick-sector { font-size: 12px; color: var(--accent-purple); font-weight: 600; margin-top: 2px; }
-  .pick-card .pick-reason { font-size: 13px; color: var(--text-secondary); margin-top: 8px; line-height: 1.6; }
+/* Metrics Row */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.metric-box{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:center}
+.metric-box .m-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+.metric-box .m-value{font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:4px}
 
-  /* Tsumitate */
-  .tsumitate-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  .tsumitate-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px 24px;
-  }
-  .tsumitate-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
-  .change-item {
-    display: flex; align-items: flex-start; gap: 8px;
-    font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;
-  }
-  .change-item .arrow { color: var(--accent-yellow); font-weight: 700; flex-shrink: 0; }
+.footer{text-align:center;padding:32px 0 20px;font-size:12px;color:var(--text-muted)}
+.fade-in{animation:fadeIn 0.6s ease forwards;opacity:0}
+@keyframes fadeIn{to{opacity:1}}
 
-  /* Risk Scenarios */
-  .risk-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-  }
-  .risk-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
-  }
-  .risk-card.bull { border-top: 3px solid var(--accent-green); }
-  .risk-card.base { border-top: 3px solid var(--accent-blue); }
-  .risk-card.bear { border-top: 3px solid var(--accent-red); }
-  .risk-prob {
-    font-size: 36px; font-weight: 900; font-family: 'JetBrains Mono', monospace;
-  }
-  .risk-card.bull .risk-prob { color: var(--accent-green); }
-  .risk-card.base .risk-prob { color: var(--accent-blue); }
-  .risk-card.bear .risk-prob { color: var(--accent-red); }
-  .risk-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-muted); margin-top: 4px; }
-  .risk-desc { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.5; }
-
-  /* Footer */
-  .footer {
-    text-align: center; padding: 32px 0 20px;
-    font-size: 12px; color: var(--text-muted);
-  }
-
-  /* Animations */
-  .fade-in {
-    animation: fadeIn 0.6s ease forwards;
-    opacity: 0;
-  }
-  @keyframes fadeIn { to { opacity: 1; } }
-  .action-card:nth-child(1) { animation-delay: 0.05s; }
-  .action-card:nth-child(2) { animation-delay: 0.1s; }
-  .action-card:nth-child(3) { animation-delay: 0.15s; }
-  .action-card:nth-child(4) { animation-delay: 0.2s; }
-  .action-card:nth-child(5) { animation-delay: 0.25s; }
-  .action-card:nth-child(6) { animation-delay: 0.3s; }
-  .action-card:nth-child(7) { animation-delay: 0.35s; }
-  .action-card:nth-child(8) { animation-delay: 0.4s; }
-  .action-card:nth-child(9) { animation-delay: 0.45s; }
-  .action-card:nth-child(10) { animation-delay: 0.5s; }
-  .action-card:nth-child(11) { animation-delay: 0.55s; }
-  .action-card:nth-child(12) { animation-delay: 0.6s; }
-  .action-card:nth-child(13) { animation-delay: 0.65s; }
-  .action-card:nth-child(14) { animation-delay: 0.7s; }
-
-  @media (max-width: 768px) {
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
-    .risk-grid { grid-template-columns: 1fr; }
-    .tsumitate-grid { grid-template-columns: 1fr; }
-    .action-grid { grid-template-columns: 1fr; }
-  }
+@media(max-width:768px){
+  .stats-row,.metrics-row{grid-template-columns:repeat(2,1fr)}
+  .risk-grid,.tsumitate-grid{grid-template-columns:1fr}
+  .action-grid{grid-template-columns:1fr}
+  .chart-row{grid-template-columns:1fr}
+  .tab-nav{gap:2px}
+  .tab-btn{padding:8px 12px;font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -292,11 +145,11 @@
   <!-- Header -->
   <div class="header">
     <div>
-      <h1>🧬 <span>Evolving Quant</span> — Action Dashboard</h1>
-      <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">AI Portfolio Analysis &amp; Recommendations</p>
+      <h1>🧬 <span>Evolving Quant</span> Dashboard</h1>
+      <p style="color:var(--text-muted);font-size:14px;margin-top:4px">Self-Learning AI Portfolio · 6 Tabs</p>
     </div>
     <div class="header-meta">
-      <div class="date">2026-03-22 分析</div>
+      <div class="date">2026-03-25 08:24 更新</div>
       <div class="confidence"><span class="dot"></span> 確信度 75%</div>
     </div>
   </div>
@@ -305,396 +158,519 @@
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-label">ポートフォリオ総額</div>
-      <div class="stat-value stat-blue">$53,165</div>
+      <div class="stat-value" style="color:var(--accent-blue)">$53,165</div>
       <div class="stat-sub">18銘柄保有</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">含み損益</div>
-      <div class="stat-value stat-green">+$14,556</div>
-      <div class="stat-sub">+27.4%</div>
+      <div class="stat-value" style="color:var(--accent-green)">+$14,556</div>
+      <div class="stat-sub">+37.7%</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">レジーム</div>
-      <div class="stat-value" style="font-size: 20px; color: var(--accent-yellow);">移行期（ボラ上昇中）</div>
-      <div class="stat-sub">KL乖離度 = 0.0864</div>
+      <div class="stat-value" style="font-size:20px;color:var(--accent-yellow)">移行期（ボラ上昇中）</div>
+      <div class="stat-sub">KL = 0.0565</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">今回のアクション</div>
-      <div class="stat-value" style="font-size: 18px;">
-        <span style="color: var(--accent-green);">9 BUY</span>
-        <span style="color: var(--text-muted);"> · </span>
-        <span style="color: var(--accent-yellow);">8 HOLD</span>
-        <span style="color: var(--text-muted);"> · </span>
-        <span style="color: var(--accent-red);">1 SELL</span>
+      <div class="stat-label">アクション</div>
+      <div class="stat-value" style="font-size:18px">
+        <span style="color:var(--accent-green)">9 BUY</span>
+        <span style="color:var(--text-muted)"> · </span>
+        <span style="color:var(--accent-yellow)">8 HOLD</span>
+        <span style="color:var(--text-muted)"> · </span>
+        <span style="color:var(--accent-red)">1 SELL</span>
       </div>
       <div class="stat-sub">+5 新規推奨</div>
     </div>
   </div>
 
-  <!-- Strategy -->
-  <div class="strategy-banner">
-    <strong>🎯 戦略:</strong> B-Lがゴールド(17.5%)+日本高配当(14.7%)+金ETF(14.8%)に大幅傾斜。20年データでMSFT(52w16%/RSI34)・LLY(RSI20)が深い調整圏。NNE(空売り30.6%)は撤退推奨。<strong>防御層60%+AI成長コア30%のバーベル戦略。</strong>
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
+    <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
+    <button class="tab-btn" data-tab="risk" onclick="switchTab(this,'risk')">🔥 Risk</button>
+    <button class="tab-btn" data-tab="report" onclick="switchTab(this,'report')">🎯 AI Report Card</button>
+    <button class="tab-btn" data-tab="prompt" onclick="switchTab(this,'prompt')">🧬 Meta-Prompt</button>
+    <button class="tab-btn" data-tab="record" onclick="switchTab(this,'record')">📝 Record</button>
   </div>
 
-  <!-- BUY Actions -->
-  <div class="section">
-    <div class="section-title"><span class="icon">🟢</span> BUY — 買い増し推奨（9銘柄）</div>
-    <div class="action-grid">
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">VYM</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>111株</span>
-          <span>取得$106 → 現$145</span>
-          <span class="pnl-positive">+$4,343</span>
-        </div>
-        <div class="reason">B-L最大推奨13.3%。RSI=15で深い売られすぎ。CAGR10Y=+11%の安定成長。<strong>5-10株追加</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 73.3%;"></div></div>
-        <div class="alloc-label">推奨配分 11.0% / 目標 13.3%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">GLD</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>11株</span>
-          <span>取得$326 → 現$413</span>
-          <span class="pnl-positive">+$962</span>
-        </div>
-        <div class="reason">B-L最大推奨17.5%。CAGR5Y=+21%。1M=-11.8%の調整は買い場。<strong>3-5株追加で14%目標</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 80%;"></div></div>
-        <div class="alloc-label">推奨配分 14.0% / 目標 17.5%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">MSFT</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>1株</span>
-          <span>取得$406 → 現$382</span>
-          <span class="pnl-negative">-$24</span>
-        </div>
-        <div class="reason">52w16%で大幅調整。RSI34。アナリスト目標<strong>$595(+56%)</strong>。CAGR10Y=+23%。追加検討</div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 53.3%;"></div></div>
-        <div class="alloc-label">推奨配分 8.0%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">LLY</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>1株</span>
-          <span>取得$1070 → 現$907</span>
-          <span class="pnl-negative">-$163</span>
-        </div>
-        <div class="reason">RSI=20で深い売られすぎ。CAGR5Y=+38%。アナリスト目標<strong>$1209(+33%)</strong>。追加チャンス</div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 53.3%;"></div></div>
-        <div class="alloc-label">推奨配分 8.0%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">TSM</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>9株</span>
-          <span>取得$189 → 現$329</span>
-          <span class="pnl-positive">+$1,261</span>
-        </div>
-        <div class="reason">Strong_buy。CAGR10Y=+33%。fPER18で妥当。アナリスト目標+31%。<strong>1-2株追加</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 26.7%;"></div></div>
-        <div class="alloc-label">推奨配分 4.0%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">MRVL</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>10株</span>
-          <span>取得$77 → 現$88</span>
-          <span class="pnl-positive">+$109</span>
-        </div>
-        <div class="reason">Strong_buy。EPS成長+106%。アナリスト目標<strong>$121(+37%)</strong>。$88は魅力的。<strong>2-3株追加</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13.3%;"></div></div>
-        <div class="alloc-label">推奨配分 2.0%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">ETN</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>3株</span>
-          <span>取得$301 → 現$357</span>
-          <span class="pnl-positive">+$168</span>
-        </div>
-        <div class="reason">CAGR10Y=+22%安定。PER34/fPER23で妥当。アナリスト目標+15%。<strong>1-2株追加</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33.3%;"></div></div>
-        <div class="alloc-label">推奨配分 5.0%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">1489.T</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>13株</span>
-          <span style="color: var(--text-muted);">NF日経高配当50</span>
-        </div>
-        <div class="reason">B-L配分14.7%で最大推奨。RSI34で調整圏。CAGR5Y=+33%。<strong>2-3株追加</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 80%;"></div></div>
-        <div class="alloc-label">推奨配分 12.0%</div>
-      </div>
-
-      <div class="action-card buy fade-in">
-        <div class="card-header">
-          <span class="ticker">1328.T</span>
-          <span class="action-badge buy">🟢 BUY</span>
-        </div>
-        <div class="holdings">
-          <span>4株</span>
-          <span style="color: var(--text-muted);">NF金価格</span>
-        </div>
-        <div class="reason">B-L配分14.8%。CAGR5Y=+30%。RSI36で調整圏。<strong>1-2株追加</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 73.3%;"></div></div>
-        <div class="alloc-label">推奨配分 11.0%</div>
-      </div>
-
+  <!-- Tab: Action -->
+  <div id="tab-action" class="tab-content active">
+    <div class="strategy-banner">
+      <strong>🎯 戦略:</strong> B-Lがゴールド(17.5%)+日本高配当(14.7%)+金ETF(14.8%)に大幅傾斜。20年データでMSFT(52w16%/RSI34)・LLY(RSI20)が深い調整圏。NNE(空売り30.6%)は撤退推奨。防御層60%+AI成長コア30%のバーベル戦略。
     </div>
+    <div class="section"><div class="section-title"><span class="icon">🟢</span> BUY — 買い増し推奨（9銘柄）</div><div class="action-grid"><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">VYM</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>111株</span>
+              <span>取得$106 → 現$145</span>
+              <span class="pnl-positive">+$4,343</span>
+            </div>
+          <div class="reason">B-L最大推奨13.3%。RSI=15で深い売られすぎ。CAGR10Y=+11%の安定成長。5-10株追加</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 73%;"></div></div>
+          <div class="alloc-label">推奨配分 11.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">ETN</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>3株</span>
+              <span>取得$301 → 現$357</span>
+              <span class="pnl-positive">+$168</span>
+            </div>
+          <div class="reason">CAGR10Y=+22%安定。PER34/fPER23で妥当。アナリスト目標+15%。1-2株追加</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
+          <div class="alloc-label">推奨配分 5.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">GLD</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>11株</span>
+              <span>取得$326 → 現$413</span>
+              <span class="pnl-positive">+$962</span>
+            </div>
+          <div class="reason">B-L最大推奨17.5%。CAGR5Y=+21%。1M=-11.8%の調整は買い場。3-5株追加で14%目標</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 93%;"></div></div>
+          <div class="alloc-label">推奨配分 14.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">LLY</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>1株</span>
+              <span>取得$1,070 → 現$907</span>
+              <span class="pnl-negative">-$163</span>
+            </div>
+          <div class="reason">RSI=20で深い売られすぎ。CAGR5Y=+38%。アナリスト目標$1209(+33%)。$907は追加チャンス</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 53%;"></div></div>
+          <div class="alloc-label">推奨配分 8.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">MRVL</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>10株</span>
+              <span>取得$77 → 現$88</span>
+              <span class="pnl-positive">+$109</span>
+            </div>
+          <div class="reason">Strong_buy。EPS成長+106%。アナリスト目標$121(+37%)。$88は魅力的。2-3株追加</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
+          <div class="alloc-label">推奨配分 2.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">MSFT</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>1株</span>
+              <span>取得$406 → 現$382</span>
+              <span class="pnl-negative">-$24</span>
+            </div>
+          <div class="reason">52w16%で大幅調整。RSI34。アナリスト目標$595(+56%)。CAGR10Y=+23%。追加検討</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 53%;"></div></div>
+          <div class="alloc-label">推奨配分 8.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">TSM</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>9株</span>
+              <span>取得$189 → 現$329</span>
+              <span class="pnl-positive">+$1,261</span>
+            </div>
+          <div class="reason">Strong_buy。CAGR10Y=+33%。fPER18で妥当。アナリスト目標+31%。1-2株追加</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
+          <div class="alloc-label">推奨配分 4.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">1489.T</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          
+          <div class="reason">B-L配分14.7%で最大推奨。RSI34で調整圏。CAGR5Y=+33%。2-3株追加</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 80%;"></div></div>
+          <div class="alloc-label">推奨配分 12.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">1328.T</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          
+          <div class="reason">B-L配分14.8%。CAGR5Y=+30%。RSI36で調整圏。円建てゴールドの安定感。1-2株追加</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 73%;"></div></div>
+          <div class="alloc-label">推奨配分 11.0%</div>
+        </div></div></div><div class="section"><div class="section-title"><span class="icon">🔴</span> SELL — 売却推奨（1銘柄）</div><div class="action-grid"><div class="action-card sell fade-in">
+          <div class="card-header">
+            <span class="ticker">NNE</span>
+            <span class="action-badge sell">🔴 SELL</span>
+          </div>
+          <div class="holdings">
+              <span>11株</span>
+              <span>取得$32 → 現$21</span>
+              <span class="pnl-negative">-$120</span>
+            </div>
+          <div class="reason">52w7%。空売り30.6%で市場が強い下落を予想。fPER=-19で赤字。損切り推奨</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 7%;"></div></div>
+          <div class="alloc-label">推奨配分 1.0%</div>
+        </div></div></div><div class="section"><div class="section-title"><span class="icon">🟡</span> HOLD — 現状維持（8銘柄）</div><div class="action-grid"><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">VRT</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>27株</span>
+              <span>取得$104 → 現$256</span>
+              <span class="pnl-positive">+$4,097</span>
+            </div>
+          <div class="reason">52w93%で高値圏。CAGR5Y=+66%の成長力は認めるが、追加は見送り。RSI49で中立</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
+          <div class="alloc-label">推奨配分 5.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">ARM</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>7株</span>
+              <span>取得$134 → 現$132</span>
+              <span class="pnl-negative">-$9</span>
+            </div>
+          <div class="reason">PER176と割高。空売り10.7%が高い。MA50&lt;MA200でデッドクロス中。次決算5/7まで静観</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
+          <div class="alloc-label">推奨配分 2.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">COHR</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>2株</span>
+              <span>取得$96 → 現$254</span>
+              <span class="pnl-positive">+$315</span>
+            </div>
+          <div class="reason">CAGR10Y=+28%堅調。3M+44%の急騰後。2株で影響軽微。現状維持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 7%;"></div></div>
+          <div class="alloc-label">推奨配分 1.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">DDOG</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>7株</span>
+              <span>取得$124 → 現$125</span>
+              <span class="pnl-positive">+$4</span>
+            </div>
+          <div class="reason">PER403と極端に割高。RSI66で買われすぎ圏。売上成長+29%は評価するが追加見送り</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 20%;"></div></div>
+          <div class="alloc-label">推奨配分 3.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">GLW</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>5株</span>
+              <span>取得$127 → 現$125</span>
+              <span class="pnl-negative">-$12</span>
+            </div>
+          <div class="reason">CAGR10Y=+24%だが1M=-10.5%の急落。RSI27で売られすぎ。反発待ちで静観</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 20%;"></div></div>
+          <div class="alloc-label">推奨配分 3.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">NVDA</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>63株</span>
+              <span>取得$118 → 現$173</span>
+              <span class="pnl-positive">+$3,430</span>
+            </div>
+          <div class="reason">Strong_buy。fPER16は成長株として割安。RSI37で中立。63株で十分。追加不要</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
+          <div class="alloc-label">推奨配分 5.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">OKLO</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>74株</span>
+              <span>取得$51 → 現$54</span>
+              <span class="pnl-positive">+$240</span>
+            </div>
+          <div class="reason">52w22%で大幅下落。空売り12.3%。fPER=-70で赤字。74株保持するが追加は見送り</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
+          <div class="alloc-label">推奨配分 2.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">PLTR</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>9株</span>
+              <span>取得$156 → 現$151</span>
+              <span class="pnl-negative">-$44</span>
+            </div>
+          <div class="reason">PER239/fPER81と割高。EPS成長+648%は驚異的だがバリュエーション懸念。現状維持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 20%;"></div></div>
+          <div class="alloc-label">推奨配分 3.0%</div>
+        </div></div></div><div class="section"><div class="section-title"><span class="icon">🆕</span> 新規推奨銘柄（5銘柄）</div><div class="picks-grid"><div class="pick-card fade-in">
+              <div class="pick-ticker">ANET</div>
+              <div class="pick-sector">DC/ネットワーク</div>
+              <div class="pick-reason">Strong_buy。CAGR10Y=+44%。fPER31。AI向け800Gスイッチ</div>
+            </div><div class="pick-card fade-in">
+              <div class="pick-ticker">CEG</div>
+              <div class="pick-sector">原子力発電</div>
+              <div class="pick-reason">アナリスト目標+40%。AI電力PPA。NNE代替の収益性ある原子力</div>
+            </div><div class="pick-card fade-in">
+              <div class="pick-ticker">ASML</div>
+              <div class="pick-sector">半導体装置</div>
+              <div class="pick-reason">EUV独占。CAGR10Y=+31%。次決算4/15で受注回復確認</div>
+            </div><div class="pick-card fade-in">
+              <div class="pick-ticker">DE</div>
+              <div class="pick-sector">精密農業</div>
+              <div class="pick-reason">CAGR10Y=+23%。fPER24。AI×農業。1M=-15.5%の調整は買い場</div>
+            </div><div class="pick-card fade-in">
+              <div class="pick-ticker">URI</div>
+              <div class="pick-sector">建機レンタル</div>
+              <div class="pick-reason">fPER13で割安。CAGR10Y=+28%。1M=-21.8%の急落で魅力的水準</div>
+            </div></div></div><div class="section"><div class="section-title"><span class="icon">⚖️</span> リスクシナリオ</div><div class="risk-grid"><div class="risk-card bull">
+              <div class="risk-prob">25%</div>
+              <div class="risk-label">🐂 BULL</div>
+              <div class="risk-desc">FRB利下げ開始。MSFT/NVDA反発+30%。GLD$3,200。全体+15-18%</div>
+            </div><div class="risk-card base">
+              <div class="risk-prob">55%</div>
+              <div class="risk-label">📊 BASE</div>
+              <div class="risk-desc">据え置き継続。テック横ばい。ゴールド+高配当が下支え。全体+3-6%</div>
+            </div><div class="risk-card bear">
+              <div class="risk-prob">20%</div>
+              <div class="risk-label">🐻 BEAR</div>
+              <div class="risk-desc">景気後退でNVDA-30%。OKLO/NNE-50%。GLD/VYMが防御。全体-10-15%</div>
+            </div></div></div>
+    <div class="section"><div class="section-title"><span class="icon">📊</span> 積立設定レビュー</div><div class="tsumitate-grid"><div class="tsumitate-card"><h4>⚡ 変更提案</h4><div class="change-item"><span class="arrow">→</span> FANG+を60,000→40,000に減額(PER高の米テック集中リスク)</div><div class="change-item"><span class="arrow">→</span> 減額分20,000でeMAXIS Slim全世界株式を新規追加</div><div class="change-item"><span class="arrow">→</span> ゴールドファンド40,000は維持(B-L最大推奨に合致)</div></div><div class="tsumitate-card"><h4>💡 理由</h4><p style="font-size:13px;color:var(--text-secondary);line-height:1.7">MSFT(52w16%),NVDA等のテック調整局面。FANG+のFAANG集中は短期リスク大。全世界で分散。</p></div></div></div>
   </div>
 
-  <!-- SELL Actions -->
-  <div class="section">
-    <div class="section-title"><span class="icon">🔴</span> SELL — 売却推奨（1銘柄）</div>
-    <div class="action-grid">
-
-      <div class="action-card sell fade-in">
-        <div class="card-header">
-          <span class="ticker">NNE</span>
-          <span class="action-badge sell">🔴 SELL</span>
+  <!-- Tab: Overview -->
+  <div id="tab-overview" class="tab-content">
+    <div class="section">
+      <div class="section-title"><span class="icon">📊</span> Portfolio Allocation Overview</div>
+      <div class="chart-row">
+        <div class="chart-container">
+          <div class="chart-title">Ensemble配分（ドーナツ）</div>
+          <div style="position:relative;height:300px"><canvas id="chartDonut"></canvas></div>
         </div>
-        <div class="holdings">
-          <span>11株</span>
-          <span>取得$32 → 現$21</span>
-          <span class="pnl-negative">-$120</span>
+        <div class="chart-container">
+          <div class="chart-title">戦略比較（棒グラフ）</div>
+          <div style="position:relative;height:300px"><canvas id="chartBar"></canvas></div>
         </div>
-        <div class="reason">⚠️ <strong>52w 7%。空売り30.6%</strong>で市場が強い下落を予想。fPER=-19で赤字。<strong>損切り推奨</strong></div>
-        <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 6.7%; background: var(--accent-red);"></div></div>
-        <div class="alloc-label">推奨配分 1.0%（縮小）</div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- HOLD Actions -->
-  <div class="section">
-    <div class="section-title"><span class="icon">🟡</span> HOLD — 現状維持（8銘柄）</div>
-    <div class="action-grid">
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">NVDA</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>63株</span>
-          <span>取得$118 → 現$173</span>
-          <span class="pnl-positive">+$3,430</span>
-        </div>
-        <div class="reason">Strong_buy。fPER16は成長株として割安。RSI37で中立。63株で十分。追加不要</div>
-      </div>
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">VRT</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>27株</span>
-          <span>取得$104 → 現$256</span>
-          <span class="pnl-positive">+$4,097</span>
-        </div>
-        <div class="reason">52w93%で高値圏。CAGR5Y=+66%の成長力は認めるが、追加は見送り。RSI49</div>
-      </div>
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">OKLO</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>74株</span>
-          <span>取得$51 → 現$54</span>
-          <span class="pnl-positive">+$240</span>
-        </div>
-        <div class="reason">52w22%で大幅下落。空売り12.3%。fPER=-70で赤字。保持するが追加見送り</div>
-      </div>
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">PLTR</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>9株</span>
-          <span>取得$156 → 現$151</span>
-          <span class="pnl-negative">-$44</span>
-        </div>
-        <div class="reason">PER239/fPER81と割高。EPS成長+648%は驚異的だがバリュエーション懸念</div>
-      </div>
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">ARM</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>7株</span>
-          <span>取得$134 → 現$132</span>
-          <span class="pnl-negative">-$9</span>
-        </div>
-        <div class="reason">PER176と割高。空売り10.7%。MA50&lt;MA200デッドクロス。次決算5/7まで静観</div>
-      </div>
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">DDOG</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>7株</span>
-          <span>取得$125 → 現$125</span>
-          <span class="pnl-positive">+$4</span>
-        </div>
-        <div class="reason">PER403と極端に割高。RSI66で買われすぎ圏。売上成長+29%は評価するが追加見送り</div>
-      </div>
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">COHR</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>2株</span>
-          <span>取得$96 → 現$254</span>
-          <span class="pnl-positive">+$315</span>
-        </div>
-        <div class="reason">CAGR10Y=+28%堅調。3M+44%の急騰後。2株で影響軽微。現状維持</div>
-      </div>
-
-      <div class="action-card hold fade-in">
-        <div class="card-header">
-          <span class="ticker">GLW</span>
-          <span class="action-badge hold">🟡 HOLD</span>
-        </div>
-        <div class="holdings">
-          <span>5株</span>
-          <span>取得$127 → 現$125</span>
-          <span class="pnl-negative">-$12</span>
-        </div>
-        <div class="reason">CAGR10Y=+24%だが1M=-10.5%の急落。RSI27で売られすぎ。反発待ちで静観</div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- New Picks -->
-  <div class="section">
-    <div class="section-title"><span class="icon">🆕</span> 新規推奨銘柄（5銘柄）</div>
-    <div class="picks-grid">
-
-      <div class="pick-card fade-in">
-        <div class="pick-ticker">ANET</div>
-        <div class="pick-sector">DC/ネットワーク</div>
-        <div class="pick-reason">Strong_buy。CAGR10Y=+44%。fPER31。AI向け800Gスイッチ需要</div>
-      </div>
-
-      <div class="pick-card fade-in">
-        <div class="pick-ticker">CEG</div>
-        <div class="pick-sector">原子力発電</div>
-        <div class="pick-reason">アナリスト目標+40%。AI電力PPA。NNE代替の収益性ある原子力</div>
-      </div>
-
-      <div class="pick-card fade-in">
-        <div class="pick-ticker">ASML</div>
-        <div class="pick-sector">半導体装置</div>
-        <div class="pick-reason">EUV独占。CAGR10Y=+31%。次決算4/15で受注回復確認</div>
-      </div>
-
-      <div class="pick-card fade-in">
-        <div class="pick-ticker">DE</div>
-        <div class="pick-sector">精密農業</div>
-        <div class="pick-reason">CAGR10Y=+23%。fPER24。AI×農業。1M=-15.5%の調整は買い場</div>
-      </div>
-
-      <div class="pick-card fade-in">
-        <div class="pick-ticker">URI</div>
-        <div class="pick-sector">建機レンタル</div>
-        <div class="pick-reason">fPER13で割安。CAGR10Y=+28%。1M=-21.8%の急落で魅力的水準</div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Tsumitate Advice -->
-  <div class="section">
-    <div class="section-title"><span class="icon">📊</span> 積立設定レビュー</div>
-    <div class="tsumitate-grid">
-      <div class="tsumitate-card">
-        <h4>⚡ 変更提案</h4>
-        <div class="change-item"><span class="arrow">→</span> FANG+を¥60,000 → <strong>¥40,000</strong>に減額（PER高の米テック集中リスク）</div>
-        <div class="change-item"><span class="arrow">→</span> 減額分¥20,000で<strong>eMAXIS Slim全世界株式</strong>を新規追加</div>
-        <div class="change-item"><span class="arrow">→</span> ゴールドファンド¥40,000は維持（B-L最大推奨に合致）</div>
-      </div>
-      <div class="tsumitate-card">
-        <h4>💡 理由</h4>
-        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
-          MSFT(52w16%), NVDA等のテック調整局面。FANG+のFAANG集中は短期リスク大。全世界株式で地域分散を追加し、ダウンサイドリスクを軽減。ゴールドはB-L最大推奨（17.5%）に合致しており維持が妥当。
-        </p>
       </div>
     </div>
   </div>
 
-  <!-- Risk Scenarios -->
-  <div class="section">
-    <div class="section-title"><span class="icon">⚖️</span> リスクシナリオ</div>
-    <div class="risk-grid">
-      <div class="risk-card bull">
-        <div class="risk-prob">25%</div>
-        <div class="risk-label">🐂 Bull</div>
-        <div class="risk-desc">FRB利下げ開始。MSFT/NVDA反発+30%。GLD$3,200。全体<strong>+15-18%</strong></div>
+  <!-- Tab: Risk -->
+  <div id="tab-risk" class="tab-content">
+    <div class="section">
+      <div class="section-title"><span class="icon">🔥</span> Risk Analysis</div>
+      <div class="chart-container">
+        <div class="chart-title">リスク寄与度</div>
+        <div style="position:relative;height:400px"><canvas id="chartRisk"></canvas></div>
       </div>
-      <div class="risk-card base">
-        <div class="risk-prob">55%</div>
-        <div class="risk-label">📊 Base</div>
-        <div class="risk-desc">据え置き継続。テック横ばい。ゴールド+高配当が下支え。全体<strong>+3-6%</strong></div>
+    </div>
+  </div>
+
+  <!-- Tab: AI Report Card -->
+  <div id="tab-report" class="tab-content">
+    <div class="section">
+      <div class="section-title"><span class="icon">🎯</span> AI Report Card — 予測精度追跡</div>
+      <div class="chart-container">
+        <div class="chart-title">確信度の推移</div>
+        <div style="position:relative;height:250px"><canvas id="chartConfidence"></canvas></div>
       </div>
-      <div class="risk-card bear">
-        <div class="risk-prob">20%</div>
-        <div class="risk-label">🐻 Bear</div>
-        <div class="risk-desc">景気後退でNVDA-30%。OKLO/NNE-50%。GLD/VYMが防御。全体<strong>-10-15%</strong></div>
+      <div class="section" style="margin-top:20px">
+        <div class="section-title"><span class="icon">📊</span> 評価データ</div>
+        <div id="evalData" style="color:var(--text-secondary);font-size:14px;padding:16px;background:var(--bg-card);border-radius:12px;border:1px solid var(--border)"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Tab: Meta-Prompt -->
+  <div id="tab-prompt" class="tab-content">
+    <div class="section">
+      <div class="section-title"><span class="icon">🧬</span> Meta-Prompt（Claude Opus用）</div>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">以下のプロンプトをコピーしてAIに渡してください。</p>
+      <div class="prompt-block" id="promptBlock">🧬 EVOLVING QUANT META-PROMPT — 2026-03-25\nSelf-Reflection Generation: 0\n\n═══ SECTION A: 数学的ベースライン ═══\nマーケットレジーム: 移行期（ボラ上昇中） (KL=0.0565)\n\nEnsemble最適配分:\n  VRT: 3.1%\n  VYM: 8.2%\n  ARM: 3.5%\n  COHR: 1.9%\n  DDOG: 4.7%\n  ETN: 5.5%\n  GLD: 9.3%\n  GLW: 4.4%\n  LLY: 8.0%\n  MRVL: 3.1%\n  MSFT: 8.0%\n  NNE: 4.2%\n  NVDA: 4.6%\n  OKLO: 3.5%\n  PLTR: 5.4%\n  TSM: 4.9%\n  1489.T: 8.7%\n  1328.T: 8.9%\n  Ensemble重み: NCO=25.0%, RP=25.0%, MV=25.0%, MD=25.0%\n\nBlack-Litterman配分:\n  VRT: 1.8%\n  VYM: 13.1%\n  ARM: 0.5%\n  COHR: 0.0%\n  DDOG: 1.7%\n  ETN: 3.8%\n  GLD: 18.5%\n  GLW: 1.5%\n  LLY: 9.6%\n  MRVL: 0.4%\n  MSFT: 9.0%\n  NNE: 1.2%\n  NVDA: 3.1%\n  OKLO: 1.2%\n  PLTR: 1.9%\n  TSM: 2.6%\n  1489.T: 15.7%\n  1328.T: 14.5%</div>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('promptBlock').textContent).then(()=>alert('コピーしました！'))" style="margin-top:12px;padding:10px 24px;background:var(--accent-purple);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📋 コピー</button>
+    </div>
+  </div>
+
+  <!-- Tab: Record -->
+  <div id="tab-record" class="tab-content">
+    <div class="section">
+      <div class="section-title"><span class="icon">📝</span> AI推奨記録（過去10件）</div>
+      <div class="record-row">
+          <span class="record-date">2026-03-22</span>
+          <span class="record-status">⏳</span>
+          <span class="record-conf">確信度 75%</span>
+          <span class="record-reason">B-Lがゴールド(17.5%)+日本高配当(14.7%)+金ETF(14.8%)に大幅傾斜。20年データでMSFT(52...</span>
+        </div><div class="record-row">
+          <span class="record-date">2026-03-22</span>
+          <span class="record-status">⏳</span>
+          <span class="record-conf">確信度 70%</span>
+          <span class="record-reason">B-Lが防御姿勢を強化(GLD17.3%最大推奨)。移行期レジームでゴールド+高配当の防御層を厚くしつつ、NVDA・TS...</span>
+        </div><div class="record-row">
+          <span class="record-date">2026-03-22</span>
+          <span class="record-status">⏳</span>
+          <span class="record-conf">確信度 72%</span>
+          <span class="record-reason">B-L配分がGLD(15.9%)・VYM(12.5%)・1328.T(11.1%)に傾斜→移行期の防御姿勢を反映。Ens...</span>
+        </div><div class="record-row">
+          <span class="record-date">2026-03-22</span>
+          <span class="record-status">⏳</span>
+          <span class="record-conf">確信度 68%</span>
+          <span class="record-reason">移行期レジーム（KL=0.0864）でボラティリティ上昇中。ゴールド・高配当ETFの防御的ウェイトを維持しつつ、半導体・...</span>
+        </div>
     </div>
   </div>
 
   <div class="footer">
-    🧬 Evolving Quant · AI自動分析 · 生成日: 2026-03-22 · 確信度: 75% · GitHub: akihamada/evolving-quant
+    🧬 Evolving Quant · AI自動分析 · 更新: 2026-03-25 08:24 · <a href="https://github.com/akihamada/evolving-quant" style="color:var(--accent-blue)">GitHub</a>
   </div>
-
 </div>
+
+<script>
+const overviewData = {"tickers": ["VRT", "VYM", "ARM", "COHR", "DDOG", "ETN", "GLD", "GLW", "LLY", "MRVL", "MSFT", "NNE", "NVDA", "OKLO", "PLTR", "TSM", "1489.T", "1328.T"], "ensemble": [3.1, 8.2, 3.5, 1.9, 4.7, 5.5, 9.3, 4.4, 8.0, 3.1, 8.0, 4.2, 4.6, 3.5, 5.4, 4.9, 8.7, 8.9], "bl": [1.8, 13.1, 0.5, 0.0, 1.7, 3.8, 18.5, 1.5, 9.6, 0.4, 9.0, 1.2, 3.1, 1.2, 1.9, 2.6, 15.7, 14.5], "equal": [5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6]};
+const trackData = {"records": [{"date": "2026-03-22", "confidence": 0.68, "evaluated": false, "reasoning": "\u79fb\u884c\u671f\u30ec\u30b8\u30fc\u30e0\uff08KL=0.0864\uff09\u3067\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u4e0a\u6607\u4e2d\u3002\u30b4\u30fc\u30eb\u30c9\u30fb\u9ad8\u914d\u5f53ETF\u306e\u9632\u5fa1\u7684\u30a6\u30a7\u30a4\u30c8\u3092\u7dad\u6301\u3057\u3064\u3064\u3001\u534a\u5c0e\u4f53\u30fbAI\u95a2\u9023\u306e\u6210\u9577\u30dd\u30b8\u30b7\u30e7\u30f3\u3092\u30b3\u30a2\u306b\u636e\u3048\u308b\u3002", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "BUY", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "HOLD", "1328.T": "BUY"}}, {"date": "2026-03-22", "confidence": 0.72, "evaluated": false, "reasoning": "B-L\u914d\u5206\u304cGLD(15.9%)\u30fbVYM(12.5%)\u30fb1328.T(11.1%)\u306b\u50be\u659c\u2192\u79fb\u884c\u671f\u306e\u9632\u5fa1\u59ff\u52e2\u3092\u53cd\u6620\u3002Ensemble\u914d\u5206\u3068\u306e\u52a0\u91cd\u5e73\u5747\u3067\u9632\u5fa1\u3068\u6210\u9577\u306e", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "BUY", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-03-22", "confidence": 0.7, "evaluated": false, "reasoning": "B-L\u304c\u9632\u5fa1\u59ff\u52e2\u3092\u5f37\u5316(GLD17.3%\u6700\u5927\u63a8\u5968)\u3002\u79fb\u884c\u671f\u30ec\u30b8\u30fc\u30e0\u3067\u30b4\u30fc\u30eb\u30c9+\u9ad8\u914d\u5f53\u306e\u9632\u5fa1\u5c64\u3092\u539a\u304f\u3057\u3064\u3064\u3001NVDA\u30fbTSM\u30fbLLY\u306e\u6210\u9577\u30b3\u30a2\u3092\u7dad\u6301\u30023\u56de\u76ee\u306e\u5206\u6790", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "BUY", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-03-22", "confidence": 0.75, "evaluated": false, "reasoning": "B-L\u304c\u30b4\u30fc\u30eb\u30c9(17.5%)+\u65e5\u672c\u9ad8\u914d\u5f53(14.7%)+\u91d1ETF(14.8%)\u306b\u5927\u5e45\u50be\u659c\u300220\u5e74\u30c7\u30fc\u30bf\u3067MSFT(52w16%/RSI34)\u30fbLLY(RSI2", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "BUY", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "BUY", "1328.T": "BUY"}}], "evaluations": []};
+
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'overview' && !window._overviewInit) { initOverview(); window._overviewInit = true; }
+  if (id === 'risk' && !window._riskInit) { initRisk(); window._riskInit = true; }
+  if (id === 'report' && !window._reportInit) { initReport(); window._reportInit = true; }
+}
+
+function initOverview() {
+  const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#a855f7','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1','#14b8a6','#e11d48','#8b5cf6','#22d3ee','#eab308','#fb923c','#4ade80','#f472b6'];
+
+  new Chart(document.getElementById('chartDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: overviewData.tickers,
+      datasets: [{ data: overviewData.ensemble, backgroundColor: colors, borderWidth: 0 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 } } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('chartBar'), {
+    type: 'bar',
+    data: {
+      labels: overviewData.tickers,
+      datasets: [
+        { label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(59,130,246,0.7)' },
+        { label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(168,85,247,0.7)' },
+        { label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(100,116,139,0.4)' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 10 } } },
+        y: { ticks: { color: '#94a3b8', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      },
+      plugins: { legend: { labels: { color: '#94a3b8' } } }
+    }
+  });
+}
+
+function initRisk() {
+  new Chart(document.getElementById('chartRisk'), {
+    type: 'bar',
+    data: {
+      labels: overviewData.tickers,
+      datasets: [{
+        label: 'Ensemble配分 (%)',
+        data: overviewData.ensemble,
+        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(239,68,68,0.7)' : 'rgba(16,185,129,0.7)')
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      scales: {
+        x: { ticks: { color: '#94a3b8', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function initReport() {
+  const recs = trackData.records;
+  if (recs.length === 0) {
+    document.getElementById('evalData').innerHTML = '📭 まだ評価データがありません。';
+    return;
+  }
+
+  new Chart(document.getElementById('chartConfidence'), {
+    type: 'line',
+    data: {
+      labels: recs.map(r => r.date),
+      datasets: [{
+        label: '確信度',
+        data: recs.map(r => r.confidence * 100),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 5,
+        pointBackgroundColor: '#3b82f6'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#94a3b8' } },
+        y: { min: 0, max: 100, ticks: { color: '#94a3b8', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      },
+      plugins: { legend: { labels: { color: '#94a3b8' } } }
+    }
+  });
+
+  const evals = trackData.evaluations;
+  if (evals.length > 0) {
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html += '<tr style="border-bottom:1px solid #1e293b"><th style="text-align:left;padding:8px;color:#64748b">日付</th><th style="padding:8px;color:#64748b">RMSE</th><th style="padding:8px;color:#64748b">方向性</th><th style="padding:8px;color:#64748b">較正</th></tr>';
+    evals.forEach(e => {
+      html += `<tr style="border-bottom:1px solid #1e293b"><td style="padding:8px;color:#94a3b8">${e.date}</td><td style="padding:8px;text-align:center;color:#ef4444">${e.rmse}</td><td style="padding:8px;text-align:center;color:#10b981">${e.direction_accuracy}%</td><td style="padding:8px;text-align:center;color:#a855f7">${e.calibration_score}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('evalData').innerHTML = html;
+  } else {
+    document.getElementById('evalData').innerHTML = '📭 まだ採点データがありません。AI推奨を記録し、7日以上経過すると自動採点されます。';
+  }
+}
+</script>
 </body>
 </html>
