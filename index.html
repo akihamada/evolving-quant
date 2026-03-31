@@ -142,6 +142,40 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
   .tab-nav{gap:2px}
   .tab-btn{padding:8px 12px;font-size:12px}
 }
+
+/* Timing Tab */
+.timing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.timing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:all 0.3s}
+.timing-card:hover{transform:translateY(-2px)}
+.timing-card.now{border-top:3px solid var(--accent-green)}
+.timing-card.later{border-top:3px solid var(--accent-yellow)}
+.timing-card.trigger{border-top:3px solid var(--accent-blue)}
+.timing-phase{font-size:15px;font-weight:700;margin-bottom:12px}
+.timing-body{display:flex;flex-direction:column;gap:8px}
+.timing-item{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.timing-note{font-size:12px;color:var(--text-muted);margin-top:4px;font-style:italic}
+.timing-table{overflow-x:auto}
+.timing-table table{width:100%;border-collapse:collapse;font-size:13px}
+.timing-table th{text-align:left;padding:10px 12px;color:var(--text-muted);border-bottom:2px solid var(--border);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.5px}
+.timing-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-secondary)}
+.timing-table tr:hover{background:var(--bg-card-hover)}
+.timing-table .priority{font-weight:800;color:var(--accent-blue);font-family:'JetBrains Mono',monospace;font-size:16px}
+.timing-table .jpy-amt{color:var(--accent-green);font-weight:700;font-family:'JetBrains Mono',monospace}
+.timing-table .timing-label{color:var(--accent-yellow);font-weight:600;white-space:nowrap}
+.timing-table .reason-short{color:var(--text-muted);font-size:12px}
+.calendar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.cal-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px;transition:all 0.3s}
+.cal-card:hover{transform:translateY(-2px)}
+.cal-month{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--accent-blue)}
+.cal-items{display:flex;flex-direction:column;gap:8px}
+.cal-item{font-size:12px;padding:6px 10px;border-radius:8px;line-height:1.4}
+.cal-item.buy-item{background:var(--accent-green-bg);color:var(--accent-green)}
+.cal-item.sell-item{background:var(--accent-red-bg);color:var(--accent-red)}
+.cal-item.info-item{background:var(--accent-blue-bg);color:var(--accent-blue)}
+.cal-item.warn-item{background:var(--accent-yellow-bg);color:var(--accent-yellow)}
+@media(max-width:768px){
+  .timing-grid,.calendar-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -154,7 +188,7 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
       <p style="color:var(--text-muted);font-size:14px;margin-top:4px">Self-Learning AI Portfolio · 6 Tabs</p>
     </div>
     <div class="header-meta">
-      <div class="date">2026-03-31 09:31 更新</div>
+      <div class="date">2026-03-31 10:06 更新</div>
       <div class="confidence"><span class="dot"></span> 確信度 75%</div>
     </div>
   </div>
@@ -192,6 +226,7 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
   <!-- Tab Navigation -->
   <div class="tab-nav">
     <button class="tab-btn active" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
+    <button class="tab-btn" data-tab="timing" onclick="switchTab(this,'timing')">📅 Timing</button>
     <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
     <button class="tab-btn" data-tab="risk" onclick="switchTab(this,'risk')">🔥 Risk</button>
     <button class="tab-btn" data-tab="report" onclick="switchTab(this,'report')">🎯 AI Report Card</button>
@@ -466,6 +501,53 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
     <div class="section"><div class="section-title"><span class="icon">📊</span> 積立設定レビュー</div><div class="tsumitate-grid"><div class="tsumitate-card"><h4>⚡ 変更提案</h4><div class="change-item"><span class="arrow">→</span> FANG+を60,000→40,000に減額(PER高の米テック集中リスク)</div><div class="change-item"><span class="arrow">→</span> 減額分20,000でeMAXIS Slim全世界株式を新規追加</div><div class="change-item"><span class="arrow">→</span> ゴールドファンド40,000は維持(B-L最大推奨に合致)</div></div><div class="tsumitate-card"><h4>💡 理由</h4><p style="font-size:13px;color:var(--text-secondary);line-height:1.7">MSFT(52w16%),NVDA等のテック調整局面。FANG+のFAANG集中は短期リスク大。全世界で分散。</p></div></div></div>
   </div>
 
+  <!-- Tab: Timing -->
+  <div id="tab-timing" class="tab-content">
+    <div class="section"><div class="section-title"><span class="icon">📊</span> 積立変更タイミング</div>
+    <div class="timing-grid">
+      <div class="timing-card now"><div class="timing-phase">✅ 今すぐ（4月〜）</div>
+        <div class="timing-body"><div class="timing-item">eMAXIS Slim全世界 <strong>¥20,000 新規開始</strong></div>
+        <div class="timing-item">FANG+ <strong>¥60,000 維持</strong>（調整圏で多く買う）</div>
+        <div class="timing-item">ゴールドファンド <strong>¥40,000 維持</strong></div>
+        <div class="timing-note">→ 合計 ¥100,000/月（一時的増額）</div></div></div>
+      <div class="timing-card later"><div class="timing-phase">⏳ RSI回復後（5-6月目安）</div>
+        <div class="timing-body"><div class="timing-item">FANG+ <strong>¥60,000 → ¥40,000</strong> に減額</div>
+        <div class="timing-item">全世界 ¥20,000 + ゴールド ¥40,000 維持</div>
+        <div class="timing-note">→ 合計 ¥80,000/月（定常運用）</div></div></div>
+      <div class="timing-card trigger"><div class="timing-phase">📊 減額トリガー条件</div>
+        <div class="timing-body"><div class="timing-item">MSFT RSI &gt; <strong>50</strong>（現在34）</div>
+        <div class="timing-item">FANG+ 52w% &gt; <strong>50%</strong></div>
+        <div class="timing-item">S&P500 直近安値から <strong>+10%</strong> 反発</div>
+        <div class="timing-note">いずれか1つで実行</div></div></div>
+    </div></div><div class="section"><div class="section-title"><span class="icon">🟢</span> BUY優先順位（¥200,000/月）</div><div class="timing-table"><table><tr><th>優先</th><th>銘柄</th><th>現在価格</th><th>推奨金額</th><th>タイミング</th><th>根拠</th></tr><tr><td class="priority">1</td><td><a href="https://finance.yahoo.com/quote/GLD/chart/" target="_blank" class="ticker-link">GLD</a></td><td>$413</td><td class="jpy-amt">¥37,333</td><td class="timing-label">4月第1週</td><td class="reason-short">B-L最大推奨17.5%。CAGR5Y=+21%。1M=-11.8%の調整は買い場。3-5株追加で1</td></tr><tr><td class="priority">2</td><td><a href="https://finance.yahoo.co.jp/quote/1489.T/chart" target="_blank" class="ticker-link">1489.T</a></td><td>—</td><td class="jpy-amt">¥31,999</td><td class="timing-label">4月第1週</td><td class="reason-short">B-L配分14.7%で最大推奨。RSI34で調整圏。CAGR5Y=+33%。2-3株追加</td></tr><tr><td class="priority">3</td><td><a href="https://finance.yahoo.com/quote/VYM/chart/" target="_blank" class="ticker-link">VYM</a></td><td>$145</td><td class="jpy-amt">¥29,333</td><td class="timing-label">4月第1週</td><td class="reason-short">B-L最大推奨13.3%。RSI=15で深い売られすぎ。CAGR10Y=+11%の安定成長。5-10</td></tr><tr><td class="priority">4</td><td><a href="https://finance.yahoo.co.jp/quote/1328.T/chart" target="_blank" class="ticker-link">1328.T</a></td><td>—</td><td class="jpy-amt">¥29,333</td><td class="timing-label">4月中旬〜</td><td class="reason-short">B-L配分14.8%。CAGR5Y=+30%。RSI36で調整圏。円建てゴールドの安定感。1-2株追</td></tr><tr><td class="priority">5</td><td><a href="https://finance.yahoo.com/quote/LLY/chart/" target="_blank" class="ticker-link">LLY</a></td><td>$907</td><td class="jpy-amt">¥21,333</td><td class="timing-label">4月中旬〜</td><td class="reason-short">RSI=20で深い売られすぎ。CAGR5Y=+38%。アナリスト目標$1209(+33%)。$907</td></tr><tr><td class="priority">6</td><td><a href="https://finance.yahoo.com/quote/MSFT/chart/" target="_blank" class="ticker-link">MSFT</a></td><td>$382</td><td class="jpy-amt">¥21,333</td><td class="timing-label">4月中旬〜</td><td class="reason-short">52w16%で大幅調整。RSI34。アナリスト目標$595(+56%)。CAGR10Y=+23%。追</td></tr><tr><td class="priority">7</td><td><a href="https://finance.yahoo.com/quote/ETN/chart/" target="_blank" class="ticker-link">ETN</a></td><td>$357</td><td class="jpy-amt">¥13,333</td><td class="timing-label">5月〜</td><td class="reason-short">CAGR10Y=+22%安定。PER34/fPER23で妥当。アナリスト目標+15%。1-2株追加</td></tr><tr><td class="priority">8</td><td><a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" class="ticker-link">TSM</a></td><td>$329</td><td class="jpy-amt">¥10,666</td><td class="timing-label">5月〜</td><td class="reason-short">Strong_buy。CAGR10Y=+33%。fPER18で妥当。アナリスト目標+31%。1-2株</td></tr><tr><td class="priority">9</td><td><a href="https://finance.yahoo.com/quote/MRVL/chart/" target="_blank" class="ticker-link">MRVL</a></td><td>$88</td><td class="jpy-amt">¥5,333</td><td class="timing-label">5月〜</td><td class="reason-short">Strong_buy。EPS成長+106%。アナリスト目標$121(+37%)。$88は魅力的。2-</td></tr></table></div></div><div class="section"><div class="section-title"><span class="icon">🔴</span> SELL — 即売却</div><div class="action-grid"><div class="action-card sell fade-in"><div class="card-header">
+              <a href="https://finance.yahoo.com/quote/NNE/chart/" target="_blank" class="ticker ticker-link">NNE 📈</a>
+              <span class="action-badge sell">🔴 今週中に売却</span></div>
+              <div class="holdings"><span>11株</span><span class="pnl-negative">-$120</span></div>
+              <div class="reason">52w7%。空売り30.6%で市場が強い下落を予想。fPER=-19で赤字。損切り推奨</div></div></div></div><div class="section"><div class="section-title"><span class="icon">📅</span> 月別アクションカレンダー</div>
+    <div class="calendar-grid">
+      <div class="cal-card"><div class="cal-month">4月 第1週</div>
+        <div class="cal-items">
+          <div class="cal-item sell-item">🔴 NNE 全売却（損切り）</div>
+          <div class="cal-item buy-item">🟢 GLD / VYM / 1328.T / 1489.T 購入</div>
+          <div class="cal-item info-item">📊 eMAXIS全世界 積立開始</div></div></div>
+      <div class="cal-card"><div class="cal-month">4月 中旬〜下旬</div>
+        <div class="cal-items">
+          <div class="cal-item info-item">👁️ ASML決算 4/15 → 新規BUY判断</div>
+          <div class="cal-item info-item">👁️ MSFT決算 4/30 → 追加判断</div>
+          <div class="cal-item info-item">👁️ LLY決算 4/30 → 底値買い判断</div></div></div>
+      <div class="cal-card"><div class="cal-month">5月</div>
+        <div class="cal-items">
+          <div class="cal-item buy-item">🟢 TSM / ETN / MRVL 追加</div>
+          <div class="cal-item info-item">👁️ ARM決算 5/7 → PER判断</div>
+          <div class="cal-item info-item">🔄 RSI>50ならFANG+減額実行</div></div></div>
+      <div class="cal-card"><div class="cal-month">6月〜 定常</div>
+        <div class="cal-items">
+          <div class="cal-item info-item">📊 積立: FANG+¥40k + 全世界¥20k + ゴールド¥40k</div>
+          <div class="cal-item info-item">📊 個別: 月¥200kでAI推奨に従う</div>
+          <div class="cal-item warn-item">⚠️ 9月: 歴史的最弱月 → リスクダウン</div></div></div>
+    </div></div><div class="section"><div class="section-title"><span class="icon">👁️</span> HOLD 監視リスト</div><div class="timing-table"><table><tr><th>銘柄</th><th>含み損益</th><th>次のアクション条件</th></tr><tr><td><a href="https://finance.yahoo.com/quote/VRT/chart/" target="_blank" class="ticker-link">VRT</a></td><td class="pnl-positive">+$4,097</td><td class="reason-short">52w93%で高値圏。CAGR5Y=+66%の成長力は認めるが、追加は見送り。RSI49で中立</td></tr><tr><td><a href="https://finance.yahoo.com/quote/ARM/chart/" target="_blank" class="ticker-link">ARM</a></td><td class="pnl-negative">-$9</td><td class="reason-short">PER176と割高。空売り10.7%が高い。MA50&lt;MA200でデッドクロス中。次決算5/7まで静観</td></tr><tr><td><a href="https://finance.yahoo.com/quote/COHR/chart/" target="_blank" class="ticker-link">COHR</a></td><td class="pnl-positive">+$315</td><td class="reason-short">CAGR10Y=+28%堅調。3M+44%の急騰後。2株で影響軽微。現状維持</td></tr><tr><td><a href="https://finance.yahoo.com/quote/DDOG/chart/" target="_blank" class="ticker-link">DDOG</a></td><td class="pnl-positive">+$4</td><td class="reason-short">PER403と極端に割高。RSI66で買われすぎ圏。売上成長+29%は評価するが追加見送り</td></tr><tr><td><a href="https://finance.yahoo.com/quote/GLW/chart/" target="_blank" class="ticker-link">GLW</a></td><td class="pnl-negative">-$12</td><td class="reason-short">CAGR10Y=+24%だが1M=-10.5%の急落。RSI27で売られすぎ。反発待ちで静観</td></tr><tr><td><a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" class="ticker-link">NVDA</a></td><td class="pnl-positive">+$3,430</td><td class="reason-short">Strong_buy。fPER16は成長株として割安。RSI37で中立。63株で十分。追加不要</td></tr><tr><td><a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" class="ticker-link">OKLO</a></td><td class="pnl-positive">+$240</td><td class="reason-short">52w22%で大幅下落。空売り12.3%。fPER=-70で赤字。74株保持するが追加は見送り</td></tr><tr><td><a href="https://finance.yahoo.com/quote/PLTR/chart/" target="_blank" class="ticker-link">PLTR</a></td><td class="pnl-negative">-$44</td><td class="reason-short">PER239/fPER81と割高。EPS成長+648%は驚異的だがバリュエーション懸念。現状維持</td></tr></table></div></div>
+  </div>
+
   <!-- Tab: Overview -->
   <div id="tab-overview" class="tab-content">
     <div class="section">
@@ -548,7 +630,7 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
   </div>
 
   <div class="footer">
-    🧬 Evolving Quant · AI自動分析 · 更新: 2026-03-31 09:31 · <a href="https://github.com/akihamada/evolving-quant" style="color:var(--accent-blue)">GitHub</a>
+    🧬 Evolving Quant · AI自動分析 · 更新: 2026-03-31 10:06 · <a href="https://github.com/akihamada/evolving-quant" style="color:var(--accent-blue)">GitHub</a>
   </div>
 </div>
 
