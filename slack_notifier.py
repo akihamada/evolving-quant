@@ -148,6 +148,228 @@ def build_advanced_section(advanced: list[dict[str, Any]]) -> list[dict[str, Any
 
 
 # ==============================================================================
+# タイミング予測 / リバランス / 積立 / 学習ジャーナル セクション
+# ==============================================================================
+
+
+LEARNING_JOURNAL_PATH = SCRIPT_DIR / "data" / "learning_journal.json"
+
+
+def build_timing_section(results: dict[str, Any]) -> list[dict[str, Any]]:
+    """タイミング予測シグナル (price_predictor連携) のセクションを構築する。
+
+    results["timing_signals"] または results["prediction_accuracy"] が
+    存在する場合のみレンダリング。
+
+    Args:
+        results: latest_evolution_results.json
+
+    Returns:
+        Block Kit ブロックのリスト（該当なければ空）
+    """
+    signals = results.get("timing_signals", []) or []
+    accuracy = results.get("prediction_accuracy", {}) or {}
+
+    active = [
+        s for s in signals
+        if s.get("signal") and s["signal"] != "HOLD"
+        and s.get("confidence", 0) >= 0.6
+    ]
+    if not active and not accuracy:
+        return []
+
+    blocks: list[dict[str, Any]] = []
+    blocks.append({
+        "type": "section",
+        "text": {"type": "mrkdwn",
+                 "text": "*🎯 タイミング予測シグナル（price_predictor）*"},
+    })
+
+    if active:
+        active_sorted = sorted(active, key=lambda x: x.get("confidence", 0), reverse=True)[:6]
+        lines = []
+        for s in active_sorted:
+            sig = s.get("signal", "HOLD")
+            emoji = "🔴" if sig == "SELL_HIGH" else "🟢" if sig == "BUY_LOW" else "🟡"
+            triggers = ", ".join(s.get("triggers", [])[:3])
+            lines.append(
+                f"  {emoji} *{s.get('ticker', '?')}* `{sig}` "
+                f"確信度 {s.get('confidence', 0):.0%}\n"
+                f"     _{triggers}_"
+            )
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "\n".join(lines)},
+        })
+
+    if accuracy.get("total_predictions", 0) > 0:
+        overall = accuracy.get("overall_accuracy", 0)
+        buy_acc = accuracy.get("buy_accuracy", 0)
+        sell_acc = accuracy.get("sell_accuracy", 0)
+        trend = accuracy.get("trend", "stable")
+        trend_emoji = {"improving": "📈", "degrading": "📉", "stable": "➡️"}.get(trend, "➡️")
+        blocks.append({
+            "type": "context",
+            "elements": [{
+                "type": "mrkdwn",
+                "text": f"📊 予測精度: 全体 {overall:.0%} / "
+                        f"BUY {buy_acc:.0%} / SELL {sell_acc:.0%} / "
+                        f"トレンド {trend_emoji} {trend}"
+            }],
+        })
+
+    return blocks
+
+
+def build_rebalance_section(
+    results: dict[str, Any],
+    latest_record: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """リバランス提案 + マルチTFスコア + AIオピニオンのセクションを構築する。"""
+    tf_scores = results.get("multi_tf_scores", {}) or {}
+    proposals = results.get("rebalance_proposals", []) or []
+    opinion = latest_record.get("rebalance_opinion", {}) or {}
+
+    if not tf_scores and not proposals and not opinion:
+        return []
+
+    blocks: list[dict[str, Any]] = []
+
+    if tf_scores:
+        sorted_tf = sorted(
+            tf_scores.items(),
+            key=lambda x: x[1].get("composite", 0) if isinstance(x[1], dict) else 0,
+            reverse=True,
+        )
+        bulls = [k for k, v in sorted_tf
+                 if isinstance(v, dict) and v.get("composite", 0) > 0.5][:3]
+        bears = [k for k, v in sorted_tf[::-1]
+                 if isinstance(v, dict) and v.get("composite", 0) < -0.5][:3]
+        tf_lines = []
+        if bulls:
+            tf_lines.append(f"  🟢 強気トレンド: {', '.join(bulls)}")
+        if bears:
+            tf_lines.append(f"  🔴 弱気トレンド: {', '.join(bears)}")
+        if tf_lines:
+            blocks.append({
+                "type": "section",
+                "text": {"type": "mrkdwn",
+                         "text": "*📈 マルチTF モメンタム*\n" + "\n".join(tf_lines)},
+            })
+
+    if proposals:
+        rb_lines = []
+        for p in proposals[:5]:
+            ptype = p.get("type", "UNKNOWN")
+            urgency = p.get("urgency", "low")
+            reasoning = (p.get("reasoning", "") or "")[:80]
+            emoji = "🔄" if "ROTATE" in ptype else "✂️" if "TRIM" in ptype else "⚪"
+            if urgency in ("immediate", "今すぐ", "high"):
+                emoji = "🚨 " + emoji
+            rb_lines.append(f"  {emoji} *[{ptype}]* {reasoning} _({urgency})_")
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn",
+                     "text": "*⚖️ リバランスアドバイザー提案*\n" + "\n".join(rb_lines)},
+        })
+
+    if opinion:
+        agree = opinion.get("agree_with_proposals", True)
+        agree_text = "✅ *賛同*" if agree else "❌ *反対 / 独自案*"
+        reason = (opinion.get("override_reason", "") or "")[:100]
+        swap_text = ""
+        swaps = opinion.get("additional_swaps", []) or []
+        if swaps:
+            swap_lines = [f"    → {s.get('sell', '?')} → {s.get('buy', '?')}: "
+                          f"{(s.get('reason', '') or '')[:40]}"
+                          for s in swaps[:3]]
+            swap_text = "\n" + "\n".join(swap_lines)
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn",
+                     "text": f"*🧠 AIリバランスオピニオン*\n  {agree_text} — {reason}{swap_text}"},
+        })
+
+    return blocks
+
+
+def build_tsumitate_section(latest_record: dict[str, Any]) -> list[dict[str, Any]]:
+    """積立設定レビューのセクションを構築する。"""
+    tsumitate = latest_record.get("tsumitate_advice", {}) or {}
+    changes = tsumitate.get("changes", []) or []
+    if not changes:
+        return []
+
+    lines = [f"  → {c[:80]}" for c in changes[:3]]
+    reasoning = (tsumitate.get("reasoning", "") or "")[:120]
+    text = "*📊 積立設定レビュー*\n" + "\n".join(lines)
+    if reasoning:
+        text += f"\n  _{reasoning}_"
+
+    return [{"type": "section", "text": {"type": "mrkdwn", "text": text}}]
+
+
+def build_learning_section() -> list[dict[str, Any]]:
+    """学習ジャーナルから直近の学びのセクションを構築する。"""
+    if not LEARNING_JOURNAL_PATH.exists():
+        return []
+    try:
+        with open(LEARNING_JOURNAL_PATH, encoding="utf-8") as f:
+            journal = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
+
+    learnings = journal.get("learnings", []) or []
+    stats = journal.get("cumulative_stats", {}) or {}
+    if not learnings:
+        return []
+
+    latest = learnings[-1]
+    lessons = latest.get("lessons", []) or []
+    dominant = latest.get("dominant_strategy", "")
+    biases = latest.get("persistent_biases", {}) or {}
+
+    if not lessons and not biases:
+        return []
+
+    blocks: list[dict[str, Any]] = []
+    blocks.append({
+        "type": "section",
+        "text": {"type": "mrkdwn",
+                 "text": f"*🧬 学習ジャーナル #{stats.get('evolution_count', '?')}*"},
+    })
+
+    body_lines = []
+    for l in lessons[:3]:
+        body_lines.append(f"  💡 {l[:120]}")
+    for t, b in list(biases.items())[:3]:
+        direction = b.get("direction", "?")
+        avg_err = b.get("avg_error_pct", 0)
+        body_lines.append(f"  ⚠️ {t}: {direction} ({avg_err:+.1f}%)")
+    if dominant:
+        body_lines.append(f"  👑 最有効戦略: {dominant}")
+
+    if body_lines:
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "\n".join(body_lines)},
+        })
+
+    overall_acc = stats.get("avg_direction_accuracy", 0)
+    total_eval = stats.get("total_evaluations", 0)
+    if total_eval > 0:
+        blocks.append({
+            "type": "context",
+            "elements": [{
+                "type": "mrkdwn",
+                "text": f"累計 {total_eval}評価 / 平均方向精度 {overall_acc:.0%}"
+            }],
+        })
+
+    return blocks
+
+
+# ==============================================================================
 # Slack メッセージ構築
 # ==============================================================================
 
@@ -246,10 +468,22 @@ def build_slack_blocks(
             "text": {"type": "mrkdwn", "text": f"*📋 戦略サマリー*\n{s_trunc}"},
         })
 
-    # === Advanced AI 予測（新規） ===
+    # === Advanced AI 予測（5モデル統合） ===
     adv_blocks = build_advanced_section(advanced)
     if adv_blocks:
         blocks.extend(adv_blocks)
+        blocks.append({"type": "divider"})
+
+    # === タイミング予測シグナル（price_predictor） ===
+    timing_blocks = build_timing_section(results)
+    if timing_blocks:
+        blocks.extend(timing_blocks)
+        blocks.append({"type": "divider"})
+
+    # === リバランス提案 + AIオピニオン ===
+    rb_blocks = build_rebalance_section(results, latest)
+    if rb_blocks:
+        blocks.extend(rb_blocks)
         blocks.append({"type": "divider"})
 
     # BUY 優先順位
@@ -307,6 +541,17 @@ def build_slack_blocks(
             "text": {"type": "mrkdwn",
                      "text": "*⚖️ リスクシナリオ*\n" + "\n".join(risk_lines)},
         })
+
+    # === 積立設定レビュー ===
+    tsumi_blocks = build_tsumitate_section(latest)
+    if tsumi_blocks:
+        blocks.extend(tsumi_blocks)
+
+    # === 学習ジャーナル（累積の学び） ===
+    learn_blocks = build_learning_section()
+    if learn_blocks:
+        blocks.append({"type": "divider"})
+        blocks.extend(learn_blocks)
 
     blocks.append({"type": "divider"})
 
