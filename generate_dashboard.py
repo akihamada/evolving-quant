@@ -30,7 +30,28 @@ BASE_DIR = Path(__file__).resolve().parent
 RESULTS_PATH = BASE_DIR / "latest_evolution_results.json"
 TRACK_RECORD_PATH = BASE_DIR / "ai_track_record.json"
 HOLDINGS_PATH = BASE_DIR / "data" / "portfolio_holdings.json"
+PERFORMANCE_PATH = BASE_DIR / "data" / "performance_history.json"
 OUTPUT_PATH = BASE_DIR / "index.html"
+
+# セクター分類（advanced_predictor と同期）
+SECTOR_MAP = {
+    "Semiconductor": ["NVDA", "ARM", "MRVL", "TSM", "COHR"],
+    "Software":      ["MSFT", "PLTR", "DDOG"],
+    "Energy":        ["NNE", "OKLO"],
+    "Infrastructure": ["VRT", "ETN", "GLW"],
+    "Pharma":        ["LLY"],
+    "Dividend ETF":  ["VYM", "1489.T"],
+    "Gold":          ["GLD", "1328.T"],
+    "Retail":        ["8173.T"],
+}
+
+
+def get_sector(ticker: str) -> str:
+    """ティッカーからセクター名を取得する。"""
+    for sec, tickers in SECTOR_MAP.items():
+        if ticker in tickers:
+            return sec
+    return "Other"
 
 
 def load_json(path: Path) -> dict:
@@ -40,6 +61,13 @@ def load_json(path: Path) -> dict:
             return json.load(f)
     logger.warning("File not found: %s", path)
     return {}
+
+
+def yahoo_chart_url(ticker: str) -> str:
+    """ティッカーからYahoo FinanceチャートURLを生成する。"""
+    if ticker.endswith(".T"):
+        return f"https://finance.yahoo.co.jp/quote/{ticker}/chart"
+    return f"https://finance.yahoo.com/quote/{ticker}/chart/"
 
 
 def build_holdings_data(holdings: dict) -> list[dict]:
@@ -202,6 +230,279 @@ def build_track_record_data(track: dict) -> str:
     return json.dumps({"records": data, "evaluations": eval_data})
 
 
+def build_portfolio_html(holdings: dict, results: dict) -> str:
+    """💼 Portfolio タブのHTML — 保有全体を一覧化。
+
+    Args:
+        holdings: portfolio_holdings.json の内容
+        results: latest_evolution_results.json の内容
+
+    Returns:
+        HTMLフラグメント
+    """
+    rows = []
+    for account_type in ["tokutei", "nisa"]:
+        for s in holdings.get("us_stocks", {}).get(account_type, []):
+            shares = s.get("shares", 0) or 0
+            cost = float(s.get("cost_basis_usd", 0) or 0)
+            price = float(s.get("current_price_usd", 0) or 0)
+            mv = price * shares
+            pnl = (price - cost) * shares if cost > 0 else (s.get("unrealized_pnl_usd", 0) or 0)
+            pnl_pct = (price - cost) / cost * 100 if cost > 0 else 0
+            ticker = s.get("ticker", "")
+            rows.append({
+                "ticker": ticker,
+                "sector": get_sector(ticker),
+                "account": "特定" if account_type == "tokutei" else "NISA",
+                "currency": "USD",
+                "shares": shares,
+                "cost": cost,
+                "price": price,
+                "market_value": mv,
+                "pnl": pnl,
+                "pnl_pct": pnl_pct,
+            })
+
+    # 日本株
+    for s in holdings.get("japan_stocks", {}).get("nisa_growth", []):
+        shares = s.get("shares", 0) or 0
+        cost = float(s.get("cost_basis_jpy", 0) or 0)
+        price = float(s.get("current_price_jpy", 0) or 0)
+        mv = price * shares
+        pnl = (price - cost) * shares if cost > 0 else 0
+        pnl_pct = (price - cost) / cost * 100 if cost > 0 else 0
+        code = s.get("code", "")
+        rows.append({
+            "ticker": code,
+            "sector": get_sector(f"{code}.T"),
+            "account": "NISA成長",
+            "currency": "JPY",
+            "shares": shares,
+            "cost": cost,
+            "price": price,
+            "market_value": mv,
+            "pnl": pnl,
+            "pnl_pct": pnl_pct,
+        })
+
+    if not rows:
+        return '<div class="section"><p style="color:var(--text-muted)">保有データがありません。</p></div>'
+
+    # USD換算サマリー
+    fx = float(holdings.get("metadata", {}).get("fx_rate", {}).get("USD_JPY", 150))
+    total_usd = sum(r["market_value"] if r["currency"] == "USD" else r["market_value"] / fx for r in rows)
+    total_pnl_usd = sum(r["pnl"] if r["currency"] == "USD" else r["pnl"] / fx for r in rows)
+
+    # セクター集計
+    sector_data: dict[str, float] = {}
+    for r in rows:
+        mv_usd = r["market_value"] if r["currency"] == "USD" else r["market_value"] / fx
+        sector_data[r["sector"]] = sector_data.get(r["sector"], 0) + mv_usd
+    sectors_sorted = sorted(sector_data.items(), key=lambda x: x[1], reverse=True)
+
+    # アカウント別集計
+    acct_data: dict[str, float] = {}
+    for r in rows:
+        mv_usd = r["market_value"] if r["currency"] == "USD" else r["market_value"] / fx
+        acct_data[r["account"]] = acct_data.get(r["account"], 0) + mv_usd
+
+    # 通貨別集計
+    usd_total = sum(r["market_value"] for r in rows if r["currency"] == "USD")
+    jpy_total = sum(r["market_value"] for r in rows if r["currency"] == "JPY")
+
+    html = '<div class="section"><div class="section-title"><span class="icon">💼</span> ポートフォリオ全体</div>'
+
+    # 概要メトリクス
+    html += '<div class="port-summary-grid">'
+    html += f'<div class="port-metric"><div class="port-metric-label">総資産（USD換算）</div>'
+    html += f'<div class="port-metric-value">${total_usd:,.0f}</div>'
+    html += f'<div class="port-metric-sub">{len(rows)}銘柄 / FX ¥{fx:.1f}</div></div>'
+
+    pnl_color = "var(--accent-green)" if total_pnl_usd >= 0 else "var(--accent-red)"
+    pnl_sign = "+" if total_pnl_usd >= 0 else ""
+    html += f'<div class="port-metric"><div class="port-metric-label">含み損益</div>'
+    html += f'<div class="port-metric-value" style="color:{pnl_color}">{pnl_sign}${total_pnl_usd:,.0f}</div>'
+    html += f'<div class="port-metric-sub">{pnl_sign}{(total_pnl_usd/(total_usd-total_pnl_usd)*100 if total_usd > total_pnl_usd else 0):.1f}%</div></div>'
+
+    html += f'<div class="port-metric"><div class="port-metric-label">米国株</div>'
+    html += f'<div class="port-metric-value" style="color:var(--accent-blue)">${usd_total:,.0f}</div>'
+    n_us = sum(1 for r in rows if r["currency"] == "USD")
+    html += f'<div class="port-metric-sub">{n_us}銘柄</div></div>'
+
+    html += f'<div class="port-metric"><div class="port-metric-label">日本株</div>'
+    html += f'<div class="port-metric-value" style="color:var(--accent-purple)">¥{jpy_total:,.0f}</div>'
+    n_jp = sum(1 for r in rows if r["currency"] == "JPY")
+    html += f'<div class="port-metric-sub">{n_jp}銘柄</div></div>'
+    html += '</div>'
+
+    # セクター配分バー
+    html += '<div class="sector-section"><div class="sector-title">📊 セクター配分</div>'
+    html += '<div class="sector-bars">'
+    colors = ["#3b82f6", "#10b981", "#f59e0b", "#a855f7", "#06b6d4", "#ef4444", "#84cc16", "#ec4899"]
+    for i, (sec, val) in enumerate(sectors_sorted):
+        pct = val / total_usd * 100 if total_usd > 0 else 0
+        color = colors[i % len(colors)]
+        html += f'<div class="sector-bar-row">'
+        html += f'<div class="sector-bar-label">{html_mod.escape(sec)}</div>'
+        html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{pct:.1f}%;background:{color}"></div></div>'
+        html += f'<div class="sector-bar-value">${val:,.0f} <span class="sector-pct">({pct:.1f}%)</span></div>'
+        html += '</div>'
+    html += '</div></div>'
+
+    # 全保有テーブル（ソート可能）
+    html += '<div class="port-table-section"><div class="port-table-title">📋 全保有銘柄（クリックでソート）</div>'
+    html += '<div class="port-table-wrap"><table class="port-table" id="portTable">'
+    html += '<thead><tr>'
+    html += '<th onclick="sortPortTable(0,\'str\')">銘柄 ↕</th>'
+    html += '<th onclick="sortPortTable(1,\'str\')">セクター</th>'
+    html += '<th onclick="sortPortTable(2,\'str\')">口座</th>'
+    html += '<th onclick="sortPortTable(3,\'num\')">数量</th>'
+    html += '<th onclick="sortPortTable(4,\'num\')">取得単価</th>'
+    html += '<th onclick="sortPortTable(5,\'num\')">現在値</th>'
+    html += '<th onclick="sortPortTable(6,\'num\')">時価(USD換算)</th>'
+    html += '<th onclick="sortPortTable(7,\'num\')">含み損益</th>'
+    html += '<th onclick="sortPortTable(8,\'num\')">損益率</th>'
+    html += '<th>チャート</th>'
+    html += '</tr></thead><tbody>'
+
+    # 時価(USD換算)で降順ソート
+    rows_sorted = sorted(rows, key=lambda r: r["market_value"] if r["currency"] == "USD" else r["market_value"] / fx, reverse=True)
+
+    for r in rows_sorted:
+        mv_usd = r["market_value"] if r["currency"] == "USD" else r["market_value"] / fx
+        pnl_usd = r["pnl"] if r["currency"] == "USD" else r["pnl"] / fx
+        pnl_class = "pnl-positive" if pnl_usd >= 0 else "pnl-negative"
+        pnl_sign = "+" if pnl_usd >= 0 else ""
+        cur_sym = "$" if r["currency"] == "USD" else "¥"
+        url = yahoo_chart_url(r["ticker"] if r["currency"] == "USD" else f"{r['ticker']}.T")
+
+        html += f'<tr>'
+        html += f'<td class="port-ticker"><strong>{r["ticker"]}</strong></td>'
+        html += f'<td>{r["sector"]}</td>'
+        html += f'<td><span class="acct-badge">{r["account"]}</span></td>'
+        html += f'<td data-num="{r["shares"]}">{r["shares"]:,}</td>'
+        html += f'<td data-num="{r["cost"]}">{cur_sym}{r["cost"]:,.2f}</td>'
+        html += f'<td data-num="{r["price"]}">{cur_sym}{r["price"]:,.2f}</td>'
+        html += f'<td data-num="{mv_usd}">${mv_usd:,.0f}</td>'
+        html += f'<td data-num="{pnl_usd}" class="{pnl_class}">{pnl_sign}${abs(pnl_usd):,.0f}</td>'
+        html += f'<td data-num="{r["pnl_pct"]}" class="{pnl_class}">{pnl_sign}{r["pnl_pct"]:.1f}%</td>'
+        html += f'<td><a href="{url}" target="_blank" class="chart-link">📈</a></td>'
+        html += '</tr>'
+
+    html += '</tbody></table></div></div>'
+    html += '</div>'
+    return html
+
+
+def build_advanced_signals_html(results: dict) -> str:
+    """🔮 高精度予測シグナルのHTMLを構築する。
+
+    Args:
+        results: latest_evolution_results.json の内容
+
+    Returns:
+        HTMLフラグメント、データなしなら空文字列
+    """
+    advanced = results.get("advanced_signals", [])
+    if not advanced:
+        return ''
+
+    html = '<div class="section"><div class="section-title"><span class="icon">🔮</span> 高精度予測アンサンブル（5モデル統合）</div>'
+    html += '<div class="adv-grid">'
+
+    signal_color = {
+        "STRONG_BUY":  ("var(--accent-green)", "🟢🟢"),
+        "BUY":         ("var(--accent-green)", "🟢"),
+        "HOLD":        ("var(--accent-yellow)", "🟡"),
+        "SELL":        ("var(--accent-red)", "🔴"),
+        "STRONG_SELL": ("var(--accent-red)", "🔴🔴"),
+    }
+
+    # 高確信度のみ表示（HOLDは除外）
+    visible = [s for s in advanced if s.get("signal") != "HOLD" or s.get("confidence", 0) >= 0.6]
+    visible = sorted(visible, key=lambda x: x.get("confidence", 0), reverse=True)[:12]
+
+    for s in visible:
+        sig = s.get("signal", "HOLD")
+        color, emoji = signal_color.get(sig, ("var(--text-muted)", "⚪"))
+        conf = s.get("confidence", 0)
+        score = s.get("composite_score", 0)
+        ticker = s.get("ticker", "?")
+        sub = s.get("sub_scores", {})
+        url = yahoo_chart_url(ticker)
+
+        html += f'<div class="adv-card" style="border-left:4px solid {color}">'
+        html += f'<div class="adv-header"><a href="{url}" target="_blank" class="adv-ticker">{ticker} 📈</a>'
+        html += f'<span class="adv-signal" style="color:{color}">{emoji} {sig}</span></div>'
+        html += f'<div class="adv-score">合成スコア: <strong style="color:{color}">{score:+.3f}</strong></div>'
+        html += f'<div class="adv-conf">確信度: {conf:.0%}</div>'
+
+        # サブスコアのミニバー
+        html += '<div class="adv-subbars">'
+        sub_labels = {
+            "kalman_trend":    "Kalman",
+            "hurst_regime":    "Hurst",
+            "cross_sectional": "C-Sect",
+            "vol_regime":      "Vol",
+            "mean_reversion":  "M-Rev",
+        }
+        for key, label in sub_labels.items():
+            v = sub.get(key, 0)
+            v_pct = abs(v) * 50
+            sign_color = "var(--accent-green)" if v > 0 else "var(--accent-red)" if v < 0 else "var(--text-muted)"
+            html += f'<div class="adv-subbar">'
+            html += f'<span class="adv-sublabel">{label}</span>'
+            html += f'<span class="adv-subval" style="color:{sign_color}">{v:+.2f}</span>'
+            if v >= 0:
+                html += f'<div class="adv-bar-track"><div class="adv-bar-pos" style="width:{v_pct:.0f}%"></div></div>'
+            else:
+                html += f'<div class="adv-bar-track"><div class="adv-bar-neg" style="width:{v_pct:.0f}%"></div></div>'
+            html += '</div>'
+        html += '</div></div>'
+
+    html += '</div></div>'
+    return html
+
+
+def build_performance_html() -> str:
+    """📈 過去パフォーマンス履歴チャートのHTMLを構築する。
+
+    Returns:
+        HTMLフラグメント、データなしなら空文字列
+    """
+    if not PERFORMANCE_PATH.exists():
+        return ''
+    try:
+        with open(PERFORMANCE_PATH, encoding="utf-8") as f:
+            history = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return ''
+
+    records = history.get("records", [])
+    if len(records) < 2:
+        return ''
+
+    return '<div class="section"><div class="section-title"><span class="icon">📈</span> パフォーマンス履歴</div><div class="chart-container"><div style="position:relative;height:320px"><canvas id="chartHistory"></canvas></div></div></div>'
+
+
+def build_performance_json() -> str:
+    """パフォーマンス履歴をJSON文字列で返す（Chart.js用）。"""
+    if not PERFORMANCE_PATH.exists():
+        return '{"records":[]}'
+    try:
+        with open(PERFORMANCE_PATH, encoding="utf-8") as f:
+            history = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return '{"records":[]}'
+
+    records = history.get("records", [])
+    return json.dumps({
+        "dates": [r.get("date", "") for r in records],
+        "values_usd": [r.get("total_usd", 0) for r in records],
+        "pnl_usd": [r.get("total_pnl_usd", 0) for r in records],
+    })
+
+
 def generate_meta_prompt_text(results: dict, track: dict) -> str:
     """メタプロンプトテキストを生成する。"""
     tickers = results.get("tickers", [])
@@ -272,6 +573,10 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
     overview_json = build_overview_data(results)
     track_json = build_track_record_data(track)
     prompt_text = generate_meta_prompt_text(results, track)
+    portfolio_html = build_portfolio_html(holdings, results)
+    advanced_html = build_advanced_signals_html(results)
+    performance_chart_html = build_performance_html()
+    performance_json = build_performance_json()
 
     # Tsumitate advice
     tsumi = latest_record.get("tsumitate_advice", {})
@@ -429,6 +734,53 @@ body{{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-primary);
 .fade-in{{animation:fadeIn 0.6s ease forwards;opacity:0}}
 @keyframes fadeIn{{to{{opacity:1}}}}
 
+/* Portfolio Tab */
+.port-summary-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}}
+.port-metric{{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:all 0.3s}}
+.port-metric:hover{{transform:translateY(-2px);border-color:rgba(59,130,246,0.4)}}
+.port-metric-label{{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}}
+.port-metric-value{{font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:6px;color:var(--text-primary)}}
+.port-metric-sub{{font-size:12px;color:var(--text-secondary);margin-top:4px}}
+.sector-section{{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:20px}}
+.sector-title{{font-size:15px;font-weight:700;margin-bottom:14px}}
+.sector-bars{{display:flex;flex-direction:column;gap:10px}}
+.sector-bar-row{{display:grid;grid-template-columns:140px 1fr 160px;align-items:center;gap:12px;font-size:13px}}
+.sector-bar-label{{color:var(--text-secondary);font-weight:600}}
+.sector-bar-track{{height:14px;background:rgba(255,255,255,0.05);border-radius:7px;overflow:hidden}}
+.sector-bar-fill{{height:100%;border-radius:7px;transition:width 0.6s ease}}
+.sector-bar-value{{font-family:'JetBrains Mono',monospace;color:var(--text-primary);text-align:right}}
+.sector-pct{{color:var(--text-muted);font-size:11px}}
+.port-table-section{{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px 0 8px;margin-bottom:20px}}
+.port-table-title{{font-size:15px;font-weight:700;margin-bottom:12px;padding:0 24px}}
+.port-table-wrap{{overflow-x:auto;max-width:100%}}
+.port-table{{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}}
+.port-table th{{text-align:left;padding:10px 12px;color:var(--text-muted);border-bottom:2px solid var(--border);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:0.6px;cursor:pointer;user-select:none;background:rgba(255,255,255,0.02);white-space:nowrap}}
+.port-table th:hover{{color:var(--accent-blue)}}
+.port-table td{{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text-secondary);white-space:nowrap}}
+.port-table tr:hover{{background:var(--bg-card-hover)}}
+.port-table .port-ticker strong{{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px}}
+.acct-badge{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:rgba(59,130,246,0.15);color:var(--accent-blue);font-weight:600}}
+.chart-link{{text-decoration:none;font-size:16px;opacity:0.7;transition:opacity 0.2s}}
+.chart-link:hover{{opacity:1}}
+
+/* Advanced Predictor Tab */
+.adv-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}}
+.adv-card{{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:all 0.3s}}
+.adv-card:hover{{transform:translateY(-2px)}}
+.adv-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}}
+.adv-ticker{{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text-primary);text-decoration:none}}
+.adv-ticker:hover{{color:var(--accent-blue)}}
+.adv-signal{{font-size:12px;font-weight:700;letter-spacing:0.5px}}
+.adv-score{{font-size:14px;color:var(--text-secondary);margin-bottom:4px}}
+.adv-conf{{font-size:13px;color:var(--text-muted);margin-bottom:12px}}
+.adv-subbars{{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:12px}}
+.adv-subbar{{display:grid;grid-template-columns:60px 60px 1fr;align-items:center;gap:8px;font-size:11px}}
+.adv-sublabel{{color:var(--text-muted);font-weight:600}}
+.adv-subval{{font-family:'JetBrains Mono',monospace;font-weight:700;text-align:right}}
+.adv-bar-track{{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;position:relative}}
+.adv-bar-pos{{height:100%;background:var(--accent-green);border-radius:3px}}
+.adv-bar-neg{{height:100%;background:var(--accent-red);border-radius:3px}}
+
 @media(max-width:768px){{
   .stats-row,.metrics-row{{grid-template-columns:repeat(2,1fr)}}
   .risk-grid,.tsumitate-grid{{grid-template-columns:1fr}}
@@ -486,7 +838,9 @@ body{{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-primary);
 
   <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-btn active" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
+    <button class="tab-btn active" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
+    <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
+    <button class="tab-btn" data-tab="advanced" onclick="switchTab(this,'advanced')">🔮 Advanced AI</button>
     <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
     <button class="tab-btn" data-tab="risk" onclick="switchTab(this,'risk')">🔥 Risk</button>
     <button class="tab-btn" data-tab="report" onclick="switchTab(this,'report')">🎯 AI Report Card</button>
@@ -494,8 +848,19 @@ body{{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-primary);
     <button class="tab-btn" data-tab="record" onclick="switchTab(this,'record')">📝 Record</button>
   </div>
 
+  <!-- Tab: Portfolio (default) -->
+  <div id="tab-portfolio" class="tab-content active">
+    {portfolio_html}
+    {performance_chart_html}
+  </div>
+
+  <!-- Tab: Advanced AI -->
+  <div id="tab-advanced" class="tab-content">
+    {advanced_html if advanced_html else '<div class="section"><p style="color:var(--text-muted);text-align:center;padding:40px">高精度予測データがまだありません。次回の <code>daily_evolution.py</code> 実行後に表示されます。</p></div>'}
+  </div>
+
   <!-- Tab: Action -->
-  <div id="tab-action" class="tab-content active">
+  <div id="tab-action" class="tab-content">
     <div class="strategy-banner">
       <strong>🎯 戦略:</strong> {reasoning}
     </div>
@@ -572,6 +937,7 @@ body{{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-primary);
 <script>
 const overviewData = {overview_json};
 const trackData = {track_json};
+const perfData = {performance_json};
 
 function switchTab(btn, id) {{
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -579,6 +945,7 @@ function switchTab(btn, id) {{
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
   if (id === 'overview' && !window._overviewInit) {{ initOverview(); window._overviewInit = true; }}
+  if (id === 'portfolio' && !window._perfInit) {{ initPerformance(); window._perfInit = true; }}
   if (id === 'risk' && !window._riskInit) {{ initRisk(); window._riskInit = true; }}
   if (id === 'report' && !window._reportInit) {{ initReport(); window._reportInit = true; }}
 }}
@@ -693,6 +1060,83 @@ function initReport() {{
     document.getElementById('evalData').innerHTML = '📭 まだ採点データがありません。AI推奨を記録し、7日以上経過すると自動採点されます。';
   }}
 }}
+
+// Portfolio table sort
+let portSortState = {{col: -1, asc: false}};
+function sortPortTable(colIdx, type) {{
+  const table = document.getElementById('portTable');
+  if (!table) return;
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.rows);
+  portSortState.asc = (portSortState.col === colIdx) ? !portSortState.asc : false;
+  portSortState.col = colIdx;
+  rows.sort((a, b) => {{
+    let av, bv;
+    if (type === 'num') {{
+      av = parseFloat(a.cells[colIdx].getAttribute('data-num') || '0');
+      bv = parseFloat(b.cells[colIdx].getAttribute('data-num') || '0');
+    }} else {{
+      av = a.cells[colIdx].innerText.trim();
+      bv = b.cells[colIdx].innerText.trim();
+    }}
+    if (av < bv) return portSortState.asc ? -1 : 1;
+    if (av > bv) return portSortState.asc ? 1 : -1;
+    return 0;
+  }});
+  rows.forEach(r => tbody.appendChild(r));
+}}
+
+// Performance history chart
+function initPerformance() {{
+  const canvas = document.getElementById('chartHistory');
+  if (!canvas || !perfData.dates || perfData.dates.length < 2) return;
+  new Chart(canvas, {{
+    type: 'line',
+    data: {{
+      labels: perfData.dates,
+      datasets: [
+        {{
+          label: 'ポートフォリオ総額 (USD)',
+          data: perfData.values_usd,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.1)',
+          fill: true,
+          tension: 0.3,
+          yAxisID: 'y',
+          pointRadius: 2,
+        }},
+        {{
+          label: '含み損益 (USD)',
+          data: perfData.pnl_usd,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.1)',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y1',
+          pointRadius: 2,
+        }}
+      ]
+    }},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {{
+        x: {{ ticks: {{ color: '#94a3b8', maxTicksLimit: 10 }}, grid: {{ color: 'rgba(255,255,255,0.03)' }} }},
+        y: {{ position: 'left', ticks: {{ color: '#94a3b8', callback: v => '$'+v.toLocaleString() }}, grid: {{ color: 'rgba(255,255,255,0.05)' }} }},
+        y1: {{ position: 'right', ticks: {{ color: '#10b981', callback: v => '$'+v.toLocaleString() }}, grid: {{ display: false }} }}
+      }},
+      plugins: {{ legend: {{ labels: {{ color: '#94a3b8' }} }} }}
+    }}
+  }});
+}}
+
+// Auto-init Performance chart if Portfolio tab is default
+document.addEventListener('DOMContentLoaded', () => {{
+  if (document.getElementById('tab-portfolio').classList.contains('active') && !window._perfInit) {{
+    initPerformance();
+    window._perfInit = true;
+  }}
+}});
 </script>
 </body>
 </html>'''
