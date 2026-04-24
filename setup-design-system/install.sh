@@ -19,7 +19,7 @@ cd /tmp
 for pair in "cursor:cursor" "notion:notion" "stripe:stripe" "linear.app:linear" "vercel:vercel"; do
   slug="${pair%%:*}"
   name="${pair##*:}"
-  npx -y getdesign@latest add "$slug" --out "$HOME/.claude/design/${name}.md"
+  npx -y getdesign@latest add "$slug" --force --out "$HOME/.claude/design/${name}.md"
 done
 
 # 3. jp-ui-contracts (clone; updatable via `git -C ~/.claude/design/jp-ui-contracts pull`)
