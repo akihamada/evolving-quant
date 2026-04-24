@@ -338,7 +338,7 @@ def build_portfolio_html(holdings: dict, results: dict) -> str:
     # セクター配分バー
     html += '<div class="sector-section"><div class="sector-title">📊 セクター配分</div>'
     html += '<div class="sector-bars">'
-    colors = ["#7170ff", "#a78bfa", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#84cc16"]
+    colors = ["#0075de", "#213183", "#1aae39", "#2a9d99", "#dd5b00", "#ff64c8", "#c08532", "#391c57"]
     for i, (sec, val) in enumerate(sectors_sorted):
         pct = val / total_usd * 100 if total_usd > 0 else 0
         color = colors[i % len(colors)]
@@ -458,7 +458,7 @@ def build_learning_html(results: dict) -> str:
             bar_pct = min(100, weight * 100)
             html += f'<div class="sector-bar-row">'
             html += f'<div class="sector-bar-label">{name}</div>'
-            html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{bar_pct:.0f}%;background:var(--accent-bright)"></div></div>'
+            html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{bar_pct:.0f}%;background:var(--accent)"></div></div>'
             html += f'<div class="sector-bar-value">精度 {acc:.0f}% / W {weight:.2f} {delta_str}<span class="sector-pct"> ({ev}件)</span></div>'
             html += '</div>'
         html += '</div></div>'
@@ -469,7 +469,7 @@ def build_learning_html(results: dict) -> str:
         html += '<div class="section-title" style="margin-top:20px"><span class="icon">💡</span> 本日の学び</div>'
         html += '<div class="action-grid" style="grid-template-columns:1fr">'
         for f in findings:
-            html += f'<div class="action-card" style="border-left:2px solid var(--accent-bright)">'
+            html += f'<div class="action-card" style="border-left:2px solid var(--accent)">'
             html += f'<div class="reason" style="border-top:none;padding-top:0">{html_mod.escape(f)}</div>'
             html += '</div>'
         html += '</div>'
@@ -732,59 +732,64 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root {{
-  /* === Linear Dark-mode-native Backgrounds === */
-  --bg-primary:    #08090a;    /* Marketing black / deepest canvas */
-  --bg-panel:      #0f1011;    /* Panel / sidebar */
-  --bg-elevated:   #191a1b;    /* Elevated surfaces / cards / dropdowns */
-  --bg-secondary:  #28282c;    /* Hover / slightly elevated */
-  --bg-card:       rgba(255,255,255,0.02);   /* 透過カード */
-  --bg-card-hover: rgba(255,255,255,0.04);   /* ホバー */
-  --bg-button:     rgba(255,255,255,0.02);
-  --bg-button-hover: rgba(255,255,255,0.05);
+  /* === Notion warm-neutral palette === */
+  --bg-primary:    #ffffff;    /* Pure white canvas */
+  --bg-panel:      #f6f5f4;    /* Warm white surface (yellow undertone) */
+  --bg-elevated:   #ffffff;    /* Cards stay pure white */
+  --bg-secondary:  #efeeec;    /* Subtle emphasis */
+  --bg-card:       #ffffff;
+  --bg-card-hover: #faf9f8;
+  --bg-button:     #ffffff;
+  --bg-button-hover: #f6f5f4;
 
-  /* === Linear Text Hierarchy === */
-  --text-primary:   #f7f8f8;    /* Near-white (not pure) */
-  --text-secondary: #d0d6e0;    /* Cool silver-gray */
-  --text-muted:     #8a8f98;    /* Tertiary gray */
-  --text-subtle:    #62666d;    /* Quaternary / disabled */
+  /* === Notion text hierarchy (warm near-black) === */
+  --text-primary:   rgba(0, 0, 0, 0.95);    /* Near-black (micro warmth) */
+  --text-secondary: #31302e;                /* Warm dark */
+  --text-muted:     #615d59;                /* Warm gray 500 */
+  --text-subtle:    #a39e98;                /* Warm gray 300 */
 
-  /* === Semi-transparent white borders (Linear signature) === */
-  --border:         rgba(255,255,255,0.08);   /* Standard */
-  --border-subtle:  rgba(255,255,255,0.05);   /* Ultra subtle */
-  --border-solid:   #23252a;                   /* Solid when needed */
-  --line-tint:      #141516;
+  /* === Notion whisper borders === */
+  --border:         rgba(0, 0, 0, 0.1);     /* Standard whisper border */
+  --border-subtle:  rgba(0, 0, 0, 0.06);    /* Ultra subtle */
+  --border-solid:   #31302e;                /* Solid for emphasis */
+  --line-tint:      rgba(0, 0, 0, 0.04);
 
-  /* === Brand: Indigo-violet (唯一の有彩色) === */
-  --accent:         #5e6ad2;    /* Brand indigo (bg) */
-  --accent-bright:  #7170ff;    /* Accent violet (interactive) */
-  --accent-hover:   #828fff;    /* Lighter hover */
-  --accent-soft:    rgba(94, 106, 210, 0.12);
-  --accent-soft-hover: rgba(94, 106, 210, 0.2);
+  /* === Brand: Notion Blue (singular accent) === */
+  --accent:         #0075de;    /* Notion Blue (primary CTA) */
+  --accent-bright:  #097fe8;    /* Focus / hover accent */
+  --accent-hover:   #005bab;    /* Button pressed */
+  --accent-navy:    #213183;    /* Deep brand navy */
+  --accent-soft:    #f2f9ff;    /* Badge blue bg */
+  --accent-soft-hover: #e6f1fc;
+  --accent-text:    #097fe8;    /* Badge blue text */
 
-  /* === Status Colors (sparingly used) === */
-  --color-success:  #10b981;    /* Emerald */
-  --color-success-alt: #27a644; /* Green */
-  --color-error:    #ef4444;    /* Red (loss / sell) */
-  --color-warn:     #f59e0b;
+  /* === Notion semantic accents === */
+  --color-success:  #1aae39;    /* Green (confirmation) */
+  --color-success-alt: #2a9d99; /* Teal (positive indicator) */
+  --color-error:    #dd5b00;    /* Orange (warning) */
+  --color-warn:     #dd5b00;
+  --color-pink:     #ff64c8;
+  --color-purple:   #391c57;
+  --color-brown:    #523410;
 
-  /* === P&L / chart semantic === */
-  --accent-green:   #10b981;
-  --accent-green-bg:rgba(16, 185, 129, 0.12);
-  --accent-red:     #ef4444;
-  --accent-red-bg:  rgba(239, 68, 68, 0.12);
-  --accent-yellow:  #f59e0b;
-  --accent-yellow-bg:rgba(245, 158, 11, 0.12);
-  --accent-blue:    #7170ff;
-  --accent-blue-bg: rgba(113, 112, 255, 0.12);
-  --accent-purple:  #a78bfa;
-  --accent-purple-bg:rgba(167, 139, 250, 0.12);
+  /* === P&L / chart semantic (Notion palette) === */
+  --accent-green:   #1aae39;
+  --accent-green-bg:rgba(26, 174, 57, 0.08);
+  --accent-red:     #dd5b00;
+  --accent-red-bg:  rgba(221, 91, 0, 0.08);
+  --accent-yellow:  #c08532;
+  --accent-yellow-bg:rgba(192, 133, 50, 0.08);
+  --accent-blue:    #0075de;
+  --accent-blue-bg: #f2f9ff;
+  --accent-purple:  #391c57;
+  --accent-purple-bg:rgba(57, 28, 87, 0.06);
 
-  /* === Radius === */
+  /* === Radius (Notion: subtle 4px) === */
   --radius-sm:     2px;
-  --radius-md:     4px;
+  --radius-md:     4px;          /* Standard Notion radius */
   --radius-lg:     6px;
   --radius-xl:     8px;
-  --radius-panel:  12px;
+  --radius-panel:  10px;
   --radius-pill:   9999px;
   --radius-circle: 50%;
 
@@ -794,12 +799,10 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
   --space-4: 24px; --space-5: 32px; --space-6: 48px;
   --space-7: 64px; --space-8: 96px;
 
-  /* === Linear Shadow: Luminance stacking + ring borders === */
-  --shadow-ring:    rgba(0,0,0,0.2) 0px 0px 0px 1px;
-  --shadow-inset:   rgba(0,0,0,0.2) 0px 0px 12px 0px inset;
-  --shadow-elevated: rgba(0,0,0,0.4) 0px 2px 4px;
-  --shadow-dialog:  rgba(0,0,0,0) 0px 8px 2px, rgba(0,0,0,0.01) 0px 5px 2px, rgba(0,0,0,0.04) 0px 3px 2px, rgba(0,0,0,0.07) 0px 1px 1px, rgba(0,0,0,0.08) 0px 0px 1px;
-  --shadow-focus:   rgba(0,0,0,0.1) 0px 4px 12px, rgba(94, 106, 210, 0.5) 0px 0px 0px 2px;
+  /* === Notion Shadow: multi-layer sub-0.05 opacity === */
+  --shadow-whisper: rgba(0,0,0,0.04) 0px 4px 18px, rgba(0,0,0,0.027) 0px 2.025px 7.84688px, rgba(0,0,0,0.02) 0px 0.8px 2.925px, rgba(0,0,0,0.01) 0px 0.175px 1.04062px;
+  --shadow-deep:    rgba(0,0,0,0.01) 0px 1px 3px, rgba(0,0,0,0.02) 0px 3px 7px, rgba(0,0,0,0.02) 0px 7px 15px, rgba(0,0,0,0.04) 0px 14px 28px, rgba(0,0,0,0.05) 0px 23px 52px;
+  --shadow-focus:   rgba(9, 127, 232, 0.25) 0px 0px 0px 3px;
 
   /* === Transitions === */
   --transition-color:   150ms ease;
@@ -823,72 +826,78 @@ h1:lang(ja), h2:lang(ja), h3:lang(ja),
 }}
 
 body{{
-  /* Inter Variable (Linear) + 日本語 fallback 必須明示 */
-  font-family:'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI','SF Pro Display',-apple-system,system-ui,sans-serif;
-  /* Linear の cv01 (single-story a) + ss03 OpenType features */
-  font-feature-settings:'cv01','ss03';
+  /* NotionInter → Inter + 日本語 fallback 必須 */
+  font-family:'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI',-apple-system,system-ui,'Segoe UI',sans-serif;
   background:var(--bg-primary);
   color:var(--text-primary);
   min-height:100vh;
-  line-height:1.6;                  /* Linear Body: 1.5-1.6 / JP ≥1.5 遵守 */
+  line-height:1.5;                  /* Notion Body line-height */
   font-weight:400;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }}
-/* Linear の 510 signature weight をUIデフォルトに */
-.ui-emphasize,
-.section-title,
+/* Notion は display/heading に lnum + locl を適用 */
+h1, h2, h3, .section-title, .header h1, .stat-value, .port-metric-value{{
+  font-feature-settings:'lnum','locl';
+}}
+/* Notion weight system: 400 body / 500 UI / 600 emphasis / 700 display */
 .tab-btn,
 .stat-label,
 .port-metric-label,
 .port-table th,
+.adv-sublabel{{
+  font-weight:500;
+}}
 .acct-badge,
 .action-badge,
-.adv-signal{{
-  font-weight:510;
+.adv-signal,
+.pick-sector{{
+  font-weight:600;
+  letter-spacing:0.01em;    /* Notion badge micro-tracking */
 }}
 .container{{max-width:1440px;margin:0 auto;padding:var(--space-5)}}
 
-/* Focus-visible: Linear indigo ring */
+/* Focus-visible: Notion blue ring */
 *:focus{{outline:none}}
 *:focus-visible{{
-  outline:2px solid var(--accent-bright);
-  outline-offset:2px;
+  outline:none;
+  box-shadow:var(--shadow-focus);
   border-radius:var(--radius-md);
 }}
 button:focus-visible,
 a:focus-visible{{
-  outline:2px solid var(--accent-bright);
-  outline-offset:2px;
+  outline:none;
+  box-shadow:var(--shadow-focus);
 }}
-/* Selection color: Linear accent */
+/* Selection color */
 ::selection{{background:var(--accent-soft);color:var(--text-primary)}}
 
 /* Scrollbar (webkit) — thin Linear style */
 ::-webkit-scrollbar{{width:10px;height:10px}}
 ::-webkit-scrollbar-track{{background:var(--bg-panel)}}
-::-webkit-scrollbar-thumb{{background:rgba(255,255,255,0.08);border-radius:var(--radius-pill);border:2px solid var(--bg-panel)}}
-::-webkit-scrollbar-thumb:hover{{background:rgba(255,255,255,0.15)}}
+::-webkit-scrollbar-thumb{{background:rgba(0,0,0,0.15);border-radius:var(--radius-pill);border:2px solid var(--bg-panel)}}
+::-webkit-scrollbar-thumb:hover{{background:rgba(0,0,0,0.25)}}
 
-/* Header — Linear dark panel */
+/* Header — Notion minimal white */
 .header{{
   display:flex;justify-content:space-between;align-items:center;
   padding:var(--space-4) var(--space-5);
-  background:var(--bg-panel);
+  background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--radius-panel);
+  border-radius:var(--radius-md);
   margin-bottom:var(--space-4);
+  box-shadow:var(--shadow-whisper);
 }}
 .header h1{{
-  font-family:inherit;              /* Inter Variable */
+  font-family:inherit;
   font-size:32px;
-  font-weight:510;                  /* Linear signature */
-  letter-spacing:-0.022em;           /* Progressive: ~-0.704px at 32px */
+  font-weight:700;                 /* Notion display weight */
+  letter-spacing:-0.028em;          /* Progressive: ~-0.9px at 32px */
   color:var(--text-primary);
-  line-height:1.13;
+  line-height:1.1;
 }}
 .header h1 span{{
-  color:var(--accent-bright);
+  color:var(--accent);
   transition:color var(--transition-color);
 }}
 .header h1 span{{color:var(--accent);font-style:italic}}
@@ -901,45 +910,42 @@ a:focus-visible{{
 .header-meta .confidence{{
   display:inline-flex;align-items:center;gap:var(--space-half);
   background:var(--accent-soft);
-  border:1px solid rgba(94, 106, 210, 0.3);
+  border:1px solid rgba(0, 117, 222, 0.15);
   border-radius:var(--radius-pill);
   padding:3px 10px;
-  font-size:12px;font-weight:510;
-  color:var(--accent-bright);
+  font-size:12px;font-weight:600;
+  color:var(--accent-text);
   margin-top:var(--space-1);
-  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.01em;
 }}
-.header-meta .confidence .dot{{width:6px;height:6px;border-radius:50%;background:var(--accent-bright);animation:pulse 2.4s infinite}}
+.header-meta .confidence .dot{{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2.4s infinite}}
 @keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:0.3}}}}
 
-/* Stats — Linear surface cards */
+/* Stats — Notion white cards w/ whisper shadow */
 .stats-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-2);margin-bottom:var(--space-4)}}
 .stat-card{{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-3);
-  transition:background var(--transition-bg), border-color var(--transition-color);
+  transition:box-shadow var(--transition-shadow);
 }}
-.stat-card:hover{{
-  background:var(--bg-card-hover);
-  border-color:rgba(255,255,255,0.12);
-}}
+.stat-card:hover{{box-shadow:var(--shadow-whisper)}}
 .stat-label{{
   font-size:11px;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:0.08em;font-weight:510;
+  text-transform:uppercase;letter-spacing:0.06em;font-weight:500;
   font-family:inherit;
 }}
 .stat-value{{
-  font-size:28px;font-weight:510;margin-top:var(--space-1);
+  font-size:28px;font-weight:700;margin-top:var(--space-1);
   font-family:inherit;
   color:var(--text-primary);
-  letter-spacing:-0.022em;     /* -0.616px at 28px */
-  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.025em;
+  font-variant-numeric:tabular-nums lnum;
 }}
 .stat-sub{{font-size:13px;color:var(--text-muted);margin-top:var(--space-half);line-height:1.5}}
 
-/* Tabs — Linear subtle segmented */
+/* Tabs — Notion pill segmented */
 .tab-nav{{
   display:flex;gap:2px;
   margin-bottom:var(--space-4);
@@ -947,83 +953,79 @@ a:focus-visible{{
   padding:var(--space-half);
   background:var(--bg-panel);
   border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
 }}
 .tab-btn{{
   padding:6px 14px;background:transparent;border:none;
-  border-radius:var(--radius-lg);
+  border-radius:var(--radius-md);
   color:var(--text-muted);cursor:pointer;
-  font-size:13px;font-weight:510;white-space:nowrap;
+  font-size:14px;font-weight:500;white-space:nowrap;
   font-family:inherit;
-  letter-spacing:-0.01em;
   transition:color var(--transition-color), background var(--transition-bg);
 }}
 .tab-btn:hover{{background:var(--bg-button-hover);color:var(--text-primary)}}
-.tab-btn.active{{background:var(--accent);color:#fff;font-weight:590}}
+.tab-btn.active{{background:var(--accent);color:#fff;font-weight:600}}
 .tab-btn.active:hover{{color:#fff;background:var(--accent-hover)}}
 .tab-content{{display:none}}
 .tab-content.active{{display:block}}
 
-/* Strategy Banner — Linear accent-left */
+/* Strategy Banner — Notion warm white */
 .strategy-banner{{
-  background:var(--bg-card);
+  background:var(--bg-panel);
   border:1px solid var(--border);
-  border-left:2px solid var(--accent-bright);
-  border-radius:var(--radius-xl);
+  border-left:3px solid var(--accent);
+  border-radius:var(--radius-md);
   padding:var(--space-3) var(--space-4);
   margin-bottom:var(--space-4);
-  font-size:14px;
+  font-size:15px;
   color:var(--text-secondary);
   line-height:1.6;
 }}
-.strategy-banner strong{{color:var(--text-primary);font-weight:510}}
+.strategy-banner strong{{color:var(--text-primary);font-weight:600}}
 
 /* Sections & Cards */
 .section{{margin-bottom:var(--space-5)}}
 .section-title{{
-  font-family:inherit;              /* Inter Variable (not serif) */
-  font-size:20px;font-weight:510;
+  font-family:inherit;
+  font-size:22px;font-weight:700;
   margin-bottom:var(--space-3);
   display:flex;align-items:center;gap:var(--space-1);
   color:var(--text-primary);
-  letter-spacing:-0.012em;           /* -0.24px at 20px */
-  line-height:1.33;
+  letter-spacing:-0.011em;
+  line-height:1.27;
 }}
-.section-title .icon{{font-size:20px}}
+.section-title .icon{{font-size:22px}}
 
 .action-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-2)}}
 .action-card{{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-3) var(--space-4);
   display:flex;flex-direction:column;gap:var(--space-1);
-  transition:background var(--transition-bg), border-color var(--transition-color);
+  transition:box-shadow var(--transition-shadow);
 }}
-.action-card:hover{{
-  background:var(--bg-card-hover);
-  border-color:rgba(255,255,255,0.12);
-}}
-.action-card.buy{{border-left:2px solid var(--accent-green)}}
-.action-card.hold{{border-left:2px solid var(--accent-yellow)}}
-.action-card.sell{{border-left:2px solid var(--accent-red)}}
+.action-card:hover{{box-shadow:var(--shadow-whisper)}}
+.action-card.buy{{border-left:3px solid var(--accent-green)}}
+.action-card.hold{{border-left:3px solid var(--accent-yellow)}}
+.action-card.sell{{border-left:3px solid var(--accent-red)}}
 .action-card .card-header{{display:flex;justify-content:space-between;align-items:center}}
 .action-card .ticker{{
-  font-size:18px;font-weight:590;
+  font-size:22px;font-weight:700;
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);
-  letter-spacing:-0.013em;
+  letter-spacing:-0.012em;
 }}
 .action-badge{{
-  font-size:10px;font-weight:510;
-  text-transform:uppercase;letter-spacing:0.06em;
+  font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.04em;
   padding:2px 10px;
   border-radius:var(--radius-pill);
   font-family:inherit;
 }}
-.action-badge.buy{{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(16, 185, 129, 0.25)}}
-.action-badge.hold{{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(245, 158, 11, 0.25)}}
-.action-badge.sell{{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(239, 68, 68, 0.25)}}
+.action-badge.buy{{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(26, 174, 57, 0.2)}}
+.action-badge.hold{{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(192, 133, 50, 0.2)}}
+.action-badge.sell{{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(221, 91, 0, 0.2)}}
 .holdings{{
   display:flex;gap:var(--space-3);
   font-size:12px;color:var(--text-muted);
@@ -1039,8 +1041,8 @@ a:focus-visible{{
   padding-top:var(--space-1);
   word-break:normal;overflow-wrap:anywhere;
 }}
-.alloc-bar{{height:2px;border-radius:var(--radius-pill);background:rgba(255,255,255,0.05);margin-top:auto;overflow:hidden}}
-.alloc-bar-fill{{height:100%;border-radius:var(--radius-pill);background:var(--accent-bright)}}
+.alloc-bar{{height:3px;border-radius:var(--radius-pill);background:var(--bg-panel);margin-top:auto;overflow:hidden}}
+.alloc-bar-fill{{height:100%;border-radius:var(--radius-pill);background:var(--accent)}}
 .alloc-label{{
   font-size:11px;color:var(--text-subtle);
   margin-top:var(--space-half);
@@ -1051,20 +1053,16 @@ a:focus-visible{{
 .picks-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--space-2)}}
 .pick-card{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-3) var(--space-4);
-  border-left:2px solid var(--accent-bright);
-  transition:background var(--transition-bg), border-color var(--transition-color);
+  border-left:3px solid var(--accent);
+  transition:box-shadow var(--transition-shadow);
 }}
-.pick-card:hover{{
-  background:var(--bg-card-hover);
-  border-color:rgba(255,255,255,0.12);
-  border-left-color:var(--accent-hover);
-}}
+.pick-card:hover{{box-shadow:var(--shadow-whisper)}}
 .pick-ticker{{font-size:18px;font-weight:590;font-family:'JetBrains Mono',monospace;color:var(--text-primary);letter-spacing:-0.013em}}
 .pick-sector{{
   display:inline-block;margin-top:var(--space-half);
-  font-size:10px;color:var(--accent-bright);
+  font-size:10px;color:var(--accent);
   font-family:inherit;
   font-weight:510;letter-spacing:0.06em;
   text-transform:uppercase;
@@ -1095,23 +1093,23 @@ a:focus-visible{{
 .risk-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)}}
 .risk-card{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-4) var(--space-3);
   text-align:center;
-  transition:background var(--transition-bg);
+  transition:box-shadow var(--transition-shadow);
 }}
-.risk-card:hover{{background:var(--bg-card-hover)}}
-.risk-card.bull{{border-top:2px solid var(--accent-green)}}
-.risk-card.base{{border-top:2px solid var(--accent-bright)}}
-.risk-card.bear{{border-top:2px solid var(--accent-red)}}
+.risk-card:hover{{box-shadow:var(--shadow-whisper)}}
+.risk-card.bull{{border-top:3px solid var(--accent-green)}}
+.risk-card.base{{border-top:3px solid var(--accent)}}
+.risk-card.bear{{border-top:3px solid var(--accent-red)}}
 .risk-prob{{
-  font-size:36px;font-weight:510;
+  font-size:40px;font-weight:700;
   font-family:inherit;
-  letter-spacing:-0.022em;
-  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.028em;
+  font-variant-numeric:tabular-nums lnum;
 }}
 .risk-card.bull .risk-prob{{color:var(--accent-green)}}
-.risk-card.base .risk-prob{{color:var(--accent-bright)}}
+.risk-card.base .risk-prob{{color:var(--accent)}}
 .risk-card.bear .risk-prob{{color:var(--accent-red)}}
 .risk-label{{
   font-size:11px;text-transform:uppercase;
@@ -1163,7 +1161,7 @@ a:focus-visible{{
 .record-row:hover{{background:var(--bg-card-hover)}}
 .record-date{{
   font-family:'JetBrains Mono',monospace;
-  font-weight:510;color:var(--accent-bright);
+  font-weight:510;color:var(--accent);
   min-width:100px;letter-spacing:-0.01em;
 }}
 .record-status{{min-width:30px}}
@@ -1183,7 +1181,7 @@ a:focus-visible{{
   letter-spacing:0.02em;
   line-height:1.8;
 }}
-.footer a{{color:var(--accent-bright);text-decoration:none;transition:color var(--transition-color)}}
+.footer a{{color:var(--accent);text-decoration:none;transition:color var(--transition-color)}}
 .footer a:hover{{color:var(--accent-hover);text-decoration:underline}}
 .fade-in{{animation:fadeIn 0.4s ease forwards;opacity:0}}
 @keyframes fadeIn{{to{{opacity:1}}}}
@@ -1192,32 +1190,29 @@ a:focus-visible{{
 .port-summary-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-2);margin-bottom:var(--space-4)}}
 .port-metric{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-3);
-  transition:background var(--transition-bg), border-color var(--transition-color);
+  transition:box-shadow var(--transition-shadow);
 }}
-.port-metric:hover{{
-  background:var(--bg-card-hover);
-  border-color:rgba(255,255,255,0.12);
-}}
+.port-metric:hover{{box-shadow:var(--shadow-whisper)}}
 .port-metric-label{{
   font-size:11px;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:0.08em;font-weight:510;
+  text-transform:uppercase;letter-spacing:0.06em;font-weight:500;
   font-family:inherit;
 }}
 .port-metric-value{{
-  font-size:26px;font-weight:510;
+  font-size:26px;font-weight:700;
   font-family:inherit;
   margin-top:var(--space-1);
   color:var(--text-primary);
-  letter-spacing:-0.022em;
-  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.025em;
+  font-variant-numeric:tabular-nums lnum;
 }}
 .port-metric-sub{{font-size:12px;color:var(--text-muted);margin-top:var(--space-half);line-height:1.5;font-variant-numeric:tabular-nums}}
 
 .sector-section{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-3) var(--space-4);
   margin-bottom:var(--space-3);
 }}
@@ -1234,7 +1229,7 @@ a:focus-visible{{
 }}
 .sector-bar-label{{color:var(--text-secondary);font-weight:510}}
 .sector-bar-track{{
-  height:6px;background:rgba(255,255,255,0.04);
+  height:8px;background:var(--bg-panel);
   border-radius:var(--radius-pill);overflow:hidden;
 }}
 .sector-bar-fill{{height:100%;border-radius:var(--radius-pill);transition:width 0.6s ease}}
@@ -1248,7 +1243,7 @@ a:focus-visible{{
 
 .port-table-section{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-3) 0 var(--space-1);
   margin-bottom:var(--space-3);
 }}
@@ -1266,17 +1261,17 @@ a:focus-visible{{
   text-align:left;padding:var(--space-1) var(--space-2);
   color:var(--text-muted);
   border-bottom:1px solid var(--border);
-  font-weight:510;text-transform:uppercase;
-  font-size:10px;letter-spacing:0.06em;
+  font-weight:600;text-transform:uppercase;
+  font-size:11px;letter-spacing:0.04em;
   cursor:pointer;user-select:none;
   background:var(--bg-panel);
   font-family:inherit;
   white-space:nowrap;
   transition:color var(--transition-color);
 }}
-.port-table th:hover{{color:var(--text-primary)}}
+.port-table th:hover{{color:var(--accent)}}
 .port-table td{{
-  padding:var(--space-1) var(--space-2);
+  padding:var(--space-2) var(--space-2);
   border-bottom:1px solid var(--border-subtle);
   color:var(--text-secondary);
   white-space:nowrap;
@@ -1285,16 +1280,16 @@ a:focus-visible{{
   font-variant-numeric:tabular-nums;
 }}
 .port-table tr:hover{{background:var(--bg-card-hover)}}
-.port-table .port-ticker strong{{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:590}}
+.port-table .port-ticker strong{{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700}}
 .acct-badge{{
-  display:inline-block;padding:1px 8px;
+  display:inline-block;padding:2px 10px;
   border-radius:var(--radius-pill);
-  font-size:10px;
+  font-size:11px;
   background:var(--accent-soft);
-  color:var(--accent-bright);
-  font-weight:510;
+  color:var(--accent-text);
+  font-weight:600;
   font-family:inherit;
-  letter-spacing:0.04em;
+  letter-spacing:0.02em;
   text-transform:uppercase;
 }}
 .chart-link{{text-decoration:none;font-size:14px;opacity:0.55;transition:opacity 0.2s}}
@@ -1304,24 +1299,21 @@ a:focus-visible{{
 .adv-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--space-2)}}
 .adv-card{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-xl);
+  border-radius:var(--radius-md);
   padding:var(--space-3) var(--space-4);
-  transition:background var(--transition-bg), border-color var(--transition-color);
+  transition:box-shadow var(--transition-shadow);
 }}
-.adv-card:hover{{
-  background:var(--bg-card-hover);
-  border-color:rgba(255,255,255,0.12);
-}}
+.adv-card:hover{{box-shadow:var(--shadow-whisper)}}
 .adv-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1)}}
 .adv-ticker{{
-  font-size:17px;font-weight:590;
+  font-size:20px;font-weight:700;
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);
   text-decoration:none;
-  letter-spacing:-0.013em;
+  letter-spacing:-0.012em;
   transition:color var(--transition-color);
 }}
-.adv-ticker:hover{{color:var(--accent-bright)}}
+.adv-ticker:hover{{color:var(--accent)}}
 .adv-signal{{
   font-size:10px;font-weight:510;
   letter-spacing:0.06em;
@@ -1344,7 +1336,7 @@ a:focus-visible{{
 .adv-sublabel{{color:var(--text-muted);font-weight:510;font-family:inherit;letter-spacing:0.02em;text-transform:uppercase}}
 .adv-subval{{font-family:'JetBrains Mono',monospace;font-weight:510;text-align:right;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}}
 .adv-bar-track{{
-  height:4px;background:rgba(255,255,255,0.04);
+  height:6px;background:var(--bg-panel);
   border-radius:var(--radius-pill);overflow:hidden;
 }}
 .adv-bar-pos{{height:100%;background:var(--accent-green);border-radius:var(--radius-pill)}}
@@ -1526,7 +1518,7 @@ function switchTab(btn, id) {{
 }}
 
 function initOverview() {{
-  const colors = ['#7170ff','#10b981','#f59e0b','#ef4444','#a78bfa','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1','#14b8a6','#e11d48','#8b5cf6','#22d3ee','#eab308','#fb923c','#4ade80','#f472b6'];
+  const colors = ['#0075de','#1aae39','#dd5b00','#2a9d99','#ff64c8','#391c57','#523410','#c08532','#097fe8','#213183','#62aef0','#9a4a6b','#1aae39','#2a9d99','#dd5b00','#c08532','#8b6914','#ff64c8'];
 
   new Chart(document.getElementById('chartDonut'), {{
     type: 'doughnut',
@@ -1538,7 +1530,7 @@ function initOverview() {{
       responsive: true,
       maintainAspectRatio: false,
       plugins: {{
-        legend: {{ position: 'right', labels: {{ color: '#8a8f98', font: {{ size: 11 }} }} }}
+        legend: {{ position: 'right', labels: {{ color: '#615d59', font: {{ size: 11 }} }} }}
       }}
     }}
   }});
@@ -1548,19 +1540,19 @@ function initOverview() {{
     data: {{
       labels: overviewData.tickers,
       datasets: [
-        {{ label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(113,112,255,0.75)' }},
-        {{ label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(167,139,250,0.7)' }},
-        {{ label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(138,143,152,0.3)' }}
+        {{ label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(0,117,222,0.85)' }},
+        {{ label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(33,49,131,0.75)' }},
+        {{ label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(97,93,89,0.35)' }}
       ]
     }},
     options: {{
       responsive: true,
       maintainAspectRatio: false,
       scales: {{
-        x: {{ ticks: {{ color: '#8a8f98', font: {{ size: 10 }} }} }},
-        y: {{ ticks: {{ color: '#8a8f98', callback: v => v+'%' }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }}
+        x: {{ ticks: {{ color: '#615d59', font: {{ size: 10 }} }} }},
+        y: {{ ticks: {{ color: '#615d59', callback: v => v+'%' }}, grid: {{ color: 'rgba(0, 0, 0, 0.06)' }} }}
       }},
-      plugins: {{ legend: {{ labels: {{ color: '#8a8f98' }} }} }}
+      plugins: {{ legend: {{ labels: {{ color: '#615d59' }} }} }}
     }}
   }});
 }}
@@ -1573,7 +1565,7 @@ function initRisk() {{
       datasets: [{{
         label: 'Ensemble配分 (%)',
         data: overviewData.ensemble,
-        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(239,68,68,0.75)' : 'rgba(16,185,129,0.75)')
+        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(221,91,0,0.85)' : 'rgba(26,174,57,0.85)')
       }}]
     }},
     options: {{
@@ -1581,8 +1573,8 @@ function initRisk() {{
       maintainAspectRatio: false,
       indexAxis: 'y',
       scales: {{
-        x: {{ ticks: {{ color: '#8a8f98', callback: v => v+'%' }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }},
-        y: {{ ticks: {{ color: '#8a8f98', font: {{ family: 'JetBrains Mono', size: 11 }} }} }}
+        x: {{ ticks: {{ color: '#615d59', callback: v => v+'%' }}, grid: {{ color: 'rgba(0, 0, 0, 0.06)' }} }},
+        y: {{ ticks: {{ color: '#615d59', font: {{ family: 'JetBrains Mono', size: 11 }} }} }}
       }},
       plugins: {{ legend: {{ display: false }} }}
     }}
@@ -1603,22 +1595,22 @@ function initReport() {{
       datasets: [{{
         label: '確信度',
         data: recs.map(r => r.confidence * 100),
-        borderColor: '#7170ff',
-        backgroundColor: 'rgba(113,112,255,0.12)',
+        borderColor: '#0075de',
+        backgroundColor: 'rgba(0,117,222,0.08)',
         fill: true,
         tension: 0.3,
         pointRadius: 5,
-        pointBackgroundColor: '#7170ff'
+        pointBackgroundColor: '#0075de'
       }}]
     }},
     options: {{
       responsive: true,
       maintainAspectRatio: false,
       scales: {{
-        x: {{ ticks: {{ color: '#8a8f98' }} }},
-        y: {{ min: 0, max: 100, ticks: {{ color: '#8a8f98', callback: v => v+'%' }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }}
+        x: {{ ticks: {{ color: '#615d59' }} }},
+        y: {{ min: 0, max: 100, ticks: {{ color: '#615d59', callback: v => v+'%' }}, grid: {{ color: 'rgba(0, 0, 0, 0.06)' }} }}
       }},
-      plugins: {{ legend: {{ labels: {{ color: '#8a8f98' }} }} }}
+      plugins: {{ legend: {{ labels: {{ color: '#615d59' }} }} }}
     }}
   }});
 
@@ -1627,7 +1619,7 @@ function initReport() {{
     let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
     html += '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px;color:var(--text-muted)">日付</th><th style="padding:8px;color:var(--text-muted)">RMSE</th><th style="padding:8px;color:var(--text-muted)">方向性</th><th style="padding:8px;color:var(--text-muted)">較正</th></tr>';
     evals.forEach(e => {{
-      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">${{e.date}}</td><td style="padding:8px;text-align:center;color:#ef4444;font-family:'JetBrains Mono',monospace">${{e.rmse}}</td><td style="padding:8px;text-align:center;color:#10b981;font-family:'JetBrains Mono',monospace">${{e.direction_accuracy}}%</td><td style="padding:8px;text-align:center;color:#7170ff;font-family:'JetBrains Mono',monospace">${{e.calibration_score}}</td></tr>`;
+      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">${{e.date}}</td><td style="padding:8px;text-align:center;color:#dd5b00;font-family:'JetBrains Mono',monospace">${{e.rmse}}</td><td style="padding:8px;text-align:center;color:#1aae39;font-family:'JetBrains Mono',monospace">${{e.direction_accuracy}}%</td><td style="padding:8px;text-align:center;color:#0075de;font-family:'JetBrains Mono',monospace">${{e.calibration_score}}</td></tr>`;
     }});
     html += '</table>';
     document.getElementById('evalData').innerHTML = html;
@@ -1673,8 +1665,8 @@ function initPerformance() {{
         {{
           label: 'ポートフォリオ総額 (USD)',
           data: perfData.values_usd,
-          borderColor: '#7170ff',
-          backgroundColor: 'rgba(113,112,255,0.12)',
+          borderColor: '#0075de',
+          backgroundColor: 'rgba(0,117,222,0.08)',
           fill: true,
           tension: 0.3,
           yAxisID: 'y',
@@ -1683,7 +1675,7 @@ function initPerformance() {{
         {{
           label: '含み損益 (USD)',
           data: perfData.pnl_usd,
-          borderColor: '#10b981',
+          borderColor: '#1aae39',
           backgroundColor: 'rgba(16,185,129,0.1)',
           fill: false,
           tension: 0.3,
@@ -1696,11 +1688,11 @@ function initPerformance() {{
       responsive: true,
       maintainAspectRatio: false,
       scales: {{
-        x: {{ ticks: {{ color: '#8a8f98', maxTicksLimit: 10 }}, grid: {{ color: 'rgba(255,255,255,0.03)' }} }},
-        y: {{ position: 'left', ticks: {{ color: '#8a8f98', callback: v => '$'+v.toLocaleString() }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }},
-        y1: {{ position: 'right', ticks: {{ color: '#10b981', callback: v => '$'+v.toLocaleString() }}, grid: {{ display: false }} }}
+        x: {{ ticks: {{ color: '#615d59', maxTicksLimit: 10 }}, grid: {{ color: 'rgba(0, 0, 0, 0.04)' }} }},
+        y: {{ position: 'left', ticks: {{ color: '#615d59', callback: v => '$'+v.toLocaleString() }}, grid: {{ color: 'rgba(0, 0, 0, 0.06)' }} }},
+        y1: {{ position: 'right', ticks: {{ color: '#1aae39', callback: v => '$'+v.toLocaleString() }}, grid: {{ display: false }} }}
       }},
-      plugins: {{ legend: {{ labels: {{ color: '#8a8f98' }} }} }}
+      plugins: {{ legend: {{ labels: {{ color: '#615d59' }} }} }}
     }}
   }});
 }}
