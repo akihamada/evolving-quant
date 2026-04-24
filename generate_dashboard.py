@@ -616,51 +616,102 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root {{
-  /* Cursor palette — warm minimalism */
-  --bg-primary:    #f2f1ed;    /* warm off-white */
-  --bg-card:       #ffffff;
-  --bg-card-hover: #eeede8;
-  --bg-elevated:   #faf9f5;
-  --border:        oklab(0.85 -0.003 0.009);
-  --border-strong: oklab(0.75 -0.003 0.009);
-  --text-primary:  #26251e;    /* warm near-black */
-  --text-secondary:#5a5850;
-  --text-muted:    #8b887d;
-  --accent:        #f54e00;    /* Cursor orange */
+  /* === Cursor.md 仕様準拠 Surface Scale === */
+  --surface-100: #f7f7f4;  /* Lightest button/card */
+  --surface-200: #f2f1ed;  /* Primary page background */
+  --surface-300: #ebeae5;  /* Button default */
+  --surface-400: #e6e5e0;  /* Card backgrounds */
+  --surface-500: #e1e0db;  /* Tertiary emphasis */
+  /* Semantic aliases */
+  --bg-primary:    #f2f1ed;    /* = surface-200 */
+  --bg-card:       #ffffff;    /* Pure white sparingly */
+  --bg-card-hover: #ebeae5;    /* = surface-300 */
+  --bg-elevated:   #f7f7f4;    /* = surface-100 */
+
+  /* === Cursor oklab borders === */
+  --border:        oklab(0.263084 -0.00230259 0.0124794 / 0.1);
+  --border-medium: oklab(0.263084 -0.00230259 0.0124794 / 0.2);
+  --border-strong: rgba(38, 37, 30, 0.55);
+  --border-solid:  #26251e;
+
+  /* === Text === */
+  --text-primary:  #26251e;              /* warm near-black */
+  --text-secondary:rgba(38, 37, 30, 0.55); /* 55% warm brown */
+  --text-muted:    rgba(38, 37, 30, 0.4);
+
+  /* === Brand & Semantic === */
+  --accent:        #f54e00;    /* Cursor Orange */
   --accent-soft:   rgba(245, 78, 0, 0.08);
-  --accent-hover:  #d94600;
-  --accent-green:  #2d7a3e;
-  --accent-green-bg:rgba(45, 122, 62, 0.08);
-  --accent-red:    #c03530;
-  --accent-red-bg: rgba(192, 53, 48, 0.08);
-  --accent-yellow: #b8860b;
-  --accent-yellow-bg:rgba(184, 134, 11, 0.08);
-  --accent-blue:   #2b5fa4;
-  --accent-blue-bg:rgba(43, 95, 164, 0.08);
-  --accent-purple: #6b4c9a;
-  --accent-purple-bg:rgba(107, 76, 154, 0.08);
-  --accent-cyan:   #1e6b7a;
-  --radius-sm:     6px;
-  --radius-md:     10px;
-  --radius-lg:     16px;
-  --radius-pill:   999px;
-  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
-  --space-4: 16px; --space-5: 24px; --space-6: 32px;
-  --shadow-sm: 0 1px 2px rgba(38, 37, 30, 0.04);
-  --shadow-md: 0 2px 8px rgba(38, 37, 30, 0.06);
+  --accent-gold:   #c08532;    /* Gold secondary */
+  --color-error:   #cf2d56;    /* Warm crimson (signature hover) */
+  --color-success: #1f8a65;    /* Muted teal-green */
+
+  /* === Timeline colors (AI state) === */
+  --timeline-thinking: #dfa88f;
+  --timeline-grep:     #9fc9a2;
+  --timeline-read:     #9fbbe0;
+  --timeline-edit:     #c0a8dd;
+
+  /* === P&L / chart semantic (accessible warm variants) === */
+  --accent-green:  #1f8a65;
+  --accent-green-bg:rgba(31, 138, 101, 0.08);
+  --accent-red:    #cf2d56;
+  --accent-red-bg: rgba(207, 45, 86, 0.08);
+  --accent-yellow: #c08532;
+  --accent-yellow-bg:rgba(192, 133, 50, 0.08);
+  --accent-blue:   #9fbbe0;
+  --accent-blue-bg:rgba(159, 187, 224, 0.12);
+  --accent-purple: #c0a8dd;
+  --accent-purple-bg:rgba(192, 168, 221, 0.12);
+
+  /* === Radius === */
+  --radius-sm:     2px;
+  --radius-md:     4px;
+  --radius-lg:     8px;
+  --radius-xl:     10px;
+  --radius-pill:   9999px;     /* full-pill per cursor.md */
+
+  /* === Spacing (8px base + sub-8px fine scale) === */
+  --space-half: 4px;
+  --space-1: 8px;  --space-2: 12px; --space-3: 16px;
+  --space-4: 24px; --space-5: 32px; --space-6: 48px;
+  --space-7: 64px; --space-8: 96px;
+
+  /* === Shadow philosophy: large blur, atmospheric === */
+  --shadow-ambient: rgba(0,0,0,0.02) 0px 0px 16px, rgba(0,0,0,0.008) 0px 0px 8px;
+  --shadow-elevated: rgba(0,0,0,0.14) 0px 28px 70px, rgba(0,0,0,0.1) 0px 14px 32px, oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
+  --shadow-focus:   rgba(0,0,0,0.1) 0px 4px 12px;
+  --shadow-border:  oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
+
+  /* === Transitions (Cursor spec: 150ms color / 200ms shadow) === */
+  --transition-color:   150ms ease;
+  --transition-shadow:  200ms ease;
 }}
 *{{margin:0;padding:0;box-sizing:border-box}}
-html{{font-feature-settings:"palt" 0; text-size-adjust:100%}}
+html{{text-size-adjust:100%;font-kerning:auto}}
+
+/* === jp-ui-contracts: Japanese line-breaking === */
+html:lang(ja),
+html{{
+  line-break:strict;
+  word-break:normal;
+  overflow-wrap:anywhere;
+}}
+/* 見出しは自然な文節で改行 (progressive enhancement) */
+h1:lang(ja), h2:lang(ja), h3:lang(ja),
+.section-title, .header h1{{
+  word-break:auto-phrase;
+}}
+
 body{{
-  font-family:'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI',system-ui,-apple-system,sans-serif;
+  font-family:-apple-system,'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
   background:var(--bg-primary);
   color:var(--text-primary);
   min-height:100vh;
-  line-height:1.7;                /* jp-ui-contracts: >=1.5 */
-  font-feature-settings:"palt" 0;
+  line-height:1.7;                 /* ≥1.5 遵守 */
+  font-feature-settings:normal;     /* base-DESIGN: palt 全体禁止 */
   -webkit-font-smoothing:antialiased;
-  word-break:normal;              /* break-all 禁止 */
-  overflow-wrap:anywhere;
+  -moz-osx-font-smoothing:grayscale;
 }}
 .container{{max-width:1440px;margin:0 auto;padding:var(--space-5)}}
 
@@ -691,12 +742,13 @@ a:focus-visible{{
 }}
 .header h1{{
   font-family:'Noto Serif JP',Georgia,serif;
-  font-size:28px;
+  font-size:32px;
   font-weight:600;
-  letter-spacing:-0.01em;
+  letter-spacing:-0.02em;  /* Progressive: ~-0.64px at 32px */
   color:var(--text-primary);
   line-height:1.5;
 }}
+.header h1 span{{transition:color var(--transition-color)}}
 .header h1 span{{color:var(--accent);font-style:italic}}
 .header-meta{{text-align:right}}
 .header-meta .date{{
@@ -725,10 +777,13 @@ a:focus-visible{{
   background:var(--bg-card);
   border:1px solid var(--border);
   border-radius:var(--radius-lg);
-  padding:var(--space-4) var(--space-5);
-  transition:border-color 0.2s;
+  padding:var(--space-3) var(--space-4);
+  transition:border-color var(--transition-color), box-shadow var(--transition-shadow);
 }}
-.stat-card:hover{{border-color:var(--border-strong)}}
+.stat-card:hover{{
+  border-color:var(--border-medium);
+  box-shadow:var(--shadow-ambient);
+}}
 .stat-label{{
   font-size:11px;color:var(--text-muted);
   text-transform:uppercase;letter-spacing:0.08em;font-weight:500;
@@ -760,8 +815,12 @@ a:focus-visible{{
   transition:all 0.2s;
   font-family:inherit;
 }}
-.tab-btn:hover{{background:var(--bg-card-hover);color:var(--text-primary)}}
+.tab-btn{{
+  transition:color var(--transition-color), background var(--transition-color);
+}}
+.tab-btn:hover{{background:var(--bg-card-hover);color:var(--color-error)}}
 .tab-btn.active{{background:var(--accent);color:#fff}}
+.tab-btn.active:hover{{color:#fff}}
 .tab-content{{display:none}}
 .tab-content.active{{display:block}}
 
@@ -968,8 +1027,8 @@ a:focus-visible{{
   letter-spacing:0.02em;
   line-height:1.8;
 }}
-.footer a{{color:var(--accent);text-decoration:none}}
-.footer a:hover{{text-decoration:underline}}
+.footer a{{color:var(--accent);text-decoration:none;transition:color var(--transition-color)}}
+.footer a:hover{{color:var(--color-error);text-decoration:underline}}
 .fade-in{{animation:fadeIn 0.4s ease forwards;opacity:0}}
 @keyframes fadeIn{{to{{opacity:1}}}}
 
@@ -1051,7 +1110,8 @@ a:focus-visible{{
   font-family:'JetBrains Mono',monospace;
   white-space:nowrap;
 }}
-.port-table th:hover{{color:var(--accent)}}
+.port-table th{{transition:color var(--transition-color)}}
+.port-table th:hover{{color:var(--color-error)}}
 .port-table td{{
   padding:var(--space-3) var(--space-3);
   border-bottom:1px solid var(--border);
@@ -1092,7 +1152,8 @@ a:focus-visible{{
   text-decoration:none;
   letter-spacing:-0.01em;
 }}
-.adv-ticker:hover{{color:var(--accent)}}
+.adv-ticker{{transition:color var(--transition-color)}}
+.adv-ticker:hover{{color:var(--color-error)}}
 .adv-signal{{
   font-size:11px;font-weight:500;
   letter-spacing:0.06em;
