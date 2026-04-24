@@ -910,6 +910,23 @@ def run_daily_evolution() -> dict[str, Any]:
             cov_detoned, market_caps, None, None, available_tickers
         )
 
+    # === 高精度予測アンサンブル統合 ===
+    advanced_signals: list = []
+    try:
+        from advanced_predictor import predict_all, evaluate_past_predictions, save_accuracy
+        prices_dict = {t: prices[t].dropna().values for t in available_tickers if t in prices.columns}
+        advanced_signals = predict_all(prices_dict)
+
+        # 過去予測の自己評価（古いレコードから)
+        past_advanced = []
+        for r in track.get("records", []):
+            past_advanced.extend(r.get("advanced_signals_archive", []))
+        if past_advanced:
+            stats = evaluate_past_predictions(past_advanced, prices_dict)
+            save_accuracy(stats)
+    except Exception as e:
+        logger.warning("高精度予測スキップ: %s", e)
+
     # 結果を保存
     results = {
         "timestamp": datetime.now().isoformat(),
@@ -924,6 +941,7 @@ def run_daily_evolution() -> dict[str, Any]:
         },
         "ensemble_weights": ew,
         "evolution_state": evolution_state,
+        "advanced_signals": advanced_signals,
     }
 
     # トラックレコード保存
