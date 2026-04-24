@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[[ ! -f \"$HOME/.claude/design/cursor.md\" ]] && bash setup-design-system/install.sh 1>&2 || true",
+            "command": "[[ -f \"$HOME/.claude/design/cursor.md\" ]] || curl -fsSL https://raw.githubusercontent.com/akihamada/claude-design-system/main/install.sh | bash 1>&2",
             "timeout": 300,
             "statusMessage": "Bootstrapping global design system..."
           }
