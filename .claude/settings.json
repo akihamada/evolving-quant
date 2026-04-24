@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[[ ! -f \"$HOME/.claude/design/cursor.md\" ]] && bash setup-design-system/install.sh 1>&2 || true",
+            "timeout": 300,
+            "statusMessage": "Bootstrapping global design system..."
+          }
+        ]
+      }
+    ]
+  }
+}
