@@ -7,80 +7,84 @@
 <meta name="description" content="Self-learning AI portfolio dashboard">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Inter Variable (Linear signature font) + Noto Sans JP (JP fallback) + JetBrains Mono (Berkeley Mono代替) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;510;590;600&family=Noto+Sans+JP:wght@300;400;500;510;590;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root {
-  /* === Cursor.md 仕様準拠 Surface Scale === */
-  --surface-100: #f7f7f4;  /* Lightest button/card */
-  --surface-200: #f2f1ed;  /* Primary page background */
-  --surface-300: #ebeae5;  /* Button default */
-  --surface-400: #e6e5e0;  /* Card backgrounds */
-  --surface-500: #e1e0db;  /* Tertiary emphasis */
-  /* Semantic aliases */
-  --bg-primary:    #f2f1ed;    /* = surface-200 */
-  --bg-card:       #ffffff;    /* Pure white sparingly */
-  --bg-card-hover: #ebeae5;    /* = surface-300 */
-  --bg-elevated:   #f7f7f4;    /* = surface-100 */
+  /* === Linear Dark-mode-native Backgrounds === */
+  --bg-primary:    #08090a;    /* Marketing black / deepest canvas */
+  --bg-panel:      #0f1011;    /* Panel / sidebar */
+  --bg-elevated:   #191a1b;    /* Elevated surfaces / cards / dropdowns */
+  --bg-secondary:  #28282c;    /* Hover / slightly elevated */
+  --bg-card:       rgba(255,255,255,0.02);   /* 透過カード */
+  --bg-card-hover: rgba(255,255,255,0.04);   /* ホバー */
+  --bg-button:     rgba(255,255,255,0.02);
+  --bg-button-hover: rgba(255,255,255,0.05);
 
-  /* === Cursor oklab borders === */
-  --border:        oklab(0.263084 -0.00230259 0.0124794 / 0.1);
-  --border-medium: oklab(0.263084 -0.00230259 0.0124794 / 0.2);
-  --border-strong: rgba(38, 37, 30, 0.55);
-  --border-solid:  #26251e;
+  /* === Linear Text Hierarchy === */
+  --text-primary:   #f7f8f8;    /* Near-white (not pure) */
+  --text-secondary: #d0d6e0;    /* Cool silver-gray */
+  --text-muted:     #8a8f98;    /* Tertiary gray */
+  --text-subtle:    #62666d;    /* Quaternary / disabled */
 
-  /* === Text === */
-  --text-primary:  #26251e;              /* warm near-black */
-  --text-secondary:rgba(38, 37, 30, 0.55); /* 55% warm brown */
-  --text-muted:    rgba(38, 37, 30, 0.4);
+  /* === Semi-transparent white borders (Linear signature) === */
+  --border:         rgba(255,255,255,0.08);   /* Standard */
+  --border-subtle:  rgba(255,255,255,0.05);   /* Ultra subtle */
+  --border-solid:   #23252a;                   /* Solid when needed */
+  --line-tint:      #141516;
 
-  /* === Brand & Semantic === */
-  --accent:        #f54e00;    /* Cursor Orange */
-  --accent-soft:   rgba(245, 78, 0, 0.08);
-  --accent-gold:   #c08532;    /* Gold secondary */
-  --color-error:   #cf2d56;    /* Warm crimson (signature hover) */
-  --color-success: #1f8a65;    /* Muted teal-green */
+  /* === Brand: Indigo-violet (唯一の有彩色) === */
+  --accent:         #5e6ad2;    /* Brand indigo (bg) */
+  --accent-bright:  #7170ff;    /* Accent violet (interactive) */
+  --accent-hover:   #828fff;    /* Lighter hover */
+  --accent-soft:    rgba(94, 106, 210, 0.12);
+  --accent-soft-hover: rgba(94, 106, 210, 0.2);
 
-  /* === Timeline colors (AI state) === */
-  --timeline-thinking: #dfa88f;
-  --timeline-grep:     #9fc9a2;
-  --timeline-read:     #9fbbe0;
-  --timeline-edit:     #c0a8dd;
+  /* === Status Colors (sparingly used) === */
+  --color-success:  #10b981;    /* Emerald */
+  --color-success-alt: #27a644; /* Green */
+  --color-error:    #ef4444;    /* Red (loss / sell) */
+  --color-warn:     #f59e0b;
 
-  /* === P&L / chart semantic (accessible warm variants) === */
-  --accent-green:  #1f8a65;
-  --accent-green-bg:rgba(31, 138, 101, 0.08);
-  --accent-red:    #cf2d56;
-  --accent-red-bg: rgba(207, 45, 86, 0.08);
-  --accent-yellow: #c08532;
-  --accent-yellow-bg:rgba(192, 133, 50, 0.08);
-  --accent-blue:   #9fbbe0;
-  --accent-blue-bg:rgba(159, 187, 224, 0.12);
-  --accent-purple: #c0a8dd;
-  --accent-purple-bg:rgba(192, 168, 221, 0.12);
+  /* === P&L / chart semantic === */
+  --accent-green:   #10b981;
+  --accent-green-bg:rgba(16, 185, 129, 0.12);
+  --accent-red:     #ef4444;
+  --accent-red-bg:  rgba(239, 68, 68, 0.12);
+  --accent-yellow:  #f59e0b;
+  --accent-yellow-bg:rgba(245, 158, 11, 0.12);
+  --accent-blue:    #7170ff;
+  --accent-blue-bg: rgba(113, 112, 255, 0.12);
+  --accent-purple:  #a78bfa;
+  --accent-purple-bg:rgba(167, 139, 250, 0.12);
 
   /* === Radius === */
   --radius-sm:     2px;
   --radius-md:     4px;
-  --radius-lg:     8px;
-  --radius-xl:     10px;
-  --radius-pill:   9999px;     /* full-pill per cursor.md */
+  --radius-lg:     6px;
+  --radius-xl:     8px;
+  --radius-panel:  12px;
+  --radius-pill:   9999px;
+  --radius-circle: 50%;
 
-  /* === Spacing (8px base + sub-8px fine scale) === */
+  /* === Spacing (8px base) === */
   --space-half: 4px;
   --space-1: 8px;  --space-2: 12px; --space-3: 16px;
   --space-4: 24px; --space-5: 32px; --space-6: 48px;
   --space-7: 64px; --space-8: 96px;
 
-  /* === Shadow philosophy: large blur, atmospheric === */
-  --shadow-ambient: rgba(0,0,0,0.02) 0px 0px 16px, rgba(0,0,0,0.008) 0px 0px 8px;
-  --shadow-elevated: rgba(0,0,0,0.14) 0px 28px 70px, rgba(0,0,0,0.1) 0px 14px 32px, oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
-  --shadow-focus:   rgba(0,0,0,0.1) 0px 4px 12px;
-  --shadow-border:  oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
+  /* === Linear Shadow: Luminance stacking + ring borders === */
+  --shadow-ring:    rgba(0,0,0,0.2) 0px 0px 0px 1px;
+  --shadow-inset:   rgba(0,0,0,0.2) 0px 0px 12px 0px inset;
+  --shadow-elevated: rgba(0,0,0,0.4) 0px 2px 4px;
+  --shadow-dialog:  rgba(0,0,0,0) 0px 8px 2px, rgba(0,0,0,0.01) 0px 5px 2px, rgba(0,0,0,0.04) 0px 3px 2px, rgba(0,0,0,0.07) 0px 1px 1px, rgba(0,0,0,0.08) 0px 0px 1px;
+  --shadow-focus:   rgba(0,0,0,0.1) 0px 4px 12px, rgba(94, 106, 210, 0.5) 0px 0px 0px 2px;
 
-  /* === Transitions (Cursor spec: 150ms color / 200ms shadow) === */
+  /* === Transitions === */
   --transition-color:   150ms ease;
   --transition-shadow:  200ms ease;
+  --transition-bg:      150ms ease;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{text-size-adjust:100%;font-kerning:auto}
@@ -92,233 +96,263 @@ html{
   word-break:normal;
   overflow-wrap:anywhere;
 }
-/* 見出しは自然な文節で改行 (progressive enhancement) */
+/* 見出しは自然な文節で改行 */
 h1:lang(ja), h2:lang(ja), h3:lang(ja),
 .section-title, .header h1{
   word-break:auto-phrase;
 }
 
 body{
-  font-family:-apple-system,'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
+  /* Inter Variable (Linear) + 日本語 fallback 必須明示 */
+  font-family:'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI','SF Pro Display',-apple-system,system-ui,sans-serif;
+  /* Linear の cv01 (single-story a) + ss03 OpenType features */
+  font-feature-settings:'cv01','ss03';
   background:var(--bg-primary);
   color:var(--text-primary);
   min-height:100vh;
-  line-height:1.7;                 /* ≥1.5 遵守 */
-  font-feature-settings:normal;     /* base-DESIGN: palt 全体禁止 */
+  line-height:1.6;                  /* Linear Body: 1.5-1.6 / JP ≥1.5 遵守 */
+  font-weight:400;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
+/* Linear の 510 signature weight をUIデフォルトに */
+.ui-emphasize,
+.section-title,
+.tab-btn,
+.stat-label,
+.port-metric-label,
+.port-table th,
+.acct-badge,
+.action-badge,
+.adv-signal{
+  font-weight:510;
+}
 .container{max-width:1440px;margin:0 auto;padding:var(--space-5)}
 
-/* Focus-visible: キーボード操作の可視化 (a11y) */
+/* Focus-visible: Linear indigo ring */
 *:focus{outline:none}
 *:focus-visible{
-  outline:2px solid var(--accent);
+  outline:2px solid var(--accent-bright);
   outline-offset:2px;
-  border-radius:var(--radius-sm);
+  border-radius:var(--radius-md);
 }
 button:focus-visible,
 a:focus-visible{
-  outline:2px solid var(--accent);
+  outline:2px solid var(--accent-bright);
   outline-offset:2px;
 }
-/* 選択色をアクセントに統一 */
+/* Selection color: Linear accent */
 ::selection{background:var(--accent-soft);color:var(--text-primary)}
 
-/* Header */
+/* Scrollbar (webkit) — thin Linear style */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg-panel)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:var(--radius-pill);border:2px solid var(--bg-panel)}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+
+/* Header — Linear dark panel */
 .header{
   display:flex;justify-content:space-between;align-items:center;
-  padding:var(--space-5) var(--space-6);
-  background:var(--bg-card);
+  padding:var(--space-4) var(--space-5);
+  background:var(--bg-panel);
   border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  margin-bottom:var(--space-5);
-  box-shadow:var(--shadow-sm);
+  border-radius:var(--radius-panel);
+  margin-bottom:var(--space-4);
 }
 .header h1{
-  font-family:'Noto Serif JP',Georgia,serif;
+  font-family:inherit;              /* Inter Variable */
   font-size:32px;
-  font-weight:600;
-  letter-spacing:-0.02em;  /* Progressive: ~-0.64px at 32px */
+  font-weight:510;                  /* Linear signature */
+  letter-spacing:-0.022em;           /* Progressive: ~-0.704px at 32px */
   color:var(--text-primary);
-  line-height:1.5;
+  line-height:1.13;
 }
-.header h1 span{transition:color var(--transition-color)}
+.header h1 span{
+  color:var(--accent-bright);
+  transition:color var(--transition-color);
+}
 .header h1 span{color:var(--accent);font-style:italic}
 .header-meta{text-align:right}
 .header-meta .date{
   color:var(--text-muted);
   font-size:13px;
   font-family:'JetBrains Mono',monospace;
-  letter-spacing:0.01em;
 }
 .header-meta .confidence{
-  display:inline-flex;align-items:center;gap:var(--space-2);
+  display:inline-flex;align-items:center;gap:var(--space-half);
   background:var(--accent-soft);
-  border:1px solid rgba(245, 78, 0, 0.2);
+  border:1px solid rgba(94, 106, 210, 0.3);
   border-radius:var(--radius-pill);
-  padding:4px 14px;
-  font-size:12px;font-weight:500;
-  color:var(--accent);
-  margin-top:var(--space-2);
+  padding:3px 10px;
+  font-size:12px;font-weight:510;
+  color:var(--accent-bright);
+  margin-top:var(--space-1);
   font-family:'JetBrains Mono',monospace;
 }
-.header-meta .confidence .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2.4s infinite}
+.header-meta .confidence .dot{width:6px;height:6px;border-radius:50%;background:var(--accent-bright);animation:pulse 2.4s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
-/* Stats */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}
+/* Stats — Linear surface cards */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-2);margin-bottom:var(--space-4)}
 .stat-card{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-3) var(--space-4);
-  transition:border-color var(--transition-color), box-shadow var(--transition-shadow);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }
 .stat-card:hover{
-  border-color:var(--border-medium);
-  box-shadow:var(--shadow-ambient);
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
 }
 .stat-label{
   font-size:11px;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:0.08em;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
-}
-.stat-value{
-  font-size:28px;font-weight:500;margin-top:var(--space-2);
-  font-family:'JetBrains Mono',monospace;
-  color:var(--text-primary);
-  letter-spacing:-0.02em;
-}
-.stat-sub{font-size:13px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}
-
-/* Tabs */
-.tab-nav{
-  display:flex;gap:var(--space-1);
-  margin-bottom:var(--space-5);
-  overflow-x:auto;
-  padding:var(--space-1);
-  background:var(--bg-elevated);
-  border:1px solid var(--border);
-  border-radius:var(--radius-pill);
-}
-.tab-btn{
-  padding:8px 18px;background:transparent;border:none;
-  border-radius:var(--radius-pill);
-  color:var(--text-secondary);cursor:pointer;
-  font-size:13px;font-weight:500;white-space:nowrap;
-  transition:all 0.2s;
+  text-transform:uppercase;letter-spacing:0.08em;font-weight:510;
   font-family:inherit;
 }
-.tab-btn{
-  transition:color var(--transition-color), background var(--transition-color);
+.stat-value{
+  font-size:28px;font-weight:510;margin-top:var(--space-1);
+  font-family:inherit;
+  color:var(--text-primary);
+  letter-spacing:-0.022em;     /* -0.616px at 28px */
+  font-variant-numeric:tabular-nums;
 }
-.tab-btn:hover{background:var(--bg-card-hover);color:var(--color-error)}
-.tab-btn.active{background:var(--accent);color:#fff}
-.tab-btn.active:hover{color:#fff}
+.stat-sub{font-size:13px;color:var(--text-muted);margin-top:var(--space-half);line-height:1.5}
+
+/* Tabs — Linear subtle segmented */
+.tab-nav{
+  display:flex;gap:2px;
+  margin-bottom:var(--space-4);
+  overflow-x:auto;
+  padding:var(--space-half);
+  background:var(--bg-panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius-xl);
+}
+.tab-btn{
+  padding:6px 14px;background:transparent;border:none;
+  border-radius:var(--radius-lg);
+  color:var(--text-muted);cursor:pointer;
+  font-size:13px;font-weight:510;white-space:nowrap;
+  font-family:inherit;
+  letter-spacing:-0.01em;
+  transition:color var(--transition-color), background var(--transition-bg);
+}
+.tab-btn:hover{background:var(--bg-button-hover);color:var(--text-primary)}
+.tab-btn.active{background:var(--accent);color:#fff;font-weight:590}
+.tab-btn.active:hover{color:#fff;background:var(--accent-hover)}
 .tab-content{display:none}
 .tab-content.active{display:block}
 
-/* Strategy Banner */
+/* Strategy Banner — Linear accent-left */
 .strategy-banner{
-  background:var(--bg-elevated);
+  background:var(--bg-card);
   border:1px solid var(--border);
-  border-left:3px solid var(--accent);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  margin-bottom:var(--space-5);
+  border-left:2px solid var(--accent-bright);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  margin-bottom:var(--space-4);
   font-size:14px;
   color:var(--text-secondary);
-  line-height:1.8;
+  line-height:1.6;
 }
-.strategy-banner strong{color:var(--text-primary);font-weight:600}
+.strategy-banner strong{color:var(--text-primary);font-weight:510}
 
 /* Sections & Cards */
-.section{margin-bottom:var(--space-6)}
+.section{margin-bottom:var(--space-5)}
 .section-title{
-  font-family:'Noto Serif JP',Georgia,serif;
-  font-size:20px;font-weight:600;
-  margin-bottom:var(--space-4);
-  display:flex;align-items:center;gap:var(--space-2);
+  font-family:inherit;              /* Inter Variable (not serif) */
+  font-size:20px;font-weight:510;
+  margin-bottom:var(--space-3);
+  display:flex;align-items:center;gap:var(--space-1);
   color:var(--text-primary);
-  letter-spacing:-0.005em;
-  line-height:1.5;
+  letter-spacing:-0.012em;           /* -0.24px at 20px */
+  line-height:1.33;
 }
-.section-title .icon{font-size:22px}
+.section-title .icon{font-size:20px}
 
-.action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-3)}
+.action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-2)}
 .action-card{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  display:flex;flex-direction:column;gap:var(--space-2);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  display:flex;flex-direction:column;gap:var(--space-1);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }
-.action-card:hover{border-color:var(--border-strong)}
-.action-card.buy{border-left:3px solid var(--accent-green)}
-.action-card.hold{border-left:3px solid var(--accent-yellow)}
-.action-card.sell{border-left:3px solid var(--accent-red)}
+.action-card:hover{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+}
+.action-card.buy{border-left:2px solid var(--accent-green)}
+.action-card.hold{border-left:2px solid var(--accent-yellow)}
+.action-card.sell{border-left:2px solid var(--accent-red)}
 .action-card .card-header{display:flex;justify-content:space-between;align-items:center}
 .action-card .ticker{
-  font-size:20px;font-weight:600;
+  font-size:18px;font-weight:590;
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);
-  letter-spacing:-0.01em;
+  letter-spacing:-0.013em;
 }
 .action-badge{
-  font-size:10px;font-weight:500;
-  text-transform:uppercase;letter-spacing:0.08em;
-  padding:4px 12px;
+  font-size:10px;font-weight:510;
+  text-transform:uppercase;letter-spacing:0.06em;
+  padding:2px 10px;
   border-radius:var(--radius-pill);
-  font-family:'JetBrains Mono',monospace;
+  font-family:inherit;
 }
-.action-badge.buy{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(45, 122, 62, 0.2)}
-.action-badge.hold{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(184, 134, 11, 0.2)}
-.action-badge.sell{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(192, 53, 48, 0.2)}
+.action-badge.buy{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(16, 185, 129, 0.25)}
+.action-badge.hold{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(245, 158, 11, 0.25)}
+.action-badge.sell{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(239, 68, 68, 0.25)}
 .holdings{
-  display:flex;gap:var(--space-4);
-  font-size:13px;color:var(--text-secondary);
+  display:flex;gap:var(--space-3);
+  font-size:12px;color:var(--text-muted);
   font-family:'JetBrains Mono',monospace;
+  letter-spacing:-0.01em;
 }
 .pnl-positive{color:var(--accent-green)}
 .pnl-negative{color:var(--accent-red)}
 .reason{
   font-size:13px;color:var(--text-secondary);
-  line-height:1.75;
+  line-height:1.6;
   border-top:1px solid var(--border);
-  padding-top:var(--space-2);
+  padding-top:var(--space-1);
   word-break:normal;overflow-wrap:anywhere;
 }
-.alloc-bar{height:3px;border-radius:var(--radius-pill);background:var(--bg-card-hover);margin-top:auto;overflow:hidden}
-.alloc-bar-fill{height:100%;border-radius:var(--radius-pill);background:var(--accent)}
+.alloc-bar{height:2px;border-radius:var(--radius-pill);background:rgba(255,255,255,0.05);margin-top:auto;overflow:hidden}
+.alloc-bar-fill{height:100%;border-radius:var(--radius-pill);background:var(--accent-bright)}
 .alloc-label{
-  font-size:11px;color:var(--text-muted);
-  margin-top:var(--space-1);
+  font-size:11px;color:var(--text-subtle);
+  margin-top:var(--space-half);
   font-family:'JetBrains Mono',monospace;
   letter-spacing:0.02em;
 }
 
-.picks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--space-3)}
+.picks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--space-2)}
 .pick-card{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  border-left:3px solid var(--accent);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  border-left:2px solid var(--accent-bright);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }
-.pick-card:hover{border-color:var(--border-strong)}
-.pick-ticker{font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-primary);letter-spacing:-0.01em}
+.pick-card:hover{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+  border-left-color:var(--accent-hover);
+}
+.pick-ticker{font-size:18px;font-weight:590;font-family:'JetBrains Mono',monospace;color:var(--text-primary);letter-spacing:-0.013em}
 .pick-sector{
-  display:inline-block;margin-top:var(--space-1);
-  font-size:11px;color:var(--accent);
-  font-family:'JetBrains Mono',monospace;
-  font-weight:500;letter-spacing:0.04em;
-  padding:2px 10px;
+  display:inline-block;margin-top:var(--space-half);
+  font-size:10px;color:var(--accent-bright);
+  font-family:inherit;
+  font-weight:510;letter-spacing:0.06em;
+  text-transform:uppercase;
+  padding:2px 8px;
   background:var(--accent-soft);
   border-radius:var(--radius-pill);
 }
-.pick-reason{font-size:13px;color:var(--text-secondary);margin-top:var(--space-2);line-height:1.75}
+.pick-reason{font-size:13px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}
 
 .tsumitate-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
 .tsumitate-card{
@@ -338,23 +372,26 @@ a:focus-visible{
 }
 .change-item .arrow{color:var(--accent);font-weight:600;flex-shrink:0}
 
-.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3)}
+.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)}
 .risk-card{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-5) var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-4) var(--space-3);
   text-align:center;
+  transition:background var(--transition-bg);
 }
+.risk-card:hover{background:var(--bg-card-hover)}
 .risk-card.bull{border-top:2px solid var(--accent-green)}
-.risk-card.base{border-top:2px solid var(--accent-blue)}
+.risk-card.base{border-top:2px solid var(--accent-bright)}
 .risk-card.bear{border-top:2px solid var(--accent-red)}
 .risk-prob{
-  font-size:36px;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
-  letter-spacing:-0.02em;
+  font-size:36px;font-weight:510;
+  font-family:inherit;
+  letter-spacing:-0.022em;
+  font-variant-numeric:tabular-nums;
 }
 .risk-card.bull .risk-prob{color:var(--accent-green)}
-.risk-card.base .risk-prob{color:var(--accent-blue)}
+.risk-card.base .risk-prob{color:var(--accent-bright)}
 .risk-card.bear .risk-prob{color:var(--accent-red)}
 .risk-label{
   font-size:11px;text-transform:uppercase;
@@ -367,47 +404,51 @@ a:focus-visible{
 /* Charts */
 .chart-container{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-5);margin-bottom:var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-4);margin-bottom:var(--space-3);
 }
-.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
 .chart-title{
-  font-family:'Noto Serif JP',serif;
-  font-size:16px;font-weight:600;
-  margin-bottom:var(--space-4);color:var(--text-primary);
+  font-family:inherit;
+  font-size:15px;font-weight:590;
+  margin-bottom:var(--space-3);color:var(--text-primary);
+  letter-spacing:-0.011em;
 }
 
 /* Meta Prompt */
 .prompt-block{
-  background:var(--bg-elevated);
+  background:var(--bg-panel);
   border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-5);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3);
   font-size:12px;
   font-family:'JetBrains Mono',monospace;
-  color:var(--text-primary);
+  color:var(--text-secondary);
   white-space:pre-wrap;
   word-break:normal;overflow-wrap:anywhere;
   max-height:500px;overflow-y:auto;
-  line-height:1.7;
+  line-height:1.6;
+  letter-spacing:-0.01em;
 }
 
 /* Records */
 .record-row{
-  display:flex;gap:var(--space-4);align-items:center;
-  padding:var(--space-3) var(--space-4);
+  display:flex;gap:var(--space-3);align-items:center;
+  padding:var(--space-2) var(--space-3);
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  margin-bottom:var(--space-2);font-size:13px;
+  border-radius:var(--radius-xl);
+  margin-bottom:var(--space-1);font-size:13px;
+  transition:background var(--transition-bg);
 }
+.record-row:hover{background:var(--bg-card-hover)}
 .record-date{
   font-family:'JetBrains Mono',monospace;
-  font-weight:500;color:var(--accent);
-  min-width:100px;letter-spacing:0.01em;
+  font-weight:510;color:var(--accent-bright);
+  min-width:100px;letter-spacing:-0.01em;
 }
 .record-status{min-width:30px}
-.record-conf{color:var(--text-secondary);font-weight:500;min-width:90px;font-family:'JetBrains Mono',monospace}
-.record-reason{color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.7}
+.record-conf{color:var(--text-secondary);font-weight:510;min-width:90px;font-family:'JetBrains Mono',monospace}
+.record-reason{color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.6}
 
 /* Metrics Row */
 .metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
@@ -422,53 +463,58 @@ a:focus-visible{
   letter-spacing:0.02em;
   line-height:1.8;
 }
-.footer a{color:var(--accent);text-decoration:none;transition:color var(--transition-color)}
-.footer a:hover{color:var(--color-error);text-decoration:underline}
+.footer a{color:var(--accent-bright);text-decoration:none;transition:color var(--transition-color)}
+.footer a:hover{color:var(--accent-hover);text-decoration:underline}
 .fade-in{animation:fadeIn 0.4s ease forwards;opacity:0}
 @keyframes fadeIn{to{opacity:1}}
 
-/* Portfolio Tab */
-.port-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}
+/* Portfolio Tab — Linear dense dashboard */
+.port-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-2);margin-bottom:var(--space-4)}
 .port-metric{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-4) var(--space-5);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }
-.port-metric:hover{border-color:var(--border-strong)}
+.port-metric:hover{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+}
 .port-metric-label{
   font-size:11px;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:0.08em;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase;letter-spacing:0.08em;font-weight:510;
+  font-family:inherit;
 }
 .port-metric-value{
-  font-size:26px;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
-  margin-top:var(--space-2);
+  font-size:26px;font-weight:510;
+  font-family:inherit;
+  margin-top:var(--space-1);
   color:var(--text-primary);
-  letter-spacing:-0.02em;
+  letter-spacing:-0.022em;
+  font-variant-numeric:tabular-nums;
 }
-.port-metric-sub{font-size:12px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}
+.port-metric-sub{font-size:12px;color:var(--text-muted);margin-top:var(--space-half);line-height:1.5;font-variant-numeric:tabular-nums}
 
 .sector-section{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-5) var(--space-5);
-  margin-bottom:var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  margin-bottom:var(--space-3);
 }
 .sector-title{
-  font-family:'Noto Serif JP',serif;
-  font-size:16px;font-weight:600;
-  margin-bottom:var(--space-4);color:var(--text-primary);
+  font-family:inherit;
+  font-size:15px;font-weight:590;
+  margin-bottom:var(--space-3);color:var(--text-primary);
+  letter-spacing:-0.011em;
 }
-.sector-bars{display:flex;flex-direction:column;gap:var(--space-2)}
+.sector-bars{display:flex;flex-direction:column;gap:var(--space-1)}
 .sector-bar-row{
   display:grid;grid-template-columns:140px 1fr 160px;
-  align-items:center;gap:var(--space-3);font-size:13px;
+  align-items:center;gap:var(--space-2);font-size:13px;
 }
-.sector-bar-label{color:var(--text-primary);font-weight:500}
+.sector-bar-label{color:var(--text-secondary);font-weight:510}
 .sector-bar-track{
-  height:12px;background:var(--bg-card-hover);
+  height:6px;background:rgba(255,255,255,0.04);
   border-radius:var(--radius-pill);overflow:hidden;
 }
 .sector-bar-fill{height:100%;border-radius:var(--radius-pill);transition:width 0.6s ease}
@@ -476,101 +522,109 @@ a:focus-visible{
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);text-align:right;
   letter-spacing:-0.01em;
+  font-variant-numeric:tabular-nums;
 }
 .sector-pct{color:var(--text-muted);font-size:11px;font-family:'JetBrains Mono',monospace}
 
 .port-table-section{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-5) 0 var(--space-2);
-  margin-bottom:var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) 0 var(--space-1);
+  margin-bottom:var(--space-3);
 }
 .port-table-title{
-  font-family:'Noto Serif JP',serif;
-  font-size:16px;font-weight:600;
-  margin-bottom:var(--space-3);
-  padding:0 var(--space-5);
+  font-family:inherit;
+  font-size:15px;font-weight:590;
+  margin-bottom:var(--space-2);
+  padding:0 var(--space-4);
   color:var(--text-primary);
+  letter-spacing:-0.011em;
 }
 .port-table-wrap{overflow-x:auto;max-width:100%}
 .port-table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
 .port-table th{
-  text-align:left;padding:var(--space-3) var(--space-3);
+  text-align:left;padding:var(--space-1) var(--space-2);
   color:var(--text-muted);
   border-bottom:1px solid var(--border);
-  font-weight:500;text-transform:uppercase;
-  font-size:10px;letter-spacing:0.08em;
+  font-weight:510;text-transform:uppercase;
+  font-size:10px;letter-spacing:0.06em;
   cursor:pointer;user-select:none;
-  background:var(--bg-elevated);
-  font-family:'JetBrains Mono',monospace;
+  background:var(--bg-panel);
+  font-family:inherit;
   white-space:nowrap;
+  transition:color var(--transition-color);
 }
-.port-table th{transition:color var(--transition-color)}
-.port-table th:hover{color:var(--color-error)}
+.port-table th:hover{color:var(--text-primary)}
 .port-table td{
-  padding:var(--space-3) var(--space-3);
-  border-bottom:1px solid var(--border);
+  padding:var(--space-1) var(--space-2);
+  border-bottom:1px solid var(--border-subtle);
   color:var(--text-secondary);
   white-space:nowrap;
   font-family:'JetBrains Mono',monospace;
   letter-spacing:-0.005em;
+  font-variant-numeric:tabular-nums;
 }
-.port-table tr:hover{background:var(--bg-elevated)}
-.port-table .port-ticker strong{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600}
+.port-table tr:hover{background:var(--bg-card-hover)}
+.port-table .port-ticker strong{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:590}
 .acct-badge{
-  display:inline-block;padding:2px 10px;
+  display:inline-block;padding:1px 8px;
   border-radius:var(--radius-pill);
   font-size:10px;
   background:var(--accent-soft);
-  color:var(--accent);
-  font-weight:500;
-  font-family:'JetBrains Mono',monospace;
+  color:var(--accent-bright);
+  font-weight:510;
+  font-family:inherit;
   letter-spacing:0.04em;
+  text-transform:uppercase;
 }
-.chart-link{text-decoration:none;font-size:16px;opacity:0.6;transition:opacity 0.2s}
+.chart-link{text-decoration:none;font-size:14px;opacity:0.55;transition:opacity 0.2s}
 .chart-link:hover{opacity:1}
 
-/* Advanced Predictor Tab */
-.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--space-3)}
+/* Advanced Predictor Tab — Linear data cards */
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--space-2)}
 .adv-card{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }
-.adv-card:hover{border-color:var(--border-strong)}
-.adv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)}
+.adv-card:hover{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+}
+.adv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1)}
 .adv-ticker{
-  font-size:18px;font-weight:600;
+  font-size:17px;font-weight:590;
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);
   text-decoration:none;
-  letter-spacing:-0.01em;
+  letter-spacing:-0.013em;
+  transition:color var(--transition-color);
 }
-.adv-ticker{transition:color var(--transition-color)}
-.adv-ticker:hover{color:var(--color-error)}
+.adv-ticker:hover{color:var(--accent-bright)}
 .adv-signal{
-  font-size:11px;font-weight:500;
+  font-size:10px;font-weight:510;
   letter-spacing:0.06em;
-  font-family:'JetBrains Mono',monospace;
-  padding:3px 10px;
+  font-family:inherit;
+  padding:2px 10px;
   border-radius:var(--radius-pill);
+  text-transform:uppercase;
 }
-.adv-score{font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-1);font-family:'JetBrains Mono',monospace}
-.adv-conf{font-size:12px;color:var(--text-muted);margin-bottom:var(--space-3);font-family:'JetBrains Mono',monospace}
+.adv-score{font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-half);font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.adv-conf{font-size:12px;color:var(--text-muted);margin-bottom:var(--space-2);font-family:'JetBrains Mono',monospace}
 .adv-subbars{
-  display:flex;flex-direction:column;gap:var(--space-2);
+  display:flex;flex-direction:column;gap:var(--space-half);
   border-top:1px solid var(--border);
-  padding-top:var(--space-3);
+  padding-top:var(--space-2);
 }
 .adv-subbar{
   display:grid;grid-template-columns:60px 60px 1fr;
-  align-items:center;gap:var(--space-2);font-size:11px;
+  align-items:center;gap:var(--space-1);font-size:11px;
 }
-.adv-sublabel{color:var(--text-muted);font-weight:500;font-family:'JetBrains Mono',monospace;letter-spacing:0.02em}
-.adv-subval{font-family:'JetBrains Mono',monospace;font-weight:500;text-align:right;letter-spacing:-0.01em}
+.adv-sublabel{color:var(--text-muted);font-weight:510;font-family:inherit;letter-spacing:0.02em;text-transform:uppercase}
+.adv-subval{font-family:'JetBrains Mono',monospace;font-weight:510;text-align:right;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}
 .adv-bar-track{
-  height:5px;background:var(--bg-card-hover);
+  height:4px;background:rgba(255,255,255,0.04);
   border-radius:var(--radius-pill);overflow:hidden;
 }
 .adv-bar-pos{height:100%;background:var(--accent-green);border-radius:var(--radius-pill)}
@@ -596,7 +650,7 @@ a:focus-visible{
       <p style="color:var(--text-muted);font-size:14px;margin-top:4px">Self-Learning AI Portfolio · 6 Tabs</p>
     </div>
     <div class="header-meta">
-      <div class="date">2026-04-24 03:29 更新</div>
+      <div class="date">2026-04-24 03:41 更新</div>
       <div class="confidence"><span class="dot"></span> 確信度 72%</div>
     </div>
   </div>
@@ -627,7 +681,7 @@ a:focus-visible{
         <span style="color:var(--text-muted)"> · </span>
         <span style="color:var(--accent-red)">2 SELL</span>
       </div>
-      <div class="stat-sub">+2 新規推奨</div>
+      <div class="stat-sub">+1 新規推奨</div>
     </div>
   </div>
 
@@ -645,7 +699,7 @@ a:focus-visible{
 
   <!-- Tab: Portfolio (default) -->
   <div id="tab-portfolio" class="tab-content active">
-    <div class="section"><div class="section-title"><span class="icon">💼</span> ポートフォリオ全体</div><div class="port-summary-grid"><div class="port-metric"><div class="port-metric-label">総資産（USD換算）</div><div class="port-metric-value">$41,088</div><div class="port-metric-sub">18銘柄 / FX ¥152.5</div></div><div class="port-metric"><div class="port-metric-label">含み損益</div><div class="port-metric-value" style="color:var(--accent-green)">+$6,857</div><div class="port-metric-sub">+20.0%</div></div><div class="port-metric"><div class="port-metric-label">米国株</div><div class="port-metric-value" style="color:var(--accent-blue)">$40,347</div><div class="port-metric-sub">16銘柄</div></div><div class="port-metric"><div class="port-metric-label">日本株</div><div class="port-metric-value" style="color:var(--accent-purple)">¥113,100</div><div class="port-metric-sub">2銘柄</div></div></div><div class="sector-section"><div class="sector-title">📊 セクター配分</div><div class="sector-bars"><div class="sector-bar-row"><div class="sector-bar-label">Semiconductor</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:35.9%;background:#f54e00"></div></div><div class="sector-bar-value">$14,745 <span class="sector-pct">(35.9%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Dividend ETF</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:35.2%;background:#2b5fa4"></div></div><div class="sector-bar-value">$14,472 <span class="sector-pct">(35.2%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Infrastructure</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:9.5%;background:#2d7a3e"></div></div><div class="sector-bar-value">$3,897 <span class="sector-pct">(9.5%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Gold</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:9.5%;background:#b8860b"></div></div><div class="sector-bar-value">$3,887 <span class="sector-pct">(9.5%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Software</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:5.0%;background:#6b4c9a"></div></div><div class="sector-bar-value">$2,050 <span class="sector-pct">(5.0%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Energy</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:2.8%;background:#c03530"></div></div><div class="sector-bar-value">$1,147 <span class="sector-pct">(2.8%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Pharma</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:2.2%;background:#1e6b7a"></div></div><div class="sector-bar-value">$890 <span class="sector-pct">(2.2%)</span></div></div></div></div><div class="port-table-section"><div class="port-table-title">📋 全保有銘柄（クリックでソート）</div><div class="port-table-wrap"><table class="port-table" id="portTable"><thead><tr><th onclick="sortPortTable(0,'str')">銘柄 ↕</th><th onclick="sortPortTable(1,'str')">セクター</th><th onclick="sortPortTable(2,'str')">口座</th><th onclick="sortPortTable(3,'num')">数量</th><th onclick="sortPortTable(4,'num')">取得単価</th><th onclick="sortPortTable(5,'num')">現在値</th><th onclick="sortPortTable(6,'num')">時価(USD換算)</th><th onclick="sortPortTable(7,'num')">含み損益</th><th onclick="sortPortTable(8,'num')">損益率</th><th>チャート</th></tr></thead><tbody><tr><td class="port-ticker"><strong>VYM</strong></td><td>Dividend ETF</td><td><span class="acct-badge">特定</span></td><td data-num="111">111</td><td data-num="115.0">$115.00</td><td data-num="128.0">$128.00</td><td data-num="14208.0">$14,208</td><td data-num="1443.0" class="pnl-positive">+$1,443</td><td data-num="11.304347826086957" class="pnl-positive">+11.3%</td><td><a href="https://finance.yahoo.com/quote/VYM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>NVDA</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="63">63</td><td data-num="130.0">$130.00</td><td data-num="175.5">$175.50</td><td data-num="11056.5">$11,056</td><td data-num="2866.5" class="pnl-positive">+$2,866</td><td data-num="35.0" class="pnl-positive">+35.0%</td><td><a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>GLD</strong></td><td>Gold</td><td><span class="acct-badge">特定</span></td><td data-num="11">11</td><td data-num="280.0">$280.00</td><td data-num="310.0">$310.00</td><td data-num="3410.0">$3,410</td><td data-num="330.0" class="pnl-positive">+$330</td><td data-num="10.714285714285714" class="pnl-positive">+10.7%</td><td><a href="https://finance.yahoo.com/quote/GLD/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>VRT</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="27">27</td><td data-num="72.5">$72.50</td><td data-num="98.3">$98.30</td><td data-num="2654.1">$2,654</td><td data-num="696.5999999999999" class="pnl-positive">+$697</td><td data-num="35.58620689655172" class="pnl-positive">+35.6%</td><td><a href="https://finance.yahoo.com/quote/VRT/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>TSM</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="9">9</td><td data-num="155.0">$155.00</td><td data-num="195.0">$195.00</td><td data-num="1755.0">$1,755</td><td data-num="360.0" class="pnl-positive">+$360</td><td data-num="25.806451612903224" class="pnl-positive">+25.8%</td><td><a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>ETN</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="3">3</td><td data-num="310.0">$310.00</td><td data-num="340.0">$340.00</td><td data-num="1020.0">$1,020</td><td data-num="90.0" class="pnl-positive">+$90</td><td data-num="9.67741935483871" class="pnl-positive">+9.7%</td><td><a href="https://finance.yahoo.com/quote/ETN/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>ARM</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="7">7</td><td data-num="115.0">$115.00</td><td data-num="132.0">$132.00</td><td data-num="924.0">$924</td><td data-num="119.0" class="pnl-positive">+$119</td><td data-num="14.782608695652174" class="pnl-positive">+14.8%</td><td><a href="https://finance.yahoo.com/quote/ARM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>OKLO</strong></td><td>Energy</td><td><span class="acct-badge">特定</span></td><td data-num="74">74</td><td data-num="8.5">$8.50</td><td data-num="12.3">$12.30</td><td data-num="910.2">$910</td><td data-num="281.20000000000005" class="pnl-positive">+$281</td><td data-num="44.70588235294118" class="pnl-positive">+44.7%</td><td><a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>LLY</strong></td><td>Pharma</td><td><span class="acct-badge">特定</span></td><td data-num="1">1</td><td data-num="820.0">$820.00</td><td data-num="890.0">$890.00</td><td data-num="890.0">$890</td><td data-num="70.0" class="pnl-positive">+$70</td><td data-num="8.536585365853659" class="pnl-positive">+8.5%</td><td><a href="https://finance.yahoo.com/quote/LLY/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>MRVL</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="10">10</td><td data-num="70.2">$70.20</td><td data-num="82.5">$82.50</td><td data-num="825.0">$825</td><td data-num="122.99999999999997" class="pnl-positive">+$123</td><td data-num="17.521367521367516" class="pnl-positive">+17.5%</td><td><a href="https://finance.yahoo.com/quote/MRVL/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>DDOG</strong></td><td>Software</td><td><span class="acct-badge">特定</span></td><td data-num="7">7</td><td data-num="108.0">$108.00</td><td data-num="115.5">$115.50</td><td data-num="808.5">$808</td><td data-num="52.5" class="pnl-positive">+$52</td><td data-num="6.944444444444445" class="pnl-positive">+6.9%</td><td><a href="https://finance.yahoo.com/quote/DDOG/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>PLTR</strong></td><td>Software</td><td><span class="acct-badge">NISA</span></td><td data-num="9">9</td><td data-num="55.0">$55.00</td><td data-num="88.5">$88.50</td><td data-num="796.5">$796</td><td data-num="301.5" class="pnl-positive">+$302</td><td data-num="60.909090909090914" class="pnl-positive">+60.9%</td><td><a href="https://finance.yahoo.com/quote/PLTR/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>1328</strong></td><td>Gold</td><td><span class="acct-badge">NISA成長</span></td><td data-num="4">4</td><td data-num="17800.0">¥17,800.00</td><td data-num="18200.0">¥18,200.00</td><td data-num="477.37704918032784">$477</td><td data-num="10.491803278688524" class="pnl-positive">+$10</td><td data-num="2.247191011235955" class="pnl-positive">+2.2%</td><td><a href="https://finance.yahoo.co.jp/quote/1328.T/chart" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>MSFT</strong></td><td>Software</td><td><span class="acct-badge">NISA</span></td><td data-num="1">1</td><td data-num="420.0">$420.00</td><td data-num="445.0">$445.00</td><td data-num="445.0">$445</td><td data-num="25.0" class="pnl-positive">+$25</td><td data-num="5.952380952380952" class="pnl-positive">+6.0%</td><td><a href="https://finance.yahoo.com/quote/MSFT/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>1489</strong></td><td>Dividend ETF</td><td><span class="acct-badge">NISA成長</span></td><td data-num="13">13</td><td data-num="2900.0">¥2,900.00</td><td data-num="3100.0">¥3,100.00</td><td data-num="264.26229508196724">$264</td><td data-num="17.049180327868854" class="pnl-positive">+$17</td><td data-num="6.896551724137931" class="pnl-positive">+6.9%</td><td><a href="https://finance.yahoo.co.jp/quote/1489.T/chart" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>NNE</strong></td><td>Energy</td><td><span class="acct-badge">特定</span></td><td data-num="11">11</td><td data-num="18.2">$18.20</td><td data-num="21.5">$21.50</td><td data-num="236.5">$236</td><td data-num="36.30000000000001" class="pnl-positive">+$36</td><td data-num="18.13186813186814" class="pnl-positive">+18.1%</td><td><a href="https://finance.yahoo.com/quote/NNE/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>GLW</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="5">5</td><td data-num="40.0">$40.00</td><td data-num="44.5">$44.50</td><td data-num="222.5">$222</td><td data-num="22.5" class="pnl-positive">+$22</td><td data-num="11.25" class="pnl-positive">+11.2%</td><td><a href="https://finance.yahoo.com/quote/GLW/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>COHR</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="2">2</td><td data-num="86.0">$86.00</td><td data-num="92.4">$92.40</td><td data-num="184.8">$185</td><td data-num="12.800000000000011" class="pnl-positive">+$13</td><td data-num="7.441860465116286" class="pnl-positive">+7.4%</td><td><a href="https://finance.yahoo.com/quote/COHR/chart/" target="_blank" class="chart-link">📈</a></td></tr></tbody></table></div></div></div>
+    <div class="section"><div class="section-title"><span class="icon">💼</span> ポートフォリオ全体</div><div class="port-summary-grid"><div class="port-metric"><div class="port-metric-label">総資産（USD換算）</div><div class="port-metric-value">$41,088</div><div class="port-metric-sub">18銘柄 / FX ¥152.5</div></div><div class="port-metric"><div class="port-metric-label">含み損益</div><div class="port-metric-value" style="color:var(--accent-green)">+$6,857</div><div class="port-metric-sub">+20.0%</div></div><div class="port-metric"><div class="port-metric-label">米国株</div><div class="port-metric-value" style="color:var(--accent-blue)">$40,347</div><div class="port-metric-sub">16銘柄</div></div><div class="port-metric"><div class="port-metric-label">日本株</div><div class="port-metric-value" style="color:var(--accent-purple)">¥113,100</div><div class="port-metric-sub">2銘柄</div></div></div><div class="sector-section"><div class="sector-title">📊 セクター配分</div><div class="sector-bars"><div class="sector-bar-row"><div class="sector-bar-label">Semiconductor</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:35.9%;background:#7170ff"></div></div><div class="sector-bar-value">$14,745 <span class="sector-pct">(35.9%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Dividend ETF</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:35.2%;background:#a78bfa"></div></div><div class="sector-bar-value">$14,472 <span class="sector-pct">(35.2%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Infrastructure</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:9.5%;background:#10b981"></div></div><div class="sector-bar-value">$3,897 <span class="sector-pct">(9.5%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Gold</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:9.5%;background:#f59e0b"></div></div><div class="sector-bar-value">$3,887 <span class="sector-pct">(9.5%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Software</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:5.0%;background:#ef4444"></div></div><div class="sector-bar-value">$2,050 <span class="sector-pct">(5.0%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Energy</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:2.8%;background:#06b6d4"></div></div><div class="sector-bar-value">$1,147 <span class="sector-pct">(2.8%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Pharma</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:2.2%;background:#ec4899"></div></div><div class="sector-bar-value">$890 <span class="sector-pct">(2.2%)</span></div></div></div></div><div class="port-table-section"><div class="port-table-title">📋 全保有銘柄（クリックでソート）</div><div class="port-table-wrap"><table class="port-table" id="portTable"><thead><tr><th onclick="sortPortTable(0,'str')">銘柄 ↕</th><th onclick="sortPortTable(1,'str')">セクター</th><th onclick="sortPortTable(2,'str')">口座</th><th onclick="sortPortTable(3,'num')">数量</th><th onclick="sortPortTable(4,'num')">取得単価</th><th onclick="sortPortTable(5,'num')">現在値</th><th onclick="sortPortTable(6,'num')">時価(USD換算)</th><th onclick="sortPortTable(7,'num')">含み損益</th><th onclick="sortPortTable(8,'num')">損益率</th><th>チャート</th></tr></thead><tbody><tr><td class="port-ticker"><strong>VYM</strong></td><td>Dividend ETF</td><td><span class="acct-badge">特定</span></td><td data-num="111">111</td><td data-num="115.0">$115.00</td><td data-num="128.0">$128.00</td><td data-num="14208.0">$14,208</td><td data-num="1443.0" class="pnl-positive">+$1,443</td><td data-num="11.304347826086957" class="pnl-positive">+11.3%</td><td><a href="https://finance.yahoo.com/quote/VYM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>NVDA</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="63">63</td><td data-num="130.0">$130.00</td><td data-num="175.5">$175.50</td><td data-num="11056.5">$11,056</td><td data-num="2866.5" class="pnl-positive">+$2,866</td><td data-num="35.0" class="pnl-positive">+35.0%</td><td><a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>GLD</strong></td><td>Gold</td><td><span class="acct-badge">特定</span></td><td data-num="11">11</td><td data-num="280.0">$280.00</td><td data-num="310.0">$310.00</td><td data-num="3410.0">$3,410</td><td data-num="330.0" class="pnl-positive">+$330</td><td data-num="10.714285714285714" class="pnl-positive">+10.7%</td><td><a href="https://finance.yahoo.com/quote/GLD/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>VRT</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="27">27</td><td data-num="72.5">$72.50</td><td data-num="98.3">$98.30</td><td data-num="2654.1">$2,654</td><td data-num="696.5999999999999" class="pnl-positive">+$697</td><td data-num="35.58620689655172" class="pnl-positive">+35.6%</td><td><a href="https://finance.yahoo.com/quote/VRT/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>TSM</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="9">9</td><td data-num="155.0">$155.00</td><td data-num="195.0">$195.00</td><td data-num="1755.0">$1,755</td><td data-num="360.0" class="pnl-positive">+$360</td><td data-num="25.806451612903224" class="pnl-positive">+25.8%</td><td><a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>ETN</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="3">3</td><td data-num="310.0">$310.00</td><td data-num="340.0">$340.00</td><td data-num="1020.0">$1,020</td><td data-num="90.0" class="pnl-positive">+$90</td><td data-num="9.67741935483871" class="pnl-positive">+9.7%</td><td><a href="https://finance.yahoo.com/quote/ETN/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>ARM</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="7">7</td><td data-num="115.0">$115.00</td><td data-num="132.0">$132.00</td><td data-num="924.0">$924</td><td data-num="119.0" class="pnl-positive">+$119</td><td data-num="14.782608695652174" class="pnl-positive">+14.8%</td><td><a href="https://finance.yahoo.com/quote/ARM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>OKLO</strong></td><td>Energy</td><td><span class="acct-badge">特定</span></td><td data-num="74">74</td><td data-num="8.5">$8.50</td><td data-num="12.3">$12.30</td><td data-num="910.2">$910</td><td data-num="281.20000000000005" class="pnl-positive">+$281</td><td data-num="44.70588235294118" class="pnl-positive">+44.7%</td><td><a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>LLY</strong></td><td>Pharma</td><td><span class="acct-badge">特定</span></td><td data-num="1">1</td><td data-num="820.0">$820.00</td><td data-num="890.0">$890.00</td><td data-num="890.0">$890</td><td data-num="70.0" class="pnl-positive">+$70</td><td data-num="8.536585365853659" class="pnl-positive">+8.5%</td><td><a href="https://finance.yahoo.com/quote/LLY/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>MRVL</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="10">10</td><td data-num="70.2">$70.20</td><td data-num="82.5">$82.50</td><td data-num="825.0">$825</td><td data-num="122.99999999999997" class="pnl-positive">+$123</td><td data-num="17.521367521367516" class="pnl-positive">+17.5%</td><td><a href="https://finance.yahoo.com/quote/MRVL/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>DDOG</strong></td><td>Software</td><td><span class="acct-badge">特定</span></td><td data-num="7">7</td><td data-num="108.0">$108.00</td><td data-num="115.5">$115.50</td><td data-num="808.5">$808</td><td data-num="52.5" class="pnl-positive">+$52</td><td data-num="6.944444444444445" class="pnl-positive">+6.9%</td><td><a href="https://finance.yahoo.com/quote/DDOG/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>PLTR</strong></td><td>Software</td><td><span class="acct-badge">NISA</span></td><td data-num="9">9</td><td data-num="55.0">$55.00</td><td data-num="88.5">$88.50</td><td data-num="796.5">$796</td><td data-num="301.5" class="pnl-positive">+$302</td><td data-num="60.909090909090914" class="pnl-positive">+60.9%</td><td><a href="https://finance.yahoo.com/quote/PLTR/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>1328</strong></td><td>Gold</td><td><span class="acct-badge">NISA成長</span></td><td data-num="4">4</td><td data-num="17800.0">¥17,800.00</td><td data-num="18200.0">¥18,200.00</td><td data-num="477.37704918032784">$477</td><td data-num="10.491803278688524" class="pnl-positive">+$10</td><td data-num="2.247191011235955" class="pnl-positive">+2.2%</td><td><a href="https://finance.yahoo.co.jp/quote/1328.T/chart" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>MSFT</strong></td><td>Software</td><td><span class="acct-badge">NISA</span></td><td data-num="1">1</td><td data-num="420.0">$420.00</td><td data-num="445.0">$445.00</td><td data-num="445.0">$445</td><td data-num="25.0" class="pnl-positive">+$25</td><td data-num="5.952380952380952" class="pnl-positive">+6.0%</td><td><a href="https://finance.yahoo.com/quote/MSFT/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>1489</strong></td><td>Dividend ETF</td><td><span class="acct-badge">NISA成長</span></td><td data-num="13">13</td><td data-num="2900.0">¥2,900.00</td><td data-num="3100.0">¥3,100.00</td><td data-num="264.26229508196724">$264</td><td data-num="17.049180327868854" class="pnl-positive">+$17</td><td data-num="6.896551724137931" class="pnl-positive">+6.9%</td><td><a href="https://finance.yahoo.co.jp/quote/1489.T/chart" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>NNE</strong></td><td>Energy</td><td><span class="acct-badge">特定</span></td><td data-num="11">11</td><td data-num="18.2">$18.20</td><td data-num="21.5">$21.50</td><td data-num="236.5">$236</td><td data-num="36.30000000000001" class="pnl-positive">+$36</td><td data-num="18.13186813186814" class="pnl-positive">+18.1%</td><td><a href="https://finance.yahoo.com/quote/NNE/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>GLW</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="5">5</td><td data-num="40.0">$40.00</td><td data-num="44.5">$44.50</td><td data-num="222.5">$222</td><td data-num="22.5" class="pnl-positive">+$22</td><td data-num="11.25" class="pnl-positive">+11.2%</td><td><a href="https://finance.yahoo.com/quote/GLW/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>COHR</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="2">2</td><td data-num="86.0">$86.00</td><td data-num="92.4">$92.40</td><td data-num="184.8">$185</td><td data-num="12.800000000000011" class="pnl-positive">+$13</td><td data-num="7.441860465116286" class="pnl-positive">+7.4%</td><td><a href="https://finance.yahoo.com/quote/COHR/chart/" target="_blank" class="chart-link">📈</a></td></tr></tbody></table></div></div></div>
     <div class="section"><div class="section-title"><span class="icon">📈</span> パフォーマンス履歴</div><div class="chart-container"><div style="position:relative;height:320px"><canvas id="chartHistory"></canvas></div></div></div>
   </div>
 
@@ -657,7 +711,7 @@ a:focus-visible{
   <!-- Tab: Action -->
   <div id="tab-action" class="tab-content">
     <div class="strategy-banner">
-      <strong>🎯 戦略:</strong> VIX上昇・10年債金利揺れの移行期局面。Advanced AIでNVDA/TSMの強い買いシグナル検出。PLTRとOKLOは高値圏利確推奨。防御としてVYM・GLDの配分を維持しつつテック選別を実施。
+      <strong>🎯 戦略:</strong> 移行期の防御的配分。Advanced AI で NVDA/TSM の強い買いシグナル検出。PLTRとOKLOは高値圏の利確推奨。
     </div>
     <div class="section"><div class="section-title"><span class="icon">🟢</span> BUY — 買い増し推奨（3銘柄）</div><div class="action-grid"><div class="action-card buy fade-in">
           <div class="card-header">
@@ -669,9 +723,9 @@ a:focus-visible{
               <span>取得$115 → 現$128</span>
               <span class="pnl-positive">+$1,443</span>
             </div>
-          <div class="reason">防御性と配当で移行期の守り。追加積立</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 80%;"></div></div>
-          <div class="alloc-label">推奨配分 12.0%</div>
+          <div class="reason">防御強化</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card buy fade-in">
           <div class="card-header">
             <span class="ticker">NVDA</span>
@@ -682,9 +736,9 @@ a:focus-visible{
               <span>取得$130 → 現$176</span>
               <span class="pnl-positive">+$2,866</span>
             </div>
-          <div class="reason">Advanced AIでSTRONG_BUY (+0.72 / 88%確信)。5モデル総合強気</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 100%;"></div></div>
-          <div class="alloc-label">推奨配分 15.0%</div>
+          <div class="reason">STRONG_BUY (+0.72)</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card buy fade-in">
           <div class="card-header">
             <span class="ticker">TSM</span>
@@ -695,9 +749,9 @@ a:focus-visible{
               <span>取得$155 → 現$195</span>
               <span class="pnl-positive">+$360</span>
             </div>
-          <div class="reason">Advanced AIでSTRONG_BUY (+0.65)。半導体受注強い</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 47%;"></div></div>
-          <div class="alloc-label">推奨配分 7.0%</div>
+          <div class="reason">STRONG_BUY (+0.65)</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div></div></div><div class="section"><div class="section-title"><span class="icon">🔴</span> SELL — 売却推奨（2銘柄）</div><div class="action-grid"><div class="action-card sell fade-in">
           <div class="card-header">
             <span class="ticker">OKLO</span>
@@ -708,9 +762,9 @@ a:focus-visible{
               <span>取得$8 → 現$12</span>
               <span class="pnl-positive">+$281</span>
             </div>
-          <div class="reason">Advanced AIでSELL (-0.38)。短期利確推奨</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
-          <div class="alloc-label">推奨配分 5.0%</div>
+          <div class="reason">利確推奨 (-0.38)</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card sell fade-in">
           <div class="card-header">
             <span class="ticker">PLTR</span>
@@ -721,9 +775,9 @@ a:focus-visible{
               <span>取得$55 → 現$88</span>
               <span class="pnl-positive">+$302</span>
             </div>
-          <div class="reason">Advanced AIでSELL (-0.42 / 74%確信)。過熱感</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
-          <div class="alloc-label">推奨配分 4.0%</div>
+          <div class="reason">過熱感 (-0.42)</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div></div></div><div class="section"><div class="section-title"><span class="icon">🟡</span> HOLD — 現状維持（13銘柄）</div><div class="action-grid"><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">VRT</span>
@@ -734,9 +788,9 @@ a:focus-visible{
               <span>取得$72 → 現$98</span>
               <span class="pnl-positive">+$697</span>
             </div>
-          <div class="reason">データセンター需要持続。モメンタム維持で保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 47%;"></div></div>
-          <div class="alloc-label">推奨配分 7.0%</div>
+          <div class="reason">保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">ARM</span>
@@ -747,9 +801,9 @@ a:focus-visible{
               <span>取得$115 → 現$132</span>
               <span class="pnl-positive">+$119</span>
             </div>
-          <div class="reason">半導体IPは横ばい。決算待ち</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
-          <div class="alloc-label">推奨配分 4.0%</div>
+          <div class="reason">決算待ち</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">COHR</span>
@@ -760,9 +814,9 @@ a:focus-visible{
               <span>取得$86 → 現$92</span>
               <span class="pnl-positive">+$13</span>
             </div>
-          <div class="reason">光通信需要安定。ポジション小さく保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
-          <div class="alloc-label">推奨配分 2.0%</div>
+          <div class="reason">保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">DDOG</span>
@@ -773,9 +827,9 @@ a:focus-visible{
               <span>取得$108 → 現$116</span>
               <span class="pnl-positive">+$52</span>
             </div>
-          <div class="reason">PER高止まり。新規買いは慎重</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
-          <div class="alloc-label">推奨配分 4.0%</div>
+          <div class="reason">高PER</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">ETN</span>
@@ -786,9 +840,9 @@ a:focus-visible{
               <span>取得$310 → 現$340</span>
               <span class="pnl-positive">+$90</span>
             </div>
-          <div class="reason">電力インフラ需要。保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
-          <div class="alloc-label">推奨配分 5.0%</div>
+          <div class="reason">保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">GLD</span>
@@ -799,9 +853,9 @@ a:focus-visible{
               <span>取得$280 → 現$310</span>
               <span class="pnl-positive">+$330</span>
             </div>
-          <div class="reason">金価格堅調。不確実性ヘッジ</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 53%;"></div></div>
-          <div class="alloc-label">推奨配分 8.0%</div>
+          <div class="reason">ヘッジ</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">GLW</span>
@@ -812,9 +866,9 @@ a:focus-visible{
               <span>取得$40 → 現$44</span>
               <span class="pnl-positive">+$22</span>
             </div>
-          <div class="reason">光ファイバー需要。保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
-          <div class="alloc-label">推奨配分 2.0%</div>
+          <div class="reason">保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">LLY</span>
@@ -825,9 +879,9 @@ a:focus-visible{
               <span>取得$820 → 現$890</span>
               <span class="pnl-positive">+$70</span>
             </div>
-          <div class="reason">医薬品ディフェンシブ。保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
-          <div class="alloc-label">推奨配分 5.0%</div>
+          <div class="reason">ディフェンシブ</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">MRVL</span>
@@ -838,9 +892,9 @@ a:focus-visible{
               <span>取得$70 → 現$82</span>
               <span class="pnl-positive">+$123</span>
             </div>
-          <div class="reason">AI半導体の中期買い候補。保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
-          <div class="alloc-label">推奨配分 5.0%</div>
+          <div class="reason">中期買い候補</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">MSFT</span>
@@ -851,9 +905,9 @@ a:focus-visible{
               <span>取得$420 → 現$445</span>
               <span class="pnl-positive">+$25</span>
             </div>
-          <div class="reason">Cloud底堅い。保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 40%;"></div></div>
-          <div class="alloc-label">推奨配分 6.0%</div>
+          <div class="reason">Cloud底堅い</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">NNE</span>
@@ -864,47 +918,43 @@ a:focus-visible{
               <span>取得$18 → 現$22</span>
               <span class="pnl-positive">+$36</span>
             </div>
-          <div class="reason">原子力小型炉期待。ボラ高いが保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 20%;"></div></div>
-          <div class="alloc-label">推奨配分 3.0%</div>
+          <div class="reason">小型炉期待</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">1489.T</span>
             <span class="action-badge hold">🟡 HOLD</span>
           </div>
           
-          <div class="reason">日本高配当ETF。円高懸念で保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
-          <div class="alloc-label">推奨配分 4.0%</div>
+          <div class="reason">円高懸念</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
             <span class="ticker">1328.T</span>
             <span class="action-badge hold">🟡 HOLD</span>
           </div>
           
-          <div class="reason">日本金ETF。ヘッジ保持</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
-          <div class="alloc-label">推奨配分 2.0%</div>
-        </div></div></div><div class="section"><div class="section-title"><span class="icon">🆕</span> 新規推奨銘柄（2銘柄）</div><div class="picks-grid"><div class="pick-card fade-in">
+          <div class="reason">金ETF</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 37%;"></div></div>
+          <div class="alloc-label">推奨配分 5.6%</div>
+        </div></div></div><div class="section"><div class="section-title"><span class="icon">🆕</span> 新規推奨銘柄（1銘柄）</div><div class="picks-grid"><div class="pick-card fade-in">
               <div class="pick-ticker">AVGO</div>
-              <div class="pick-sector">Semiconductor / AI</div>
-              <div class="pick-reason">AI受注強くブロードコム存在感増</div>
-            </div><div class="pick-card fade-in">
-              <div class="pick-ticker">ANET</div>
-              <div class="pick-sector">Network / AI Infra</div>
-              <div class="pick-reason">データセンタースイッチ寡占</div>
+              <div class="pick-sector">Semiconductor</div>
+              <div class="pick-reason">AI受注強い</div>
             </div></div></div><div class="section"><div class="section-title"><span class="icon">⚖️</span> リスクシナリオ</div><div class="risk-grid"><div class="risk-card bull">
               <div class="risk-prob">35%</div>
               <div class="risk-label">🐂 BULL</div>
-              <div class="risk-desc">AI半導体第2波到来。NVDA/TSM +25%、SP500 +12%</div>
+              <div class="risk-desc">AI半導体第2波 +12%</div>
             </div><div class="risk-card base">
               <div class="risk-prob">45%</div>
               <div class="risk-label">📊 BASE</div>
-              <div class="risk-desc">緩やかな成長継続。テック選別相場、SP500 +5~8%</div>
+              <div class="risk-desc">テック選別 +5~8%</div>
             </div><div class="risk-card bear">
               <div class="risk-prob">20%</div>
               <div class="risk-label">🐻 BEAR</div>
-              <div class="risk-desc">金利再上昇でテック調整 -15%、VIX&gt;25</div>
+              <div class="risk-desc">金利再上昇 -15%</div>
             </div></div></div>
     
   </div>
@@ -957,7 +1007,7 @@ a:focus-visible{
     <div class="section">
       <div class="section-title"><span class="icon">🧬</span> Meta-Prompt（Claude Opus用）</div>
       <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">以下のプロンプトをコピーしてAIに渡してください。</p>
-      <div class="prompt-block" id="promptBlock">🧬 EVOLVING QUANT META-PROMPT — 2026-04-24\nSelf-Reflection Generation: 2\n\n═══ SECTION A: 数学的ベースライン ═══\nマーケットレジーム: 移行期（ボラ上昇中） (KL=0.1200)\n\nEnsemble最適配分:\n  VRT: 7.0%\n  VYM: 12.0%\n  ARM: 4.0%\n  COHR: 2.0%\n  DDOG: 4.0%\n  ETN: 5.0%\n  GLD: 8.0%\n  GLW: 2.0%\n  LLY: 5.0%\n  MRVL: 5.0%\n  MSFT: 6.0%\n  NNE: 3.0%\n  NVDA: 15.0%\n  OKLO: 5.0%\n  PLTR: 4.0%\n  TSM: 7.0%\n  1489.T: 4.0%\n  1328.T: 2.0%\n  Ensemble重み: NCO=22.0%, RP=34.0%, MV=24.0%, MD=20.0%\n\nBlack-Litterman配分:\n  VRT: 8.0%\n  VYM: 10.0%\n  ARM: 5.0%\n  COHR: 2.0%\n  DDOG: 4.0%\n  ETN: 5.0%\n  GLD: 9.0%\n  GLW: 2.0%\n  LLY: 6.0%\n  MRVL: 6.0%\n  MSFT: 7.0%\n  NNE: 3.0%\n  NVDA: 14.0%\n  OKLO: 4.0%\n  PLTR: 4.0%\n  TSM: 7.0%\n  1489.T: 3.0%\n  1328.T: 1.0%</div>
+      <div class="prompt-block" id="promptBlock">🧬 EVOLVING QUANT META-PROMPT — 2026-04-24\nSelf-Reflection Generation: 1\n\n═══ SECTION A: 数学的ベースライン ═══\nマーケットレジーム: 移行期（ボラ上昇中） (KL=0.1200)\n\nEnsemble最適配分:\n  VRT: 5.6%\n  VYM: 5.6%\n  ARM: 5.6%\n  COHR: 5.6%\n  DDOG: 5.6%\n  ETN: 5.6%\n  GLD: 5.6%\n  GLW: 5.6%\n  LLY: 5.6%\n  MRVL: 5.6%\n  MSFT: 5.6%\n  NNE: 5.6%\n  NVDA: 5.6%\n  OKLO: 5.6%\n  PLTR: 5.6%\n  TSM: 5.6%\n  1489.T: 5.6%\n  1328.T: 5.6%\n  Ensemble重み: NCO=22.0%, RP=34.0%, MV=24.0%, MD=20.0%\n\nBlack-Litterman配分:\n  VRT: 5.6%\n  VYM: 5.6%\n  ARM: 5.6%\n  COHR: 5.6%\n  DDOG: 5.6%\n  ETN: 5.6%\n  GLD: 5.6%\n  GLW: 5.6%\n  LLY: 5.6%\n  MRVL: 5.6%\n  MSFT: 5.6%\n  NNE: 5.6%\n  NVDA: 5.6%\n  OKLO: 5.6%\n  PLTR: 5.6%\n  TSM: 5.6%\n  1489.T: 5.6%\n  1328.T: 5.6%</div>
       <button onclick="navigator.clipboard.writeText(document.getElementById('promptBlock').textContent).then(()=>alert('コピーしました！'))" style="margin-top:12px;padding:10px 24px;background:var(--accent-purple);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📋 コピー</button>
     </div>
   </div>
@@ -967,32 +1017,22 @@ a:focus-visible{
     <div class="section">
       <div class="section-title"><span class="icon">📝</span> AI推奨記録（過去10件）</div>
       <div class="record-row">
-          <span class="record-date">2026-04-23</span>
+          <span class="record-date">2026-04-24</span>
           <span class="record-status">⏳</span>
           <span class="record-conf">確信度 72%</span>
-          <span class="record-reason">VIX上昇・10年債金利揺れの移行期局面。Advanced AIでNVDA/TSMの強い買いシグナル検出。PLTRとOK...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-22</span>
-          <span class="record-status">✅</span>
-          <span class="record-conf">確信度 71%</span>
-          <span class="record-reason">レジーム移行期の防御的配分へ微調整。...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-21</span>
-          <span class="record-status">✅</span>
-          <span class="record-conf">確信度 68%</span>
-          <span class="record-reason">前週から継続。...</span>
+          <span class="record-reason">移行期の防御的配分。Advanced AI で NVDA/TSM の強い買いシグナル検出。PLTRとOKLOは高値圏の利...</span>
         </div>
     </div>
   </div>
 
   <div class="footer">
-    🧬 Evolving Quant · AI自動分析 · 更新: 2026-04-24 03:29 · <a href="https://github.com/akihamada/evolving-quant" style="color:var(--accent-blue)">GitHub</a>
+    🧬 Evolving Quant · AI自動分析 · 更新: 2026-04-24 03:41 · <a href="https://github.com/akihamada/evolving-quant" style="color:var(--accent-blue)">GitHub</a>
   </div>
 </div>
 
 <script>
-const overviewData = {"tickers": ["VRT", "VYM", "ARM", "COHR", "DDOG", "ETN", "GLD", "GLW", "LLY", "MRVL", "MSFT", "NNE", "NVDA", "OKLO", "PLTR", "TSM", "1489.T", "1328.T"], "ensemble": [7.0, 12.0, 4.0, 2.0, 4.0, 5.0, 8.0, 2.0, 5.0, 5.0, 6.0, 3.0, 15.0, 5.0, 4.0, 7.0, 4.0, 2.0], "bl": [8.0, 10.0, 5.0, 2.0, 4.0, 5.0, 9.0, 2.0, 6.0, 6.0, 7.0, 3.0, 14.0, 4.0, 4.0, 7.0, 3.0, 1.0], "equal": [5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6]};
-const trackData = {"records": [{"date": "2026-04-21", "confidence": 0.68, "evaluated": true, "reasoning": "\u524d\u9031\u304b\u3089\u7d99\u7d9a\u3002", "actions": {"NVDA": "BUY", "PLTR": "HOLD"}}, {"date": "2026-04-22", "confidence": 0.71, "evaluated": true, "reasoning": "\u30ec\u30b8\u30fc\u30e0\u79fb\u884c\u671f\u306e\u9632\u5fa1\u7684\u914d\u5206\u3078\u5fae\u8abf\u6574\u3002", "actions": {"NVDA": "BUY", "PLTR": "SELL"}}, {"date": "2026-04-23", "confidence": 0.72, "evaluated": false, "reasoning": "VIX\u4e0a\u6607\u30fb10\u5e74\u50b5\u91d1\u5229\u63fa\u308c\u306e\u79fb\u884c\u671f\u5c40\u9762\u3002Advanced AI\u3067NVDA/TSM\u306e\u5f37\u3044\u8cb7\u3044\u30b7\u30b0\u30ca\u30eb\u691c\u51fa\u3002PLTR\u3068OKLO\u306f\u9ad8\u5024\u570f\u5229\u78ba\u63a8\u5968\u3002\u9632\u5fa1\u3068\u3057\u3066VYM\u30fb", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "HOLD", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "BUY", "OKLO": "SELL", "PLTR": "SELL", "TSM": "BUY", "1489.T": "HOLD", "1328.T": "HOLD"}}], "evaluations": [{"date": "2026-04-22", "rmse": 0.018, "direction_accuracy": 67.0, "calibration_score": 0.72}, {"date": "2026-04-23", "rmse": 0.015, "direction_accuracy": 75.0, "calibration_score": 0.78}]};
+const overviewData = {"tickers": ["VRT", "VYM", "ARM", "COHR", "DDOG", "ETN", "GLD", "GLW", "LLY", "MRVL", "MSFT", "NNE", "NVDA", "OKLO", "PLTR", "TSM", "1489.T", "1328.T"], "ensemble": [5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6], "bl": [5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6], "equal": [5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6]};
+const trackData = {"records": [{"date": "2026-04-24", "confidence": 0.72, "evaluated": false, "reasoning": "\u79fb\u884c\u671f\u306e\u9632\u5fa1\u7684\u914d\u5206\u3002Advanced AI \u3067 NVDA/TSM \u306e\u5f37\u3044\u8cb7\u3044\u30b7\u30b0\u30ca\u30eb\u691c\u51fa\u3002PLTR\u3068OKLO\u306f\u9ad8\u5024\u570f\u306e\u5229\u78ba\u63a8\u5968\u3002", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "HOLD", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "BUY", "OKLO": "SELL", "PLTR": "SELL", "TSM": "BUY", "1489.T": "HOLD", "1328.T": "HOLD"}}], "evaluations": [{"date": "2026-04-22", "rmse": 0.015, "direction_accuracy": 75.0, "calibration_score": 0.78}]};
 const perfData = {"dates": ["2026-02-24", "2026-03-03", "2026-03-10", "2026-03-17", "2026-03-24", "2026-03-31", "2026-04-07", "2026-04-14", "2026-04-21", "2026-04-24"], "values_usd": [36500, 37200, 37850, 38600, 38100, 38900, 39500, 39800, 40100, 40347], "pnl_usd": [3200, 3800, 4300, 4900, 4400, 5100, 5600, 5900, 6500, 6829]};
 
 function switchTab(btn, id) {
@@ -1007,7 +1047,7 @@ function switchTab(btn, id) {
 }
 
 function initOverview() {
-  const colors = ['#f54e00','#2b5fa4','#2d7a3e','#b8860b','#6b4c9a','#c03530','#1e6b7a','#8b6914','#7a4a1e','#4a6b2d','#9a4a6b','#4a7a8b','#b8560b','#6b1e4a','#2d5a7a','#7a6b1e','#5a2d4a','#1e7a5a'];
+  const colors = ['#7170ff','#10b981','#f59e0b','#ef4444','#a78bfa','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1','#14b8a6','#e11d48','#8b5cf6','#22d3ee','#eab308','#fb923c','#4ade80','#f472b6'];
 
   new Chart(document.getElementById('chartDonut'), {
     type: 'doughnut',
@@ -1019,7 +1059,7 @@ function initOverview() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'right', labels: { color: '#8b887d', font: { size: 11 } } }
+        legend: { position: 'right', labels: { color: '#8a8f98', font: { size: 11 } } }
       }
     }
   });
@@ -1029,19 +1069,19 @@ function initOverview() {
     data: {
       labels: overviewData.tickers,
       datasets: [
-        { label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(245,78,0,0.75)' },
-        { label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(43,95,164,0.7)' },
-        { label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(139,136,125,0.35)' }
+        { label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(113,112,255,0.75)' },
+        { label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(167,139,250,0.7)' },
+        { label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(138,143,152,0.3)' }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { ticks: { color: '#8b887d', font: { size: 10 } } },
-        y: { ticks: { color: '#8b887d', callback: v => v+'%' }, grid: { color: 'rgba(38, 37, 30, 0.06)' } }
+        x: { ticks: { color: '#8a8f98', font: { size: 10 } } },
+        y: { ticks: { color: '#8a8f98', callback: v => v+'%' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
       },
-      plugins: { legend: { labels: { color: '#8b887d' } } }
+      plugins: { legend: { labels: { color: '#8a8f98' } } }
     }
   });
 }
@@ -1054,7 +1094,7 @@ function initRisk() {
       datasets: [{
         label: 'Ensemble配分 (%)',
         data: overviewData.ensemble,
-        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(192,53,48,0.75)' : 'rgba(45,122,62,0.75)')
+        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(239,68,68,0.75)' : 'rgba(16,185,129,0.75)')
       }]
     },
     options: {
@@ -1062,8 +1102,8 @@ function initRisk() {
       maintainAspectRatio: false,
       indexAxis: 'y',
       scales: {
-        x: { ticks: { color: '#8b887d', callback: v => v+'%' }, grid: { color: 'rgba(38, 37, 30, 0.06)' } },
-        y: { ticks: { color: '#8b887d', font: { family: 'JetBrains Mono', size: 11 } } }
+        x: { ticks: { color: '#8a8f98', callback: v => v+'%' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+        y: { ticks: { color: '#8a8f98', font: { family: 'JetBrains Mono', size: 11 } } }
       },
       plugins: { legend: { display: false } }
     }
@@ -1084,22 +1124,22 @@ function initReport() {
       datasets: [{
         label: '確信度',
         data: recs.map(r => r.confidence * 100),
-        borderColor: '#f54e00',
-        backgroundColor: 'rgba(245,78,0,0.08)',
+        borderColor: '#7170ff',
+        backgroundColor: 'rgba(113,112,255,0.12)',
         fill: true,
         tension: 0.3,
         pointRadius: 5,
-        pointBackgroundColor: '#f54e00'
+        pointBackgroundColor: '#7170ff'
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { ticks: { color: '#8b887d' } },
-        y: { min: 0, max: 100, ticks: { color: '#8b887d', callback: v => v+'%' }, grid: { color: 'rgba(38, 37, 30, 0.06)' } }
+        x: { ticks: { color: '#8a8f98' } },
+        y: { min: 0, max: 100, ticks: { color: '#8a8f98', callback: v => v+'%' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
       },
-      plugins: { legend: { labels: { color: '#8b887d' } } }
+      plugins: { legend: { labels: { color: '#8a8f98' } } }
     }
   });
 
@@ -1108,7 +1148,7 @@ function initReport() {
     let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
     html += '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px;color:var(--text-muted)">日付</th><th style="padding:8px;color:var(--text-muted)">RMSE</th><th style="padding:8px;color:var(--text-muted)">方向性</th><th style="padding:8px;color:var(--text-muted)">較正</th></tr>';
     evals.forEach(e => {
-      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">${e.date}</td><td style="padding:8px;text-align:center;color:#c03530;font-family:'JetBrains Mono',monospace">${e.rmse}</td><td style="padding:8px;text-align:center;color:#2d7a3e;font-family:'JetBrains Mono',monospace">${e.direction_accuracy}%</td><td style="padding:8px;text-align:center;color:#6b4c9a;font-family:'JetBrains Mono',monospace">${e.calibration_score}</td></tr>`;
+      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">${e.date}</td><td style="padding:8px;text-align:center;color:#ef4444;font-family:'JetBrains Mono',monospace">${e.rmse}</td><td style="padding:8px;text-align:center;color:#10b981;font-family:'JetBrains Mono',monospace">${e.direction_accuracy}%</td><td style="padding:8px;text-align:center;color:#7170ff;font-family:'JetBrains Mono',monospace">${e.calibration_score}</td></tr>`;
     });
     html += '</table>';
     document.getElementById('evalData').innerHTML = html;
@@ -1154,8 +1194,8 @@ function initPerformance() {
         {
           label: 'ポートフォリオ総額 (USD)',
           data: perfData.values_usd,
-          borderColor: '#f54e00',
-          backgroundColor: 'rgba(245,78,0,0.08)',
+          borderColor: '#7170ff',
+          backgroundColor: 'rgba(113,112,255,0.12)',
           fill: true,
           tension: 0.3,
           yAxisID: 'y',
@@ -1164,7 +1204,7 @@ function initPerformance() {
         {
           label: '含み損益 (USD)',
           data: perfData.pnl_usd,
-          borderColor: '#2d7a3e',
+          borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.1)',
           fill: false,
           tension: 0.3,
@@ -1177,11 +1217,11 @@ function initPerformance() {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { ticks: { color: '#8b887d', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.03)' } },
-        y: { position: 'left', ticks: { color: '#8b887d', callback: v => '$'+v.toLocaleString() }, grid: { color: 'rgba(38, 37, 30, 0.06)' } },
-        y1: { position: 'right', ticks: { color: '#2d7a3e', callback: v => '$'+v.toLocaleString() }, grid: { display: false } }
+        x: { ticks: { color: '#8a8f98', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+        y: { position: 'left', ticks: { color: '#8a8f98', callback: v => '$'+v.toLocaleString() }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+        y1: { position: 'right', ticks: { color: '#10b981', callback: v => '$'+v.toLocaleString() }, grid: { display: false } }
       },
-      plugins: { legend: { labels: { color: '#8b887d' } } }
+      plugins: { legend: { labels: { color: '#8a8f98' } } }
     }
   });
 }

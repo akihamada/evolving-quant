@@ -338,7 +338,7 @@ def build_portfolio_html(holdings: dict, results: dict) -> str:
     # セクター配分バー
     html += '<div class="sector-section"><div class="sector-title">📊 セクター配分</div>'
     html += '<div class="sector-bars">'
-    colors = ["#f54e00", "#2b5fa4", "#2d7a3e", "#b8860b", "#6b4c9a", "#c03530", "#1e6b7a", "#8b6914"]
+    colors = ["#7170ff", "#a78bfa", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#84cc16"]
     for i, (sec, val) in enumerate(sectors_sorted):
         pct = val / total_usd * 100 if total_usd > 0 else 0
         color = colors[i % len(colors)]
@@ -612,80 +612,84 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
 <meta name="description" content="Self-learning AI portfolio dashboard">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Inter Variable (Linear signature font) + Noto Sans JP (JP fallback) + JetBrains Mono (Berkeley Mono代替) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;510;590;600&family=Noto+Sans+JP:wght@300;400;500;510;590;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root {{
-  /* === Cursor.md 仕様準拠 Surface Scale === */
-  --surface-100: #f7f7f4;  /* Lightest button/card */
-  --surface-200: #f2f1ed;  /* Primary page background */
-  --surface-300: #ebeae5;  /* Button default */
-  --surface-400: #e6e5e0;  /* Card backgrounds */
-  --surface-500: #e1e0db;  /* Tertiary emphasis */
-  /* Semantic aliases */
-  --bg-primary:    #f2f1ed;    /* = surface-200 */
-  --bg-card:       #ffffff;    /* Pure white sparingly */
-  --bg-card-hover: #ebeae5;    /* = surface-300 */
-  --bg-elevated:   #f7f7f4;    /* = surface-100 */
+  /* === Linear Dark-mode-native Backgrounds === */
+  --bg-primary:    #08090a;    /* Marketing black / deepest canvas */
+  --bg-panel:      #0f1011;    /* Panel / sidebar */
+  --bg-elevated:   #191a1b;    /* Elevated surfaces / cards / dropdowns */
+  --bg-secondary:  #28282c;    /* Hover / slightly elevated */
+  --bg-card:       rgba(255,255,255,0.02);   /* 透過カード */
+  --bg-card-hover: rgba(255,255,255,0.04);   /* ホバー */
+  --bg-button:     rgba(255,255,255,0.02);
+  --bg-button-hover: rgba(255,255,255,0.05);
 
-  /* === Cursor oklab borders === */
-  --border:        oklab(0.263084 -0.00230259 0.0124794 / 0.1);
-  --border-medium: oklab(0.263084 -0.00230259 0.0124794 / 0.2);
-  --border-strong: rgba(38, 37, 30, 0.55);
-  --border-solid:  #26251e;
+  /* === Linear Text Hierarchy === */
+  --text-primary:   #f7f8f8;    /* Near-white (not pure) */
+  --text-secondary: #d0d6e0;    /* Cool silver-gray */
+  --text-muted:     #8a8f98;    /* Tertiary gray */
+  --text-subtle:    #62666d;    /* Quaternary / disabled */
 
-  /* === Text === */
-  --text-primary:  #26251e;              /* warm near-black */
-  --text-secondary:rgba(38, 37, 30, 0.55); /* 55% warm brown */
-  --text-muted:    rgba(38, 37, 30, 0.4);
+  /* === Semi-transparent white borders (Linear signature) === */
+  --border:         rgba(255,255,255,0.08);   /* Standard */
+  --border-subtle:  rgba(255,255,255,0.05);   /* Ultra subtle */
+  --border-solid:   #23252a;                   /* Solid when needed */
+  --line-tint:      #141516;
 
-  /* === Brand & Semantic === */
-  --accent:        #f54e00;    /* Cursor Orange */
-  --accent-soft:   rgba(245, 78, 0, 0.08);
-  --accent-gold:   #c08532;    /* Gold secondary */
-  --color-error:   #cf2d56;    /* Warm crimson (signature hover) */
-  --color-success: #1f8a65;    /* Muted teal-green */
+  /* === Brand: Indigo-violet (唯一の有彩色) === */
+  --accent:         #5e6ad2;    /* Brand indigo (bg) */
+  --accent-bright:  #7170ff;    /* Accent violet (interactive) */
+  --accent-hover:   #828fff;    /* Lighter hover */
+  --accent-soft:    rgba(94, 106, 210, 0.12);
+  --accent-soft-hover: rgba(94, 106, 210, 0.2);
 
-  /* === Timeline colors (AI state) === */
-  --timeline-thinking: #dfa88f;
-  --timeline-grep:     #9fc9a2;
-  --timeline-read:     #9fbbe0;
-  --timeline-edit:     #c0a8dd;
+  /* === Status Colors (sparingly used) === */
+  --color-success:  #10b981;    /* Emerald */
+  --color-success-alt: #27a644; /* Green */
+  --color-error:    #ef4444;    /* Red (loss / sell) */
+  --color-warn:     #f59e0b;
 
-  /* === P&L / chart semantic (accessible warm variants) === */
-  --accent-green:  #1f8a65;
-  --accent-green-bg:rgba(31, 138, 101, 0.08);
-  --accent-red:    #cf2d56;
-  --accent-red-bg: rgba(207, 45, 86, 0.08);
-  --accent-yellow: #c08532;
-  --accent-yellow-bg:rgba(192, 133, 50, 0.08);
-  --accent-blue:   #9fbbe0;
-  --accent-blue-bg:rgba(159, 187, 224, 0.12);
-  --accent-purple: #c0a8dd;
-  --accent-purple-bg:rgba(192, 168, 221, 0.12);
+  /* === P&L / chart semantic === */
+  --accent-green:   #10b981;
+  --accent-green-bg:rgba(16, 185, 129, 0.12);
+  --accent-red:     #ef4444;
+  --accent-red-bg:  rgba(239, 68, 68, 0.12);
+  --accent-yellow:  #f59e0b;
+  --accent-yellow-bg:rgba(245, 158, 11, 0.12);
+  --accent-blue:    #7170ff;
+  --accent-blue-bg: rgba(113, 112, 255, 0.12);
+  --accent-purple:  #a78bfa;
+  --accent-purple-bg:rgba(167, 139, 250, 0.12);
 
   /* === Radius === */
   --radius-sm:     2px;
   --radius-md:     4px;
-  --radius-lg:     8px;
-  --radius-xl:     10px;
-  --radius-pill:   9999px;     /* full-pill per cursor.md */
+  --radius-lg:     6px;
+  --radius-xl:     8px;
+  --radius-panel:  12px;
+  --radius-pill:   9999px;
+  --radius-circle: 50%;
 
-  /* === Spacing (8px base + sub-8px fine scale) === */
+  /* === Spacing (8px base) === */
   --space-half: 4px;
   --space-1: 8px;  --space-2: 12px; --space-3: 16px;
   --space-4: 24px; --space-5: 32px; --space-6: 48px;
   --space-7: 64px; --space-8: 96px;
 
-  /* === Shadow philosophy: large blur, atmospheric === */
-  --shadow-ambient: rgba(0,0,0,0.02) 0px 0px 16px, rgba(0,0,0,0.008) 0px 0px 8px;
-  --shadow-elevated: rgba(0,0,0,0.14) 0px 28px 70px, rgba(0,0,0,0.1) 0px 14px 32px, oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
-  --shadow-focus:   rgba(0,0,0,0.1) 0px 4px 12px;
-  --shadow-border:  oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
+  /* === Linear Shadow: Luminance stacking + ring borders === */
+  --shadow-ring:    rgba(0,0,0,0.2) 0px 0px 0px 1px;
+  --shadow-inset:   rgba(0,0,0,0.2) 0px 0px 12px 0px inset;
+  --shadow-elevated: rgba(0,0,0,0.4) 0px 2px 4px;
+  --shadow-dialog:  rgba(0,0,0,0) 0px 8px 2px, rgba(0,0,0,0.01) 0px 5px 2px, rgba(0,0,0,0.04) 0px 3px 2px, rgba(0,0,0,0.07) 0px 1px 1px, rgba(0,0,0,0.08) 0px 0px 1px;
+  --shadow-focus:   rgba(0,0,0,0.1) 0px 4px 12px, rgba(94, 106, 210, 0.5) 0px 0px 0px 2px;
 
-  /* === Transitions (Cursor spec: 150ms color / 200ms shadow) === */
+  /* === Transitions === */
   --transition-color:   150ms ease;
   --transition-shadow:  200ms ease;
+  --transition-bg:      150ms ease;
 }}
 *{{margin:0;padding:0;box-sizing:border-box}}
 html{{text-size-adjust:100%;font-kerning:auto}}
@@ -697,233 +701,263 @@ html{{
   word-break:normal;
   overflow-wrap:anywhere;
 }}
-/* 見出しは自然な文節で改行 (progressive enhancement) */
+/* 見出しは自然な文節で改行 */
 h1:lang(ja), h2:lang(ja), h3:lang(ja),
 .section-title, .header h1{{
   word-break:auto-phrase;
 }}
 
 body{{
-  font-family:-apple-system,'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
+  /* Inter Variable (Linear) + 日本語 fallback 必須明示 */
+  font-family:'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI','SF Pro Display',-apple-system,system-ui,sans-serif;
+  /* Linear の cv01 (single-story a) + ss03 OpenType features */
+  font-feature-settings:'cv01','ss03';
   background:var(--bg-primary);
   color:var(--text-primary);
   min-height:100vh;
-  line-height:1.7;                 /* ≥1.5 遵守 */
-  font-feature-settings:normal;     /* base-DESIGN: palt 全体禁止 */
+  line-height:1.6;                  /* Linear Body: 1.5-1.6 / JP ≥1.5 遵守 */
+  font-weight:400;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }}
+/* Linear の 510 signature weight をUIデフォルトに */
+.ui-emphasize,
+.section-title,
+.tab-btn,
+.stat-label,
+.port-metric-label,
+.port-table th,
+.acct-badge,
+.action-badge,
+.adv-signal{{
+  font-weight:510;
+}}
 .container{{max-width:1440px;margin:0 auto;padding:var(--space-5)}}
 
-/* Focus-visible: キーボード操作の可視化 (a11y) */
+/* Focus-visible: Linear indigo ring */
 *:focus{{outline:none}}
 *:focus-visible{{
-  outline:2px solid var(--accent);
+  outline:2px solid var(--accent-bright);
   outline-offset:2px;
-  border-radius:var(--radius-sm);
+  border-radius:var(--radius-md);
 }}
 button:focus-visible,
 a:focus-visible{{
-  outline:2px solid var(--accent);
+  outline:2px solid var(--accent-bright);
   outline-offset:2px;
 }}
-/* 選択色をアクセントに統一 */
+/* Selection color: Linear accent */
 ::selection{{background:var(--accent-soft);color:var(--text-primary)}}
 
-/* Header */
+/* Scrollbar (webkit) — thin Linear style */
+::-webkit-scrollbar{{width:10px;height:10px}}
+::-webkit-scrollbar-track{{background:var(--bg-panel)}}
+::-webkit-scrollbar-thumb{{background:rgba(255,255,255,0.08);border-radius:var(--radius-pill);border:2px solid var(--bg-panel)}}
+::-webkit-scrollbar-thumb:hover{{background:rgba(255,255,255,0.15)}}
+
+/* Header — Linear dark panel */
 .header{{
   display:flex;justify-content:space-between;align-items:center;
-  padding:var(--space-5) var(--space-6);
-  background:var(--bg-card);
+  padding:var(--space-4) var(--space-5);
+  background:var(--bg-panel);
   border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  margin-bottom:var(--space-5);
-  box-shadow:var(--shadow-sm);
+  border-radius:var(--radius-panel);
+  margin-bottom:var(--space-4);
 }}
 .header h1{{
-  font-family:'Noto Serif JP',Georgia,serif;
+  font-family:inherit;              /* Inter Variable */
   font-size:32px;
-  font-weight:600;
-  letter-spacing:-0.02em;  /* Progressive: ~-0.64px at 32px */
+  font-weight:510;                  /* Linear signature */
+  letter-spacing:-0.022em;           /* Progressive: ~-0.704px at 32px */
   color:var(--text-primary);
-  line-height:1.5;
+  line-height:1.13;
 }}
-.header h1 span{{transition:color var(--transition-color)}}
+.header h1 span{{
+  color:var(--accent-bright);
+  transition:color var(--transition-color);
+}}
 .header h1 span{{color:var(--accent);font-style:italic}}
 .header-meta{{text-align:right}}
 .header-meta .date{{
   color:var(--text-muted);
   font-size:13px;
   font-family:'JetBrains Mono',monospace;
-  letter-spacing:0.01em;
 }}
 .header-meta .confidence{{
-  display:inline-flex;align-items:center;gap:var(--space-2);
+  display:inline-flex;align-items:center;gap:var(--space-half);
   background:var(--accent-soft);
-  border:1px solid rgba(245, 78, 0, 0.2);
+  border:1px solid rgba(94, 106, 210, 0.3);
   border-radius:var(--radius-pill);
-  padding:4px 14px;
-  font-size:12px;font-weight:500;
-  color:var(--accent);
-  margin-top:var(--space-2);
+  padding:3px 10px;
+  font-size:12px;font-weight:510;
+  color:var(--accent-bright);
+  margin-top:var(--space-1);
   font-family:'JetBrains Mono',monospace;
 }}
-.header-meta .confidence .dot{{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2.4s infinite}}
+.header-meta .confidence .dot{{width:6px;height:6px;border-radius:50%;background:var(--accent-bright);animation:pulse 2.4s infinite}}
 @keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:0.3}}}}
 
-/* Stats */
-.stats-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}}
+/* Stats — Linear surface cards */
+.stats-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-2);margin-bottom:var(--space-4)}}
 .stat-card{{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-3) var(--space-4);
-  transition:border-color var(--transition-color), box-shadow var(--transition-shadow);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }}
 .stat-card:hover{{
-  border-color:var(--border-medium);
-  box-shadow:var(--shadow-ambient);
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
 }}
 .stat-label{{
   font-size:11px;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:0.08em;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
-}}
-.stat-value{{
-  font-size:28px;font-weight:500;margin-top:var(--space-2);
-  font-family:'JetBrains Mono',monospace;
-  color:var(--text-primary);
-  letter-spacing:-0.02em;
-}}
-.stat-sub{{font-size:13px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}}
-
-/* Tabs */
-.tab-nav{{
-  display:flex;gap:var(--space-1);
-  margin-bottom:var(--space-5);
-  overflow-x:auto;
-  padding:var(--space-1);
-  background:var(--bg-elevated);
-  border:1px solid var(--border);
-  border-radius:var(--radius-pill);
-}}
-.tab-btn{{
-  padding:8px 18px;background:transparent;border:none;
-  border-radius:var(--radius-pill);
-  color:var(--text-secondary);cursor:pointer;
-  font-size:13px;font-weight:500;white-space:nowrap;
-  transition:all 0.2s;
+  text-transform:uppercase;letter-spacing:0.08em;font-weight:510;
   font-family:inherit;
 }}
-.tab-btn{{
-  transition:color var(--transition-color), background var(--transition-color);
+.stat-value{{
+  font-size:28px;font-weight:510;margin-top:var(--space-1);
+  font-family:inherit;
+  color:var(--text-primary);
+  letter-spacing:-0.022em;     /* -0.616px at 28px */
+  font-variant-numeric:tabular-nums;
 }}
-.tab-btn:hover{{background:var(--bg-card-hover);color:var(--color-error)}}
-.tab-btn.active{{background:var(--accent);color:#fff}}
-.tab-btn.active:hover{{color:#fff}}
+.stat-sub{{font-size:13px;color:var(--text-muted);margin-top:var(--space-half);line-height:1.5}}
+
+/* Tabs — Linear subtle segmented */
+.tab-nav{{
+  display:flex;gap:2px;
+  margin-bottom:var(--space-4);
+  overflow-x:auto;
+  padding:var(--space-half);
+  background:var(--bg-panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius-xl);
+}}
+.tab-btn{{
+  padding:6px 14px;background:transparent;border:none;
+  border-radius:var(--radius-lg);
+  color:var(--text-muted);cursor:pointer;
+  font-size:13px;font-weight:510;white-space:nowrap;
+  font-family:inherit;
+  letter-spacing:-0.01em;
+  transition:color var(--transition-color), background var(--transition-bg);
+}}
+.tab-btn:hover{{background:var(--bg-button-hover);color:var(--text-primary)}}
+.tab-btn.active{{background:var(--accent);color:#fff;font-weight:590}}
+.tab-btn.active:hover{{color:#fff;background:var(--accent-hover)}}
 .tab-content{{display:none}}
 .tab-content.active{{display:block}}
 
-/* Strategy Banner */
+/* Strategy Banner — Linear accent-left */
 .strategy-banner{{
-  background:var(--bg-elevated);
+  background:var(--bg-card);
   border:1px solid var(--border);
-  border-left:3px solid var(--accent);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  margin-bottom:var(--space-5);
+  border-left:2px solid var(--accent-bright);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  margin-bottom:var(--space-4);
   font-size:14px;
   color:var(--text-secondary);
-  line-height:1.8;
+  line-height:1.6;
 }}
-.strategy-banner strong{{color:var(--text-primary);font-weight:600}}
+.strategy-banner strong{{color:var(--text-primary);font-weight:510}}
 
 /* Sections & Cards */
-.section{{margin-bottom:var(--space-6)}}
+.section{{margin-bottom:var(--space-5)}}
 .section-title{{
-  font-family:'Noto Serif JP',Georgia,serif;
-  font-size:20px;font-weight:600;
-  margin-bottom:var(--space-4);
-  display:flex;align-items:center;gap:var(--space-2);
+  font-family:inherit;              /* Inter Variable (not serif) */
+  font-size:20px;font-weight:510;
+  margin-bottom:var(--space-3);
+  display:flex;align-items:center;gap:var(--space-1);
   color:var(--text-primary);
-  letter-spacing:-0.005em;
-  line-height:1.5;
+  letter-spacing:-0.012em;           /* -0.24px at 20px */
+  line-height:1.33;
 }}
-.section-title .icon{{font-size:22px}}
+.section-title .icon{{font-size:20px}}
 
-.action-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-3)}}
+.action-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-2)}}
 .action-card{{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  display:flex;flex-direction:column;gap:var(--space-2);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  display:flex;flex-direction:column;gap:var(--space-1);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }}
-.action-card:hover{{border-color:var(--border-strong)}}
-.action-card.buy{{border-left:3px solid var(--accent-green)}}
-.action-card.hold{{border-left:3px solid var(--accent-yellow)}}
-.action-card.sell{{border-left:3px solid var(--accent-red)}}
+.action-card:hover{{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+}}
+.action-card.buy{{border-left:2px solid var(--accent-green)}}
+.action-card.hold{{border-left:2px solid var(--accent-yellow)}}
+.action-card.sell{{border-left:2px solid var(--accent-red)}}
 .action-card .card-header{{display:flex;justify-content:space-between;align-items:center}}
 .action-card .ticker{{
-  font-size:20px;font-weight:600;
+  font-size:18px;font-weight:590;
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);
-  letter-spacing:-0.01em;
+  letter-spacing:-0.013em;
 }}
 .action-badge{{
-  font-size:10px;font-weight:500;
-  text-transform:uppercase;letter-spacing:0.08em;
-  padding:4px 12px;
+  font-size:10px;font-weight:510;
+  text-transform:uppercase;letter-spacing:0.06em;
+  padding:2px 10px;
   border-radius:var(--radius-pill);
-  font-family:'JetBrains Mono',monospace;
+  font-family:inherit;
 }}
-.action-badge.buy{{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(45, 122, 62, 0.2)}}
-.action-badge.hold{{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(184, 134, 11, 0.2)}}
-.action-badge.sell{{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(192, 53, 48, 0.2)}}
+.action-badge.buy{{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(16, 185, 129, 0.25)}}
+.action-badge.hold{{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(245, 158, 11, 0.25)}}
+.action-badge.sell{{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(239, 68, 68, 0.25)}}
 .holdings{{
-  display:flex;gap:var(--space-4);
-  font-size:13px;color:var(--text-secondary);
+  display:flex;gap:var(--space-3);
+  font-size:12px;color:var(--text-muted);
   font-family:'JetBrains Mono',monospace;
+  letter-spacing:-0.01em;
 }}
 .pnl-positive{{color:var(--accent-green)}}
 .pnl-negative{{color:var(--accent-red)}}
 .reason{{
   font-size:13px;color:var(--text-secondary);
-  line-height:1.75;
+  line-height:1.6;
   border-top:1px solid var(--border);
-  padding-top:var(--space-2);
+  padding-top:var(--space-1);
   word-break:normal;overflow-wrap:anywhere;
 }}
-.alloc-bar{{height:3px;border-radius:var(--radius-pill);background:var(--bg-card-hover);margin-top:auto;overflow:hidden}}
-.alloc-bar-fill{{height:100%;border-radius:var(--radius-pill);background:var(--accent)}}
+.alloc-bar{{height:2px;border-radius:var(--radius-pill);background:rgba(255,255,255,0.05);margin-top:auto;overflow:hidden}}
+.alloc-bar-fill{{height:100%;border-radius:var(--radius-pill);background:var(--accent-bright)}}
 .alloc-label{{
-  font-size:11px;color:var(--text-muted);
-  margin-top:var(--space-1);
+  font-size:11px;color:var(--text-subtle);
+  margin-top:var(--space-half);
   font-family:'JetBrains Mono',monospace;
   letter-spacing:0.02em;
 }}
 
-.picks-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--space-3)}}
+.picks-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--space-2)}}
 .pick-card{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  border-left:3px solid var(--accent);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  border-left:2px solid var(--accent-bright);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }}
-.pick-card:hover{{border-color:var(--border-strong)}}
-.pick-ticker{{font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-primary);letter-spacing:-0.01em}}
+.pick-card:hover{{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+  border-left-color:var(--accent-hover);
+}}
+.pick-ticker{{font-size:18px;font-weight:590;font-family:'JetBrains Mono',monospace;color:var(--text-primary);letter-spacing:-0.013em}}
 .pick-sector{{
-  display:inline-block;margin-top:var(--space-1);
-  font-size:11px;color:var(--accent);
-  font-family:'JetBrains Mono',monospace;
-  font-weight:500;letter-spacing:0.04em;
-  padding:2px 10px;
+  display:inline-block;margin-top:var(--space-half);
+  font-size:10px;color:var(--accent-bright);
+  font-family:inherit;
+  font-weight:510;letter-spacing:0.06em;
+  text-transform:uppercase;
+  padding:2px 8px;
   background:var(--accent-soft);
   border-radius:var(--radius-pill);
 }}
-.pick-reason{{font-size:13px;color:var(--text-secondary);margin-top:var(--space-2);line-height:1.75}}
+.pick-reason{{font-size:13px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}}
 
 .tsumitate-grid{{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}}
 .tsumitate-card{{
@@ -943,23 +977,26 @@ a:focus-visible{{
 }}
 .change-item .arrow{{color:var(--accent);font-weight:600;flex-shrink:0}}
 
-.risk-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3)}}
+.risk-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)}}
 .risk-card{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-5) var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-4) var(--space-3);
   text-align:center;
+  transition:background var(--transition-bg);
 }}
+.risk-card:hover{{background:var(--bg-card-hover)}}
 .risk-card.bull{{border-top:2px solid var(--accent-green)}}
-.risk-card.base{{border-top:2px solid var(--accent-blue)}}
+.risk-card.base{{border-top:2px solid var(--accent-bright)}}
 .risk-card.bear{{border-top:2px solid var(--accent-red)}}
 .risk-prob{{
-  font-size:36px;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
-  letter-spacing:-0.02em;
+  font-size:36px;font-weight:510;
+  font-family:inherit;
+  letter-spacing:-0.022em;
+  font-variant-numeric:tabular-nums;
 }}
 .risk-card.bull .risk-prob{{color:var(--accent-green)}}
-.risk-card.base .risk-prob{{color:var(--accent-blue)}}
+.risk-card.base .risk-prob{{color:var(--accent-bright)}}
 .risk-card.bear .risk-prob{{color:var(--accent-red)}}
 .risk-label{{
   font-size:11px;text-transform:uppercase;
@@ -972,47 +1009,51 @@ a:focus-visible{{
 /* Charts */
 .chart-container{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-5);margin-bottom:var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-4);margin-bottom:var(--space-3);
 }}
-.chart-row{{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}}
+.chart-row{{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}}
 .chart-title{{
-  font-family:'Noto Serif JP',serif;
-  font-size:16px;font-weight:600;
-  margin-bottom:var(--space-4);color:var(--text-primary);
+  font-family:inherit;
+  font-size:15px;font-weight:590;
+  margin-bottom:var(--space-3);color:var(--text-primary);
+  letter-spacing:-0.011em;
 }}
 
 /* Meta Prompt */
 .prompt-block{{
-  background:var(--bg-elevated);
+  background:var(--bg-panel);
   border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-5);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3);
   font-size:12px;
   font-family:'JetBrains Mono',monospace;
-  color:var(--text-primary);
+  color:var(--text-secondary);
   white-space:pre-wrap;
   word-break:normal;overflow-wrap:anywhere;
   max-height:500px;overflow-y:auto;
-  line-height:1.7;
+  line-height:1.6;
+  letter-spacing:-0.01em;
 }}
 
 /* Records */
 .record-row{{
-  display:flex;gap:var(--space-4);align-items:center;
-  padding:var(--space-3) var(--space-4);
+  display:flex;gap:var(--space-3);align-items:center;
+  padding:var(--space-2) var(--space-3);
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  margin-bottom:var(--space-2);font-size:13px;
+  border-radius:var(--radius-xl);
+  margin-bottom:var(--space-1);font-size:13px;
+  transition:background var(--transition-bg);
 }}
+.record-row:hover{{background:var(--bg-card-hover)}}
 .record-date{{
   font-family:'JetBrains Mono',monospace;
-  font-weight:500;color:var(--accent);
-  min-width:100px;letter-spacing:0.01em;
+  font-weight:510;color:var(--accent-bright);
+  min-width:100px;letter-spacing:-0.01em;
 }}
 .record-status{{min-width:30px}}
-.record-conf{{color:var(--text-secondary);font-weight:500;min-width:90px;font-family:'JetBrains Mono',monospace}}
-.record-reason{{color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.7}}
+.record-conf{{color:var(--text-secondary);font-weight:510;min-width:90px;font-family:'JetBrains Mono',monospace}}
+.record-reason{{color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.6}}
 
 /* Metrics Row */
 .metrics-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}}
@@ -1027,53 +1068,58 @@ a:focus-visible{{
   letter-spacing:0.02em;
   line-height:1.8;
 }}
-.footer a{{color:var(--accent);text-decoration:none;transition:color var(--transition-color)}}
-.footer a:hover{{color:var(--color-error);text-decoration:underline}}
+.footer a{{color:var(--accent-bright);text-decoration:none;transition:color var(--transition-color)}}
+.footer a:hover{{color:var(--accent-hover);text-decoration:underline}}
 .fade-in{{animation:fadeIn 0.4s ease forwards;opacity:0}}
 @keyframes fadeIn{{to{{opacity:1}}}}
 
-/* Portfolio Tab */
-.port-summary-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}}
+/* Portfolio Tab — Linear dense dashboard */
+.port-summary-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-2);margin-bottom:var(--space-4)}}
 .port-metric{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-4) var(--space-5);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }}
-.port-metric:hover{{border-color:var(--border-strong)}}
+.port-metric:hover{{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+}}
 .port-metric-label{{
   font-size:11px;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:0.08em;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase;letter-spacing:0.08em;font-weight:510;
+  font-family:inherit;
 }}
 .port-metric-value{{
-  font-size:26px;font-weight:500;
-  font-family:'JetBrains Mono',monospace;
-  margin-top:var(--space-2);
+  font-size:26px;font-weight:510;
+  font-family:inherit;
+  margin-top:var(--space-1);
   color:var(--text-primary);
-  letter-spacing:-0.02em;
+  letter-spacing:-0.022em;
+  font-variant-numeric:tabular-nums;
 }}
-.port-metric-sub{{font-size:12px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}}
+.port-metric-sub{{font-size:12px;color:var(--text-muted);margin-top:var(--space-half);line-height:1.5;font-variant-numeric:tabular-nums}}
 
 .sector-section{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-5) var(--space-5);
-  margin-bottom:var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  margin-bottom:var(--space-3);
 }}
 .sector-title{{
-  font-family:'Noto Serif JP',serif;
-  font-size:16px;font-weight:600;
-  margin-bottom:var(--space-4);color:var(--text-primary);
+  font-family:inherit;
+  font-size:15px;font-weight:590;
+  margin-bottom:var(--space-3);color:var(--text-primary);
+  letter-spacing:-0.011em;
 }}
-.sector-bars{{display:flex;flex-direction:column;gap:var(--space-2)}}
+.sector-bars{{display:flex;flex-direction:column;gap:var(--space-1)}}
 .sector-bar-row{{
   display:grid;grid-template-columns:140px 1fr 160px;
-  align-items:center;gap:var(--space-3);font-size:13px;
+  align-items:center;gap:var(--space-2);font-size:13px;
 }}
-.sector-bar-label{{color:var(--text-primary);font-weight:500}}
+.sector-bar-label{{color:var(--text-secondary);font-weight:510}}
 .sector-bar-track{{
-  height:12px;background:var(--bg-card-hover);
+  height:6px;background:rgba(255,255,255,0.04);
   border-radius:var(--radius-pill);overflow:hidden;
 }}
 .sector-bar-fill{{height:100%;border-radius:var(--radius-pill);transition:width 0.6s ease}}
@@ -1081,101 +1127,109 @@ a:focus-visible{{
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);text-align:right;
   letter-spacing:-0.01em;
+  font-variant-numeric:tabular-nums;
 }}
 .sector-pct{{color:var(--text-muted);font-size:11px;font-family:'JetBrains Mono',monospace}}
 
 .port-table-section{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:var(--space-5) 0 var(--space-2);
-  margin-bottom:var(--space-4);
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) 0 var(--space-1);
+  margin-bottom:var(--space-3);
 }}
 .port-table-title{{
-  font-family:'Noto Serif JP',serif;
-  font-size:16px;font-weight:600;
-  margin-bottom:var(--space-3);
-  padding:0 var(--space-5);
+  font-family:inherit;
+  font-size:15px;font-weight:590;
+  margin-bottom:var(--space-2);
+  padding:0 var(--space-4);
   color:var(--text-primary);
+  letter-spacing:-0.011em;
 }}
 .port-table-wrap{{overflow-x:auto;max-width:100%}}
 .port-table{{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}}
 .port-table th{{
-  text-align:left;padding:var(--space-3) var(--space-3);
+  text-align:left;padding:var(--space-1) var(--space-2);
   color:var(--text-muted);
   border-bottom:1px solid var(--border);
-  font-weight:500;text-transform:uppercase;
-  font-size:10px;letter-spacing:0.08em;
+  font-weight:510;text-transform:uppercase;
+  font-size:10px;letter-spacing:0.06em;
   cursor:pointer;user-select:none;
-  background:var(--bg-elevated);
-  font-family:'JetBrains Mono',monospace;
+  background:var(--bg-panel);
+  font-family:inherit;
   white-space:nowrap;
+  transition:color var(--transition-color);
 }}
-.port-table th{{transition:color var(--transition-color)}}
-.port-table th:hover{{color:var(--color-error)}}
+.port-table th:hover{{color:var(--text-primary)}}
 .port-table td{{
-  padding:var(--space-3) var(--space-3);
-  border-bottom:1px solid var(--border);
+  padding:var(--space-1) var(--space-2);
+  border-bottom:1px solid var(--border-subtle);
   color:var(--text-secondary);
   white-space:nowrap;
   font-family:'JetBrains Mono',monospace;
   letter-spacing:-0.005em;
+  font-variant-numeric:tabular-nums;
 }}
-.port-table tr:hover{{background:var(--bg-elevated)}}
-.port-table .port-ticker strong{{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600}}
+.port-table tr:hover{{background:var(--bg-card-hover)}}
+.port-table .port-ticker strong{{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:590}}
 .acct-badge{{
-  display:inline-block;padding:2px 10px;
+  display:inline-block;padding:1px 8px;
   border-radius:var(--radius-pill);
   font-size:10px;
   background:var(--accent-soft);
-  color:var(--accent);
-  font-weight:500;
-  font-family:'JetBrains Mono',monospace;
+  color:var(--accent-bright);
+  font-weight:510;
+  font-family:inherit;
   letter-spacing:0.04em;
+  text-transform:uppercase;
 }}
-.chart-link{{text-decoration:none;font-size:16px;opacity:0.6;transition:opacity 0.2s}}
+.chart-link{{text-decoration:none;font-size:14px;opacity:0.55;transition:opacity 0.2s}}
 .chart-link:hover{{opacity:1}}
 
-/* Advanced Predictor Tab */
-.adv-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--space-3)}}
+/* Advanced Predictor Tab — Linear data cards */
+.adv-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--space-2)}}
 .adv-card{{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:var(--space-4) var(--space-5);
-  transition:border-color 0.2s;
+  border-radius:var(--radius-xl);
+  padding:var(--space-3) var(--space-4);
+  transition:background var(--transition-bg), border-color var(--transition-color);
 }}
-.adv-card:hover{{border-color:var(--border-strong)}}
-.adv-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)}}
+.adv-card:hover{{
+  background:var(--bg-card-hover);
+  border-color:rgba(255,255,255,0.12);
+}}
+.adv-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1)}}
 .adv-ticker{{
-  font-size:18px;font-weight:600;
+  font-size:17px;font-weight:590;
   font-family:'JetBrains Mono',monospace;
   color:var(--text-primary);
   text-decoration:none;
-  letter-spacing:-0.01em;
+  letter-spacing:-0.013em;
+  transition:color var(--transition-color);
 }}
-.adv-ticker{{transition:color var(--transition-color)}}
-.adv-ticker:hover{{color:var(--color-error)}}
+.adv-ticker:hover{{color:var(--accent-bright)}}
 .adv-signal{{
-  font-size:11px;font-weight:500;
+  font-size:10px;font-weight:510;
   letter-spacing:0.06em;
-  font-family:'JetBrains Mono',monospace;
-  padding:3px 10px;
+  font-family:inherit;
+  padding:2px 10px;
   border-radius:var(--radius-pill);
+  text-transform:uppercase;
 }}
-.adv-score{{font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-1);font-family:'JetBrains Mono',monospace}}
-.adv-conf{{font-size:12px;color:var(--text-muted);margin-bottom:var(--space-3);font-family:'JetBrains Mono',monospace}}
+.adv-score{{font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-half);font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}}
+.adv-conf{{font-size:12px;color:var(--text-muted);margin-bottom:var(--space-2);font-family:'JetBrains Mono',monospace}}
 .adv-subbars{{
-  display:flex;flex-direction:column;gap:var(--space-2);
+  display:flex;flex-direction:column;gap:var(--space-half);
   border-top:1px solid var(--border);
-  padding-top:var(--space-3);
+  padding-top:var(--space-2);
 }}
 .adv-subbar{{
   display:grid;grid-template-columns:60px 60px 1fr;
-  align-items:center;gap:var(--space-2);font-size:11px;
+  align-items:center;gap:var(--space-1);font-size:11px;
 }}
-.adv-sublabel{{color:var(--text-muted);font-weight:500;font-family:'JetBrains Mono',monospace;letter-spacing:0.02em}}
-.adv-subval{{font-family:'JetBrains Mono',monospace;font-weight:500;text-align:right;letter-spacing:-0.01em}}
+.adv-sublabel{{color:var(--text-muted);font-weight:510;font-family:inherit;letter-spacing:0.02em;text-transform:uppercase}}
+.adv-subval{{font-family:'JetBrains Mono',monospace;font-weight:510;text-align:right;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}}
 .adv-bar-track{{
-  height:5px;background:var(--bg-card-hover);
+  height:4px;background:rgba(255,255,255,0.04);
   border-radius:var(--radius-pill);overflow:hidden;
 }}
 .adv-bar-pos{{height:100%;background:var(--accent-green);border-radius:var(--radius-pill)}}
@@ -1351,7 +1405,7 @@ function switchTab(btn, id) {{
 }}
 
 function initOverview() {{
-  const colors = ['#f54e00','#2b5fa4','#2d7a3e','#b8860b','#6b4c9a','#c03530','#1e6b7a','#8b6914','#7a4a1e','#4a6b2d','#9a4a6b','#4a7a8b','#b8560b','#6b1e4a','#2d5a7a','#7a6b1e','#5a2d4a','#1e7a5a'];
+  const colors = ['#7170ff','#10b981','#f59e0b','#ef4444','#a78bfa','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1','#14b8a6','#e11d48','#8b5cf6','#22d3ee','#eab308','#fb923c','#4ade80','#f472b6'];
 
   new Chart(document.getElementById('chartDonut'), {{
     type: 'doughnut',
@@ -1363,7 +1417,7 @@ function initOverview() {{
       responsive: true,
       maintainAspectRatio: false,
       plugins: {{
-        legend: {{ position: 'right', labels: {{ color: '#8b887d', font: {{ size: 11 }} }} }}
+        legend: {{ position: 'right', labels: {{ color: '#8a8f98', font: {{ size: 11 }} }} }}
       }}
     }}
   }});
@@ -1373,19 +1427,19 @@ function initOverview() {{
     data: {{
       labels: overviewData.tickers,
       datasets: [
-        {{ label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(245,78,0,0.75)' }},
-        {{ label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(43,95,164,0.7)' }},
-        {{ label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(139,136,125,0.35)' }}
+        {{ label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(113,112,255,0.75)' }},
+        {{ label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(167,139,250,0.7)' }},
+        {{ label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(138,143,152,0.3)' }}
       ]
     }},
     options: {{
       responsive: true,
       maintainAspectRatio: false,
       scales: {{
-        x: {{ ticks: {{ color: '#8b887d', font: {{ size: 10 }} }} }},
-        y: {{ ticks: {{ color: '#8b887d', callback: v => v+'%' }}, grid: {{ color: 'rgba(38, 37, 30, 0.06)' }} }}
+        x: {{ ticks: {{ color: '#8a8f98', font: {{ size: 10 }} }} }},
+        y: {{ ticks: {{ color: '#8a8f98', callback: v => v+'%' }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }}
       }},
-      plugins: {{ legend: {{ labels: {{ color: '#8b887d' }} }} }}
+      plugins: {{ legend: {{ labels: {{ color: '#8a8f98' }} }} }}
     }}
   }});
 }}
@@ -1398,7 +1452,7 @@ function initRisk() {{
       datasets: [{{
         label: 'Ensemble配分 (%)',
         data: overviewData.ensemble,
-        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(192,53,48,0.75)' : 'rgba(45,122,62,0.75)')
+        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(239,68,68,0.75)' : 'rgba(16,185,129,0.75)')
       }}]
     }},
     options: {{
@@ -1406,8 +1460,8 @@ function initRisk() {{
       maintainAspectRatio: false,
       indexAxis: 'y',
       scales: {{
-        x: {{ ticks: {{ color: '#8b887d', callback: v => v+'%' }}, grid: {{ color: 'rgba(38, 37, 30, 0.06)' }} }},
-        y: {{ ticks: {{ color: '#8b887d', font: {{ family: 'JetBrains Mono', size: 11 }} }} }}
+        x: {{ ticks: {{ color: '#8a8f98', callback: v => v+'%' }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }},
+        y: {{ ticks: {{ color: '#8a8f98', font: {{ family: 'JetBrains Mono', size: 11 }} }} }}
       }},
       plugins: {{ legend: {{ display: false }} }}
     }}
@@ -1428,22 +1482,22 @@ function initReport() {{
       datasets: [{{
         label: '確信度',
         data: recs.map(r => r.confidence * 100),
-        borderColor: '#f54e00',
-        backgroundColor: 'rgba(245,78,0,0.08)',
+        borderColor: '#7170ff',
+        backgroundColor: 'rgba(113,112,255,0.12)',
         fill: true,
         tension: 0.3,
         pointRadius: 5,
-        pointBackgroundColor: '#f54e00'
+        pointBackgroundColor: '#7170ff'
       }}]
     }},
     options: {{
       responsive: true,
       maintainAspectRatio: false,
       scales: {{
-        x: {{ ticks: {{ color: '#8b887d' }} }},
-        y: {{ min: 0, max: 100, ticks: {{ color: '#8b887d', callback: v => v+'%' }}, grid: {{ color: 'rgba(38, 37, 30, 0.06)' }} }}
+        x: {{ ticks: {{ color: '#8a8f98' }} }},
+        y: {{ min: 0, max: 100, ticks: {{ color: '#8a8f98', callback: v => v+'%' }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }}
       }},
-      plugins: {{ legend: {{ labels: {{ color: '#8b887d' }} }} }}
+      plugins: {{ legend: {{ labels: {{ color: '#8a8f98' }} }} }}
     }}
   }});
 
@@ -1452,7 +1506,7 @@ function initReport() {{
     let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
     html += '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px;color:var(--text-muted)">日付</th><th style="padding:8px;color:var(--text-muted)">RMSE</th><th style="padding:8px;color:var(--text-muted)">方向性</th><th style="padding:8px;color:var(--text-muted)">較正</th></tr>';
     evals.forEach(e => {{
-      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">${{e.date}}</td><td style="padding:8px;text-align:center;color:#c03530;font-family:'JetBrains Mono',monospace">${{e.rmse}}</td><td style="padding:8px;text-align:center;color:#2d7a3e;font-family:'JetBrains Mono',monospace">${{e.direction_accuracy}}%</td><td style="padding:8px;text-align:center;color:#6b4c9a;font-family:'JetBrains Mono',monospace">${{e.calibration_score}}</td></tr>`;
+      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">${{e.date}}</td><td style="padding:8px;text-align:center;color:#ef4444;font-family:'JetBrains Mono',monospace">${{e.rmse}}</td><td style="padding:8px;text-align:center;color:#10b981;font-family:'JetBrains Mono',monospace">${{e.direction_accuracy}}%</td><td style="padding:8px;text-align:center;color:#7170ff;font-family:'JetBrains Mono',monospace">${{e.calibration_score}}</td></tr>`;
     }});
     html += '</table>';
     document.getElementById('evalData').innerHTML = html;
@@ -1498,8 +1552,8 @@ function initPerformance() {{
         {{
           label: 'ポートフォリオ総額 (USD)',
           data: perfData.values_usd,
-          borderColor: '#f54e00',
-          backgroundColor: 'rgba(245,78,0,0.08)',
+          borderColor: '#7170ff',
+          backgroundColor: 'rgba(113,112,255,0.12)',
           fill: true,
           tension: 0.3,
           yAxisID: 'y',
@@ -1508,7 +1562,7 @@ function initPerformance() {{
         {{
           label: '含み損益 (USD)',
           data: perfData.pnl_usd,
-          borderColor: '#2d7a3e',
+          borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.1)',
           fill: false,
           tension: 0.3,
@@ -1521,11 +1575,11 @@ function initPerformance() {{
       responsive: true,
       maintainAspectRatio: false,
       scales: {{
-        x: {{ ticks: {{ color: '#8b887d', maxTicksLimit: 10 }}, grid: {{ color: 'rgba(255,255,255,0.03)' }} }},
-        y: {{ position: 'left', ticks: {{ color: '#8b887d', callback: v => '$'+v.toLocaleString() }}, grid: {{ color: 'rgba(38, 37, 30, 0.06)' }} }},
-        y1: {{ position: 'right', ticks: {{ color: '#2d7a3e', callback: v => '$'+v.toLocaleString() }}, grid: {{ display: false }} }}
+        x: {{ ticks: {{ color: '#8a8f98', maxTicksLimit: 10 }}, grid: {{ color: 'rgba(255,255,255,0.03)' }} }},
+        y: {{ position: 'left', ticks: {{ color: '#8a8f98', callback: v => '$'+v.toLocaleString() }}, grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }},
+        y1: {{ position: 'right', ticks: {{ color: '#10b981', callback: v => '$'+v.toLocaleString() }}, grid: {{ display: false }} }}
       }},
-      plugins: {{ legend: {{ labels: {{ color: '#8b887d' }} }} }}
+      plugins: {{ legend: {{ labels: {{ color: '#8a8f98' }} }} }}
     }}
   }});
 }}
