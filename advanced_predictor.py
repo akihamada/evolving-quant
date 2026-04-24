@@ -30,6 +30,13 @@ logger = logging.getLogger("advanced-predictor")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 ACCURACY_PATH = SCRIPT_DIR / "data" / "advanced_predictor_accuracy.json"
+HISTORY_PATH  = SCRIPT_DIR / "data" / "prediction_history.json"
+JOURNAL_PATH  = SCRIPT_DIR / "data" / "learning_journal.json"
+
+# アーカイブ制御
+MAX_HISTORY_RECORDS = 500    # 予測履歴の上限
+MAX_JOURNAL_ENTRIES = 180    # 学習ジャーナル上限（≒半年分）
+EVAL_MIN_DAYS = 7            # 評価対象の最低経過日数
 
 # 各サブ予測器の事前ウェイト（同等を仮定）
 PRIOR_WEIGHTS: dict[str, float] = {
@@ -601,6 +608,334 @@ def save_accuracy(stats: dict[str, Any]) -> None:
     }
     with open(ACCURACY_PATH, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
+
+
+# ==============================================================================
+# 8. 予測履歴アーカイブ（自己学習の基盤）
+# ==============================================================================
+
+
+def load_history() -> dict[str, Any]:
+    """予測履歴を読み込む。存在しない場合は初期構造を返す。
+
+    Returns:
+        {"version": 1, "predictions": [...], "max_records": int}
+    """
+    if not HISTORY_PATH.exists():
+        return {"version": 1, "predictions": [], "max_records": MAX_HISTORY_RECORDS}
+    try:
+        with open(HISTORY_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+            if "predictions" not in data:
+                data["predictions"] = []
+            return data
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("予測履歴読み込み失敗: %s — 新規初期化", e)
+        return {"version": 1, "predictions": [], "max_records": MAX_HISTORY_RECORDS}
+
+
+def save_history(history: dict[str, Any]) -> None:
+    """予測履歴を永続化する。古いレコードを自動トリム。"""
+    HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # 上限超過分を削除（新しい順に保持）
+    records = history.get("predictions", [])
+    if len(records) > MAX_HISTORY_RECORDS:
+        records = records[-MAX_HISTORY_RECORDS:]
+    history["predictions"] = records
+    history["updated_at"] = datetime.now().isoformat()
+    with open(HISTORY_PATH, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
+
+
+def archive_predictions(predictions: list[dict[str, Any]]) -> int:
+    """新しい予測を履歴アーカイブに追加する。
+
+    同日・同銘柄の重複は上書きする（同日複数実行時の安全策）。
+
+    Args:
+        predictions: predict_all() の出力
+
+    Returns:
+        新規追加または更新された件数
+    """
+    history = load_history()
+    existing = {p.get("id", ""): i for i, p in enumerate(history["predictions"])}
+    added = 0
+    updated = 0
+
+    for pred in predictions:
+        pid = pred.get("id", "")
+        if not pid:
+            continue
+        # 評価関連フィールドのプレースホルダを付与
+        pred.setdefault("evaluated", False)
+        pred.setdefault("actual_return", None)
+        pred.setdefault("actual_direction", None)
+        pred.setdefault("evaluation_date", None)
+        if pid in existing:
+            # 未評価なら上書き（同日再実行時の安全策）
+            if not history["predictions"][existing[pid]].get("evaluated", False):
+                history["predictions"][existing[pid]] = pred
+                updated += 1
+        else:
+            history["predictions"].append(pred)
+            added += 1
+
+    save_history(history)
+    if added or updated:
+        logger.info(
+            "📦 予測履歴アーカイブ: +%d 新規 / %d 更新 (累計 %d 件)",
+            added, updated, len(history["predictions"])
+        )
+    return added + updated
+
+
+# ==============================================================================
+# 9. 学習ジャーナル（日次の学び）
+# ==============================================================================
+
+
+def load_journal() -> dict[str, Any]:
+    """学習ジャーナルを読み込む。"""
+    if not JOURNAL_PATH.exists():
+        return {"version": 1, "entries": []}
+    try:
+        with open(JOURNAL_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+            if "entries" not in data:
+                data["entries"] = []
+            return data
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("ジャーナル読み込み失敗: %s", e)
+        return {"version": 1, "entries": []}
+
+
+def save_journal(journal: dict[str, Any]) -> None:
+    """学習ジャーナルを永続化し、古いエントリをトリム。"""
+    JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    entries = journal.get("entries", [])
+    if len(entries) > MAX_JOURNAL_ENTRIES:
+        entries = entries[-MAX_JOURNAL_ENTRIES:]
+    journal["entries"] = entries
+    journal["updated_at"] = datetime.now().isoformat()
+    with open(JOURNAL_PATH, "w", encoding="utf-8") as f:
+        json.dump(journal, f, indent=2, ensure_ascii=False)
+
+
+def _detect_notable_findings(
+    history: dict[str, Any],
+    prev_weights: dict[str, float],
+    new_weights: dict[str, float],
+    predictor_stats: dict[str, dict[str, Any]],
+) -> list[str]:
+    """学習で発見された特筆すべき事項を抽出する。
+
+    Args:
+        history: 予測履歴
+        prev_weights: 前回のサブ予測器ウェイト
+        new_weights: 更新後のサブ予測器ウェイト
+        predictor_stats: 各サブ予測器の精度統計
+
+    Returns:
+        日本語の findings リスト
+    """
+    findings: list[str] = []
+
+    # ウェイト変化の大きい予測器を検出
+    for name, new_w in new_weights.items():
+        old_w = prev_weights.get(name, 1.0 / len(new_weights))
+        delta = new_w - old_w
+        stats = predictor_stats.get(name, {})
+        acc = stats.get("accuracy", 0.5)
+        evaluated = stats.get("evaluated", 0)
+        if evaluated < 5:
+            continue  # サンプル不足
+        if abs(delta) >= 0.05:
+            direction = "引き上げ" if delta > 0 else "引き下げ"
+            findings.append(
+                f"{name}: 精度 {acc:.0%} ({evaluated}件) → ウェイト {direction} "
+                f"({old_w:.2f} → {new_w:.2f})"
+            )
+
+    # 銘柄別のバイアスを検出（同じ銘柄を連続で誤って過小/過大評価）
+    evaluated = [p for p in history.get("predictions", []) if p.get("evaluated")]
+    by_ticker: dict[str, list[dict[str, Any]]] = {}
+    for p in evaluated[-80:]:  # 直近80件
+        by_ticker.setdefault(p.get("ticker", ""), []).append(p)
+
+    for ticker, preds in by_ticker.items():
+        if len(preds) < 3:
+            continue
+        # 予測より実際が高いケースの連続数
+        misses = [
+            p for p in preds[-5:]  # 最新5件
+            if p.get("actual_return") is not None
+            and p.get("expected_return_7d") is not None
+        ]
+        if len(misses) < 3:
+            continue
+        under_count = sum(
+            1 for p in misses
+            if p["actual_return"] > p["expected_return_7d"] + 0.01
+        )
+        over_count = sum(
+            1 for p in misses
+            if p["actual_return"] < p["expected_return_7d"] - 0.01
+        )
+        if under_count >= 3:
+            findings.append(f"{ticker}: {under_count}/5回 過小評価傾向 — 強気補正を検討")
+        if over_count >= 3:
+            findings.append(f"{ticker}: {over_count}/5回 過大評価傾向 — 弱気補正を検討")
+
+    return findings[:8]  # 最大8件
+
+
+def append_journal_entry(
+    history: dict[str, Any],
+    prev_weights: dict[str, float],
+    new_weights: dict[str, float],
+    predictor_stats: dict[str, dict[str, Any]],
+    n_evaluated_today: int,
+) -> dict[str, Any]:
+    """本日の学習結果をジャーナルに追記する。
+
+    Args:
+        history: 予測履歴
+        prev_weights: 前回のウェイト
+        new_weights: 更新後のウェイト
+        predictor_stats: サブ予測器の精度統計
+        n_evaluated_today: 今回新たに評価した件数
+
+    Returns:
+        追記された journal entry
+    """
+    journal = load_journal()
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # 直近窓での精度を計算
+    evaluated = [p for p in history.get("predictions", []) if p.get("evaluated")]
+    recent_7 = [p for p in evaluated if p.get("actual_direction") is not None][-30:]
+    recent_30 = [p for p in evaluated if p.get("actual_direction") is not None][-100:]
+
+    def _acc(preds: list[dict]) -> float:
+        if not preds:
+            return 0.0
+        correct = sum(
+            1 for p in preds
+            if float(np.sign(p.get("composite_score", 0)))
+               == float(p.get("actual_direction", 0))
+        )
+        return correct / len(preds)
+
+    accuracy_recent = _acc(recent_7)
+    accuracy_30 = _acc(recent_30)
+
+    findings = _detect_notable_findings(
+        history, prev_weights, new_weights, predictor_stats
+    )
+
+    entry = {
+        "date": today,
+        "timestamp": datetime.now().isoformat(),
+        "n_evaluated_today": n_evaluated_today,
+        "n_total_evaluated": len(evaluated),
+        "accuracy_recent": round(accuracy_recent, 4),
+        "accuracy_30d": round(accuracy_30, 4),
+        "sub_predictor_stats": {
+            name: {
+                "accuracy": round(s.get("accuracy", 0), 4),
+                "evaluated": s.get("evaluated", 0),
+                "weight": round(new_weights.get(name, 0), 3),
+                "weight_delta": round(
+                    new_weights.get(name, 0) - prev_weights.get(name, 0), 3
+                ),
+            }
+            for name, s in predictor_stats.items()
+        },
+        "notable_findings": findings,
+    }
+
+    # 同日エントリがあれば上書き
+    entries = journal.get("entries", [])
+    if entries and entries[-1].get("date") == today:
+        entries[-1] = entry
+    else:
+        entries.append(entry)
+    journal["entries"] = entries
+
+    save_journal(journal)
+    logger.info(
+        "🧠 学習ジャーナル更新: 直近精度 %.0f%% / 累計 %d件評価 / findings %d件",
+        accuracy_recent * 100, len(evaluated), len(findings)
+    )
+    return entry
+
+
+# ==============================================================================
+# 10. 統合学習サイクル（毎日1回呼び出し）
+# ==============================================================================
+
+
+def run_learning_cycle(
+    prices_dict: dict[str, np.ndarray],
+) -> dict[str, Any]:
+    """毎日の完全な学習サイクルを実行する。
+
+    フロー:
+      1. 予測履歴を読み込み
+      2. 7日以上経過した未評価予測を評価
+      3. サブ予測器の精度統計を更新 → Bayesian ウェイト調整
+      4. 学習ジャーナルに本日の学びを記録
+      5. 累積統計を永続化
+
+    Args:
+        prices_dict: {ticker: 日次価格配列}
+
+    Returns:
+        {"n_evaluated": int, "new_weights": {...}, "accuracy": float}
+    """
+    history = load_history()
+    predictions = history.get("predictions", [])
+
+    if not predictions:
+        logger.info("予測履歴が空 — 学習サイクルをスキップ")
+        return {"n_evaluated": 0, "accuracy": 0.0}
+
+    # 評価前のウェイトを記録（変化量を追跡するため）
+    prev_weights = load_predictor_weights()
+
+    # 評価（advanced_predictor の既存関数を流用）
+    n_before = sum(1 for p in predictions if p.get("evaluated"))
+    stats_output = evaluate_past_predictions(
+        predictions, prices_dict, eval_days=EVAL_MIN_DAYS
+    )
+    n_after = sum(1 for p in predictions if p.get("evaluated"))
+    n_newly_evaluated = n_after - n_before
+
+    # 精度統計を永続化
+    save_accuracy(stats_output)
+
+    # 更新済み履歴を保存（evaluated フラグが変わっている）
+    history["predictions"] = predictions
+    save_history(history)
+
+    # ウェイトを再読み込み（新統計に基づく Bayesian 更新済み）
+    new_weights = load_predictor_weights()
+
+    # ジャーナルに学習結果を記録
+    predictor_stats = stats_output.get("predictor_stats", {})
+    journal_entry = append_journal_entry(
+        history, prev_weights, new_weights, predictor_stats, n_newly_evaluated
+    )
+
+    return {
+        "n_evaluated": n_newly_evaluated,
+        "n_total_evaluated": journal_entry["n_total_evaluated"],
+        "accuracy_recent": journal_entry["accuracy_recent"],
+        "accuracy_30d": journal_entry["accuracy_30d"],
+        "new_weights": new_weights,
+        "notable_findings": journal_entry["notable_findings"],
+    }
 
 
 if __name__ == "__main__":

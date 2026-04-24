@@ -394,6 +394,106 @@ def build_portfolio_html(holdings: dict, results: dict) -> str:
     return html
 
 
+def build_learning_html(results: dict) -> str:
+    """🧠 Learning タブ: 予測精度の推移 + 学習ジャーナル."""
+    learning = results.get("learning_summary", {}) or {}
+
+    # 学習ジャーナルを直接読み込む（過去エントリ用）
+    journal_path = BASE_DIR / "data" / "learning_journal.json"
+    journal_entries = []
+    if journal_path.exists():
+        try:
+            with open(journal_path, encoding="utf-8") as f:
+                journal_entries = json.load(f).get("entries", [])
+        except (json.JSONDecodeError, OSError):
+            journal_entries = []
+
+    if not learning and not journal_entries:
+        return ('<div class="section"><p style="color:var(--text-muted);text-align:center;padding:40px">'
+                '学習データがまだありません。予測履歴が7日以上蓄積されると自動評価が始まります。</p></div>')
+
+    html = '<div class="section"><div class="section-title"><span class="icon">🧠</span> 自己学習サイクル</div>'
+
+    # サマリーメトリクス
+    acc_recent = (learning.get("accuracy_recent", 0) or 0) * 100
+    acc_30 = (learning.get("accuracy_30d", 0) or 0) * 100
+    n_total = learning.get("n_total_evaluated", 0)
+    n_today = learning.get("n_evaluated", 0)
+
+    html += '<div class="port-summary-grid">'
+    html += f'<div class="port-metric"><div class="port-metric-label">直近方向精度</div>'
+    html += f'<div class="port-metric-value">{acc_recent:.0f}%</div>'
+    html += f'<div class="port-metric-sub">直近30件</div></div>'
+
+    html += f'<div class="port-metric"><div class="port-metric-label">30日精度</div>'
+    html += f'<div class="port-metric-value">{acc_30:.0f}%</div>'
+    html += f'<div class="port-metric-sub">直近100件</div></div>'
+
+    html += f'<div class="port-metric"><div class="port-metric-label">累計評価</div>'
+    html += f'<div class="port-metric-value">{n_total}</div>'
+    html += f'<div class="port-metric-sub">本日 +{n_today} 新規</div></div>'
+
+    html += f'<div class="port-metric"><div class="port-metric-label">ジャーナル</div>'
+    html += f'<div class="port-metric-value">{len(journal_entries)}</div>'
+    html += f'<div class="port-metric-sub">日次学習エントリ</div></div>'
+    html += '</div>'
+
+    # サブ予測器ウェイト
+    sub_stats = {}
+    if journal_entries:
+        latest_entry = journal_entries[-1]
+        sub_stats = latest_entry.get("sub_predictor_stats", {})
+
+    if sub_stats:
+        html += '<div class="sector-section"><div class="sector-title">🔬 サブ予測器の学習状態</div>'
+        html += '<div class="sector-bars">'
+        for name, s in sub_stats.items():
+            acc = s.get("accuracy", 0) * 100
+            weight = s.get("weight", 0)
+            delta = s.get("weight_delta", 0)
+            ev = s.get("evaluated", 0)
+            delta_str = f'<span style="color:var(--accent-green)">+{delta:.2f}</span>' if delta > 0 else \
+                        f'<span style="color:var(--accent-red)">{delta:.2f}</span>' if delta < 0 else \
+                        f'<span style="color:var(--text-muted)">±0</span>'
+            bar_pct = min(100, weight * 100)
+            html += f'<div class="sector-bar-row">'
+            html += f'<div class="sector-bar-label">{name}</div>'
+            html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{bar_pct:.0f}%;background:var(--accent-bright)"></div></div>'
+            html += f'<div class="sector-bar-value">精度 {acc:.0f}% / W {weight:.2f} {delta_str}<span class="sector-pct"> ({ev}件)</span></div>'
+            html += '</div>'
+        html += '</div></div>'
+
+    # 最新の notable findings
+    findings = learning.get("notable_findings", [])
+    if findings:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">💡</span> 本日の学び</div>'
+        html += '<div class="action-grid" style="grid-template-columns:1fr">'
+        for f in findings:
+            html += f'<div class="action-card" style="border-left:2px solid var(--accent-bright)">'
+            html += f'<div class="reason" style="border-top:none;padding-top:0">{html_mod.escape(f)}</div>'
+            html += '</div>'
+        html += '</div>'
+
+    # 過去ジャーナル（7日分）
+    if len(journal_entries) > 1:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">📓</span> 学習ジャーナル（直近7日）</div>'
+        html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
+        html += '<thead><tr><th>日付</th><th>評価件数</th><th>直近精度</th><th>30日精度</th><th>主な学び</th></tr></thead><tbody>'
+        for e in reversed(journal_entries[-7:]):
+            acc_r = (e.get("accuracy_recent", 0) or 0) * 100
+            acc_30 = (e.get("accuracy_30d", 0) or 0) * 100
+            n_ev = e.get("n_evaluated_today", 0)
+            ns = e.get("notable_findings", [])
+            finding_text = ns[0][:60] + "…" if ns and len(ns[0]) > 60 else (ns[0] if ns else "—")
+            html += f'<tr><td>{e.get("date", "")}</td><td>+{n_ev}</td>'
+            html += f'<td>{acc_r:.0f}%</td><td>{acc_30:.0f}%</td>'
+            html += f'<td style="white-space:normal;max-width:420px">{html_mod.escape(finding_text)}</td></tr>'
+        html += '</tbody></table></div></div>'
+
+    html += '</div>'
+    return html
+
+
 def build_advanced_signals_html(results: dict) -> str:
     """🔮 高精度予測シグナルのHTMLを構築する。
 
@@ -589,6 +689,7 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
     prompt_text = generate_meta_prompt_text(results, track)
     portfolio_html = build_portfolio_html(holdings, results)
     advanced_html = build_advanced_signals_html(results)
+    learning_html = build_learning_html(results)
     performance_chart_html = build_performance_html()
     performance_json = build_performance_json()
 
@@ -1309,6 +1410,7 @@ a:focus-visible{{
     <button class="tab-btn active" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
     <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
     <button class="tab-btn" data-tab="advanced" onclick="switchTab(this,'advanced')">🔮 Advanced AI</button>
+    <button class="tab-btn" data-tab="learning" onclick="switchTab(this,'learning')">🧠 Learning</button>
     <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
     <button class="tab-btn" data-tab="risk" onclick="switchTab(this,'risk')">🔥 Risk</button>
     <button class="tab-btn" data-tab="report" onclick="switchTab(this,'report')">🎯 AI Report Card</button>
@@ -1320,6 +1422,11 @@ a:focus-visible{{
   <div id="tab-portfolio" class="tab-content active">
     {portfolio_html}
     {performance_chart_html}
+  </div>
+
+  <!-- Tab: Learning -->
+  <div id="tab-learning" class="tab-content">
+    {learning_html}
   </div>
 
   <!-- Tab: Advanced AI -->

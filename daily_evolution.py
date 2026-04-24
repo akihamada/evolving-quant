@@ -910,20 +910,31 @@ def run_daily_evolution() -> dict[str, Any]:
             cov_detoned, market_caps, None, None, available_tickers
         )
 
-    # === 高精度予測アンサンブル統合 ===
+    # === 高精度予測アンサンブル + 自己学習サイクル統合 ===
     advanced_signals: list = []
+    learning_result: dict = {}
     try:
-        from advanced_predictor import predict_all, evaluate_past_predictions, save_accuracy
+        from advanced_predictor import (
+            predict_all, archive_predictions, run_learning_cycle,
+        )
         prices_dict = {t: prices[t].dropna().values for t in available_tickers if t in prices.columns}
+
+        # 1. 予測生成
         advanced_signals = predict_all(prices_dict)
 
-        # 過去予測の自己評価（古いレコードから)
-        past_advanced = []
-        for r in track.get("records", []):
-            past_advanced.extend(r.get("advanced_signals_archive", []))
-        if past_advanced:
-            stats = evaluate_past_predictions(past_advanced, prices_dict)
-            save_accuracy(stats)
+        # 2. 履歴アーカイブ（後の評価のため永続化）
+        archive_predictions(advanced_signals)
+
+        # 3. 毎日の学習サイクル:
+        #    過去予測の答え合わせ → サブ予測器ウェイトの Bayesian 更新
+        #    → 学習ジャーナル追記
+        learning_result = run_learning_cycle(prices_dict)
+        logger.info(
+            "🧠 学習サイクル完了: 新規評価 %d件 / 直近精度 %.0f%% / 累計 %d件",
+            learning_result.get("n_evaluated", 0),
+            learning_result.get("accuracy_recent", 0) * 100,
+            learning_result.get("n_total_evaluated", 0),
+        )
     except Exception as e:
         logger.warning("高精度予測スキップ: %s", e)
 
@@ -942,6 +953,7 @@ def run_daily_evolution() -> dict[str, Any]:
         "ensemble_weights": ew,
         "evolution_state": evolution_state,
         "advanced_signals": advanced_signals,
+        "learning_summary": learning_result,
     }
 
     # トラックレコード保存
