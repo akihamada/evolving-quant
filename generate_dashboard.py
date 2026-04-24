@@ -554,8 +554,22 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
 
     # Summary stats
     summary = holdings.get("us_stocks", {}).get("summary", {})
-    total_usd = summary.get("grand_total_usd", 0)
-    total_pnl = summary.get("grand_total_pnl_usd", 0)
+    # 新旧スキーマ両対応: total_market_value (current) / grand_total_usd (legacy)
+    total_usd = summary.get("total_market_value", summary.get("grand_total_usd", 0))
+    total_pnl = summary.get("total_unrealized_pnl", summary.get("grand_total_pnl_usd", 0))
+    # summary が 0/欠損の場合は実保有から計算（ロバスト fallback）
+    if not total_usd or total_usd == 0:
+        total_usd = 0.0
+        total_pnl = 0.0
+        for acct in ["tokutei", "nisa"]:
+            for s in holdings.get("us_stocks", {}).get(acct, []):
+                shares = s.get("shares", 0) or 0
+                price = float(s.get("current_price_usd", 0) or 0)
+                cost = float(s.get("cost_basis_usd", 0) or 0)
+                mv = s.get("market_value_usd", price * shares)
+                pnl = s.get("unrealized_pnl_usd", (price - cost) * shares)
+                total_usd += mv
+                total_pnl += pnl
     pnl_pct = (total_pnl / (total_usd - total_pnl) * 100) if total_usd > total_pnl else 0
 
     regime = results.get("regime", "unknown")
