@@ -664,6 +664,21 @@ body{{
 }}
 .container{{max-width:1440px;margin:0 auto;padding:var(--space-5)}}
 
+/* Focus-visible: キーボード操作の可視化 (a11y) */
+*:focus{{outline:none}}
+*:focus-visible{{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  border-radius:var(--radius-sm);
+}}
+button:focus-visible,
+a:focus-visible{{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}}
+/* 選択色をアクセントに統一 */
+::selection{{background:var(--accent-soft);color:var(--text-primary)}}
+
 /* Header */
 .header{{
   display:flex;justify-content:space-between;align-items:center;
@@ -680,7 +695,7 @@ body{{
   font-weight:600;
   letter-spacing:-0.01em;
   color:var(--text-primary);
-  line-height:1.4;
+  line-height:1.5;
 }}
 .header h1 span{{color:var(--accent);font-style:italic}}
 .header-meta{{text-align:right}}
@@ -943,7 +958,7 @@ body{{
 /* Metrics Row */
 .metrics-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}}
 .metric-box{{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:center}}
-.metric-box .m-label{{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}}
+.metric-box .m-label{{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;font-family:'JetBrains Mono',monospace}}
 .metric-box .m-value{{font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:4px}}
 
 .footer{{
