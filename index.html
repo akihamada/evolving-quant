@@ -6,133 +6,575 @@
 <title>🧬 Evolving Quant Dashboard</title>
 <meta name="description" content="Self-learning AI portfolio dashboard">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg-primary:#0a0e1a;--bg-card:#111827;--bg-card-hover:#1a2332;
-  --border:#1e293b;--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;
-  --accent-green:#10b981;--accent-green-bg:rgba(16,185,129,0.12);
-  --accent-red:#ef4444;--accent-red-bg:rgba(239,68,68,0.12);
-  --accent-yellow:#f59e0b;--accent-yellow-bg:rgba(245,158,11,0.12);
-  --accent-blue:#3b82f6;--accent-blue-bg:rgba(59,130,246,0.12);
-  --accent-purple:#a855f7;--accent-purple-bg:rgba(168,85,247,0.12);
-  --accent-cyan:#06b6d4;
+  /* === Cursor.md 仕様準拠 Surface Scale === */
+  --surface-100: #f7f7f4;  /* Lightest button/card */
+  --surface-200: #f2f1ed;  /* Primary page background */
+  --surface-300: #ebeae5;  /* Button default */
+  --surface-400: #e6e5e0;  /* Card backgrounds */
+  --surface-500: #e1e0db;  /* Tertiary emphasis */
+  /* Semantic aliases */
+  --bg-primary:    #f2f1ed;    /* = surface-200 */
+  --bg-card:       #ffffff;    /* Pure white sparingly */
+  --bg-card-hover: #ebeae5;    /* = surface-300 */
+  --bg-elevated:   #f7f7f4;    /* = surface-100 */
+
+  /* === Cursor oklab borders === */
+  --border:        oklab(0.263084 -0.00230259 0.0124794 / 0.1);
+  --border-medium: oklab(0.263084 -0.00230259 0.0124794 / 0.2);
+  --border-strong: rgba(38, 37, 30, 0.55);
+  --border-solid:  #26251e;
+
+  /* === Text === */
+  --text-primary:  #26251e;              /* warm near-black */
+  --text-secondary:rgba(38, 37, 30, 0.55); /* 55% warm brown */
+  --text-muted:    rgba(38, 37, 30, 0.4);
+
+  /* === Brand & Semantic === */
+  --accent:        #f54e00;    /* Cursor Orange */
+  --accent-soft:   rgba(245, 78, 0, 0.08);
+  --accent-gold:   #c08532;    /* Gold secondary */
+  --color-error:   #cf2d56;    /* Warm crimson (signature hover) */
+  --color-success: #1f8a65;    /* Muted teal-green */
+
+  /* === Timeline colors (AI state) === */
+  --timeline-thinking: #dfa88f;
+  --timeline-grep:     #9fc9a2;
+  --timeline-read:     #9fbbe0;
+  --timeline-edit:     #c0a8dd;
+
+  /* === P&L / chart semantic (accessible warm variants) === */
+  --accent-green:  #1f8a65;
+  --accent-green-bg:rgba(31, 138, 101, 0.08);
+  --accent-red:    #cf2d56;
+  --accent-red-bg: rgba(207, 45, 86, 0.08);
+  --accent-yellow: #c08532;
+  --accent-yellow-bg:rgba(192, 133, 50, 0.08);
+  --accent-blue:   #9fbbe0;
+  --accent-blue-bg:rgba(159, 187, 224, 0.12);
+  --accent-purple: #c0a8dd;
+  --accent-purple-bg:rgba(192, 168, 221, 0.12);
+
+  /* === Radius === */
+  --radius-sm:     2px;
+  --radius-md:     4px;
+  --radius-lg:     8px;
+  --radius-xl:     10px;
+  --radius-pill:   9999px;     /* full-pill per cursor.md */
+
+  /* === Spacing (8px base + sub-8px fine scale) === */
+  --space-half: 4px;
+  --space-1: 8px;  --space-2: 12px; --space-3: 16px;
+  --space-4: 24px; --space-5: 32px; --space-6: 48px;
+  --space-7: 64px; --space-8: 96px;
+
+  /* === Shadow philosophy: large blur, atmospheric === */
+  --shadow-ambient: rgba(0,0,0,0.02) 0px 0px 16px, rgba(0,0,0,0.008) 0px 0px 8px;
+  --shadow-elevated: rgba(0,0,0,0.14) 0px 28px 70px, rgba(0,0,0,0.1) 0px 14px 32px, oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
+  --shadow-focus:   rgba(0,0,0,0.1) 0px 4px 12px;
+  --shadow-border:  oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
+
+  /* === Transitions (Cursor spec: 150ms color / 200ms shadow) === */
+  --transition-color:   150ms ease;
+  --transition-shadow:  200ms ease;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.5}
-.container{max-width:1400px;margin:0 auto;padding:24px}
+html{text-size-adjust:100%;font-kerning:auto}
+
+/* === jp-ui-contracts: Japanese line-breaking === */
+html:lang(ja),
+html{
+  line-break:strict;
+  word-break:normal;
+  overflow-wrap:anywhere;
+}
+/* 見出しは自然な文節で改行 (progressive enhancement) */
+h1:lang(ja), h2:lang(ja), h3:lang(ja),
+.section-title, .header h1{
+  word-break:auto-phrase;
+}
+
+body{
+  font-family:-apple-system,'Inter','Noto Sans JP','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
+  background:var(--bg-primary);
+  color:var(--text-primary);
+  min-height:100vh;
+  line-height:1.7;                 /* ≥1.5 遵守 */
+  font-feature-settings:normal;     /* base-DESIGN: palt 全体禁止 */
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+.container{max-width:1440px;margin:0 auto;padding:var(--space-5)}
+
+/* Focus-visible: キーボード操作の可視化 (a11y) */
+*:focus{outline:none}
+*:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  border-radius:var(--radius-sm);
+}
+button:focus-visible,
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+/* 選択色をアクセントに統一 */
+::selection{background:var(--accent-soft);color:var(--text-primary)}
 
 /* Header */
-.header{display:flex;justify-content:space-between;align-items:center;padding:28px 32px;background:linear-gradient(135deg,#111827,#1a2332);border:1px solid var(--border);border-radius:20px;margin-bottom:24px;position:relative;overflow:hidden}
-.header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple),var(--accent-cyan))}
-.header h1{font-size:26px;font-weight:800;letter-spacing:-0.5px}
-.header h1 span{background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:var(--space-5) var(--space-6);
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  margin-bottom:var(--space-5);
+  box-shadow:var(--shadow-sm);
+}
+.header h1{
+  font-family:'Noto Serif JP',Georgia,serif;
+  font-size:32px;
+  font-weight:600;
+  letter-spacing:-0.02em;  /* Progressive: ~-0.64px at 32px */
+  color:var(--text-primary);
+  line-height:1.5;
+}
+.header h1 span{transition:color var(--transition-color)}
+.header h1 span{color:var(--accent);font-style:italic}
 .header-meta{text-align:right}
-.header-meta .date{color:var(--text-secondary);font-size:14px}
-.header-meta .confidence{display:inline-flex;align-items:center;gap:6px;background:var(--accent-blue-bg);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:4px 14px;font-size:13px;font-weight:600;color:var(--accent-blue);margin-top:6px}
-.header-meta .confidence .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-blue);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.header-meta .date{
+  color:var(--text-muted);
+  font-size:13px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.01em;
+}
+.header-meta .confidence{
+  display:inline-flex;align-items:center;gap:var(--space-2);
+  background:var(--accent-soft);
+  border:1px solid rgba(245, 78, 0, 0.2);
+  border-radius:var(--radius-pill);
+  padding:4px 14px;
+  font-size:12px;font-weight:500;
+  color:var(--accent);
+  margin-top:var(--space-2);
+  font-family:'JetBrains Mono',monospace;
+}
+.header-meta .confidence .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
 /* Stats */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;transition:all 0.3s}
-.stat-card:hover{transform:translateY(-2px);border-color:rgba(59,130,246,0.3)}
-.stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
-.stat-value{font-size:28px;font-weight:800;margin-top:4px;font-family:'JetBrains Mono',monospace}
-.stat-sub{font-size:13px;color:var(--text-secondary);margin-top:2px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}
+.stat-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-3) var(--space-4);
+  transition:border-color var(--transition-color), box-shadow var(--transition-shadow);
+}
+.stat-card:hover{
+  border-color:var(--border-medium);
+  box-shadow:var(--shadow-ambient);
+}
+.stat-label{
+  font-size:11px;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:0.08em;font-weight:500;
+  font-family:'JetBrains Mono',monospace;
+}
+.stat-value{
+  font-size:28px;font-weight:500;margin-top:var(--space-2);
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text-primary);
+  letter-spacing:-0.02em;
+}
+.stat-sub{font-size:13px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}
 
 /* Tabs */
-.tab-nav{display:flex;gap:4px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px}
-.tab-btn{padding:10px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px 10px 0 0;color:var(--text-secondary);cursor:pointer;font-size:14px;font-weight:600;white-space:nowrap;transition:all 0.3s;font-family:'Inter',sans-serif}
-.tab-btn:hover{background:var(--bg-card-hover);color:var(--text-primary)}
-.tab-btn.active{background:linear-gradient(135deg,#3b82f6,#6c5ce7);color:#fff;border-color:transparent}
+.tab-nav{
+  display:flex;gap:var(--space-1);
+  margin-bottom:var(--space-5);
+  overflow-x:auto;
+  padding:var(--space-1);
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:var(--radius-pill);
+}
+.tab-btn{
+  padding:8px 18px;background:transparent;border:none;
+  border-radius:var(--radius-pill);
+  color:var(--text-secondary);cursor:pointer;
+  font-size:13px;font-weight:500;white-space:nowrap;
+  transition:all 0.2s;
+  font-family:inherit;
+}
+.tab-btn{
+  transition:color var(--transition-color), background var(--transition-color);
+}
+.tab-btn:hover{background:var(--bg-card-hover);color:var(--color-error)}
+.tab-btn.active{background:var(--accent);color:#fff}
+.tab-btn.active:hover{color:#fff}
 .tab-content{display:none}
 .tab-content.active{display:block}
 
 /* Strategy Banner */
-.strategy-banner{background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(168,85,247,0.08));border:1px solid rgba(59,130,246,0.2);border-radius:16px;padding:20px 28px;margin-bottom:24px;font-size:15px;color:var(--text-secondary);line-height:1.7}
-.strategy-banner strong{color:var(--text-primary)}
+.strategy-banner{
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:var(--radius-md);
+  padding:var(--space-4) var(--space-5);
+  margin-bottom:var(--space-5);
+  font-size:14px;
+  color:var(--text-secondary);
+  line-height:1.8;
+}
+.strategy-banner strong{color:var(--text-primary);font-weight:600}
 
 /* Sections & Cards */
-.section{margin-bottom:28px}
-.section-title{font-size:18px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.section{margin-bottom:var(--space-6)}
+.section-title{
+  font-family:'Noto Serif JP',Georgia,serif;
+  font-size:20px;font-weight:600;
+  margin-bottom:var(--space-4);
+  display:flex;align-items:center;gap:var(--space-2);
+  color:var(--text-primary);
+  letter-spacing:-0.005em;
+  line-height:1.5;
+}
 .section-title .icon{font-size:22px}
 
-.action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-.action-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;transition:all 0.3s;overflow:hidden}
-.action-card:hover{transform:translateY(-2px)}
-.action-card.buy{border-left:4px solid var(--accent-green)}
-.action-card.hold{border-left:4px solid var(--accent-yellow)}
-.action-card.sell{border-left:4px solid var(--accent-red)}
+.action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-3)}
+.action-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-4) var(--space-5);
+  display:flex;flex-direction:column;gap:var(--space-2);
+  transition:border-color 0.2s;
+}
+.action-card:hover{border-color:var(--border-strong)}
+.action-card.buy{border-left:3px solid var(--accent-green)}
+.action-card.hold{border-left:3px solid var(--accent-yellow)}
+.action-card.sell{border-left:3px solid var(--accent-red)}
 .action-card .card-header{display:flex;justify-content:space-between;align-items:center}
-.action-card .ticker{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace}
-.ticker-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s}
-.ticker-link:hover{color:var(--accent-blue);text-decoration:underline}
-.ticker-link .link-icon{font-size:14px;opacity:0;transition:opacity 0.2s}
-.ticker-link:hover .link-icon{opacity:1}
-a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
-.action-badge{font-size:11px;font-weight:700;text-transform:uppercase;padding:4px 12px;border-radius:20px;letter-spacing:0.5px}
-.action-badge.buy{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3)}
-.action-badge.hold{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(245,158,11,0.3)}
-.action-badge.sell{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3)}
-.holdings{display:flex;gap:16px;font-size:13px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace}
+.action-card .ticker{
+  font-size:20px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text-primary);
+  letter-spacing:-0.01em;
+}
+.action-badge{
+  font-size:10px;font-weight:500;
+  text-transform:uppercase;letter-spacing:0.08em;
+  padding:4px 12px;
+  border-radius:var(--radius-pill);
+  font-family:'JetBrains Mono',monospace;
+}
+.action-badge.buy{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid rgba(45, 122, 62, 0.2)}
+.action-badge.hold{background:var(--accent-yellow-bg);color:var(--accent-yellow);border:1px solid rgba(184, 134, 11, 0.2)}
+.action-badge.sell{background:var(--accent-red-bg);color:var(--accent-red);border:1px solid rgba(192, 53, 48, 0.2)}
+.holdings{
+  display:flex;gap:var(--space-4);
+  font-size:13px;color:var(--text-secondary);
+  font-family:'JetBrains Mono',monospace;
+}
 .pnl-positive{color:var(--accent-green)}
 .pnl-negative{color:var(--accent-red)}
-.reason{font-size:13px;color:var(--text-secondary);line-height:1.6;border-top:1px solid var(--border);padding-top:10px}
-.alloc-bar{height:4px;border-radius:2px;background:rgba(255,255,255,0.06);margin-top:auto}
-.alloc-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple))}
-.alloc-label{font-size:11px;color:var(--text-muted);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.reason{
+  font-size:13px;color:var(--text-secondary);
+  line-height:1.75;
+  border-top:1px solid var(--border);
+  padding-top:var(--space-2);
+  word-break:normal;overflow-wrap:anywhere;
+}
+.alloc-bar{height:3px;border-radius:var(--radius-pill);background:var(--bg-card-hover);margin-top:auto;overflow:hidden}
+.alloc-bar-fill{height:100%;border-radius:var(--radius-pill);background:var(--accent)}
+.alloc-label{
+  font-size:11px;color:var(--text-muted);
+  margin-top:var(--space-1);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.02em;
+}
 
-.picks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
-.pick-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;border-left:4px solid var(--accent-purple);transition:all 0.3s}
-.pick-card:hover{transform:translateY(-2px)}
-.pick-ticker{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace}
-.pick-sector{font-size:12px;color:var(--accent-purple);font-weight:600;margin-top:2px}
-.pick-reason{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.6}
+.picks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--space-3)}
+.pick-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-4) var(--space-5);
+  border-left:3px solid var(--accent);
+  transition:border-color 0.2s;
+}
+.pick-card:hover{border-color:var(--border-strong)}
+.pick-ticker{font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-primary);letter-spacing:-0.01em}
+.pick-sector{
+  display:inline-block;margin-top:var(--space-1);
+  font-size:11px;color:var(--accent);
+  font-family:'JetBrains Mono',monospace;
+  font-weight:500;letter-spacing:0.04em;
+  padding:2px 10px;
+  background:var(--accent-soft);
+  border-radius:var(--radius-pill);
+}
+.pick-reason{font-size:13px;color:var(--text-secondary);margin-top:var(--space-2);line-height:1.75}
 
-.tsumitate-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.tsumitate-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px 24px}
-.tsumitate-card h4{font-size:15px;font-weight:700;margin-bottom:12px}
-.change-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text-secondary);margin-bottom:8px;line-height:1.5}
-.change-item .arrow{color:var(--accent-yellow);font-weight:700;flex-shrink:0}
+.tsumitate-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+.tsumitate-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-4) var(--space-5);
+}
+.tsumitate-card h4{
+  font-family:'Noto Serif JP',serif;
+  font-size:15px;font-weight:600;
+  margin-bottom:var(--space-3);color:var(--text-primary);
+}
+.change-item{
+  display:flex;align-items:flex-start;gap:var(--space-2);
+  font-size:13px;color:var(--text-secondary);
+  margin-bottom:var(--space-2);line-height:1.7;
+}
+.change-item .arrow{color:var(--accent);font-weight:600;flex-shrink:0}
 
-.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.risk-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
-.risk-card.bull{border-top:3px solid var(--accent-green)}
-.risk-card.base{border-top:3px solid var(--accent-blue)}
-.risk-card.bear{border-top:3px solid var(--accent-red)}
-.risk-prob{font-size:36px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3)}
+.risk-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-5) var(--space-4);
+  text-align:center;
+}
+.risk-card.bull{border-top:2px solid var(--accent-green)}
+.risk-card.base{border-top:2px solid var(--accent-blue)}
+.risk-card.bear{border-top:2px solid var(--accent-red)}
+.risk-prob{
+  font-size:36px;font-weight:500;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:-0.02em;
+}
 .risk-card.bull .risk-prob{color:var(--accent-green)}
 .risk-card.base .risk-prob{color:var(--accent-blue)}
 .risk-card.bear .risk-prob{color:var(--accent-red)}
-.risk-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--text-muted);margin-top:4px}
-.risk-desc{font-size:13px;color:var(--text-secondary);margin-top:10px;line-height:1.5}
+.risk-label{
+  font-size:11px;text-transform:uppercase;
+  letter-spacing:0.08em;font-weight:500;
+  color:var(--text-muted);margin-top:var(--space-1);
+  font-family:'JetBrains Mono',monospace;
+}
+.risk-desc{font-size:13px;color:var(--text-secondary);margin-top:var(--space-2);line-height:1.7}
 
 /* Charts */
-.chart-container{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
-.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.chart-title{font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text-primary)}
+.chart-container{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-5);margin-bottom:var(--space-4);
+}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+.chart-title{
+  font-family:'Noto Serif JP',serif;
+  font-size:16px;font-weight:600;
+  margin-bottom:var(--space-4);color:var(--text-primary);
+}
 
 /* Meta Prompt */
-.prompt-block{background:#0d1117;border:2px solid var(--accent-purple);border-radius:12px;padding:20px;font-size:12px;font-family:'JetBrains Mono',monospace;color:#c9d1d9;white-space:pre-wrap;word-break:break-all;max-height:500px;overflow-y:auto;line-height:1.6}
+.prompt-block{
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-5);
+  font-size:12px;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text-primary);
+  white-space:pre-wrap;
+  word-break:normal;overflow-wrap:anywhere;
+  max-height:500px;overflow-y:auto;
+  line-height:1.7;
+}
 
 /* Records */
-.record-row{display:flex;gap:16px;align-items:center;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:13px}
-.record-date{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent-blue);min-width:90px}
+.record-row{
+  display:flex;gap:var(--space-4);align-items:center;
+  padding:var(--space-3) var(--space-4);
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  margin-bottom:var(--space-2);font-size:13px;
+}
+.record-date{
+  font-family:'JetBrains Mono',monospace;
+  font-weight:500;color:var(--accent);
+  min-width:100px;letter-spacing:0.01em;
+}
 .record-status{min-width:30px}
-.record-conf{color:var(--accent-yellow);font-weight:600;min-width:80px}
-.record-reason{color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.record-conf{color:var(--text-secondary);font-weight:500;min-width:90px;font-family:'JetBrains Mono',monospace}
+.record-reason{color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.7}
 
 /* Metrics Row */
 .metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
 .metric-box{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:center}
-.metric-box .m-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+.metric-box .m-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;font-family:'JetBrains Mono',monospace}
 .metric-box .m-value{font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:4px}
 
-.footer{text-align:center;padding:32px 0 20px;font-size:12px;color:var(--text-muted)}
-.fade-in{animation:fadeIn 0.6s ease forwards;opacity:0}
+.footer{
+  text-align:center;padding:var(--space-6) 0 var(--space-5);
+  font-size:12px;color:var(--text-muted);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.02em;
+  line-height:1.8;
+}
+.footer a{color:var(--accent);text-decoration:none;transition:color var(--transition-color)}
+.footer a:hover{color:var(--color-error);text-decoration:underline}
+.fade-in{animation:fadeIn 0.4s ease forwards;opacity:0}
 @keyframes fadeIn{to{opacity:1}}
+
+/* Portfolio Tab */
+.port-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}
+.port-metric{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-4) var(--space-5);
+  transition:border-color 0.2s;
+}
+.port-metric:hover{border-color:var(--border-strong)}
+.port-metric-label{
+  font-size:11px;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:0.08em;font-weight:500;
+  font-family:'JetBrains Mono',monospace;
+}
+.port-metric-value{
+  font-size:26px;font-weight:500;
+  font-family:'JetBrains Mono',monospace;
+  margin-top:var(--space-2);
+  color:var(--text-primary);
+  letter-spacing:-0.02em;
+}
+.port-metric-sub{font-size:12px;color:var(--text-secondary);margin-top:var(--space-1);line-height:1.6}
+
+.sector-section{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-5) var(--space-5);
+  margin-bottom:var(--space-4);
+}
+.sector-title{
+  font-family:'Noto Serif JP',serif;
+  font-size:16px;font-weight:600;
+  margin-bottom:var(--space-4);color:var(--text-primary);
+}
+.sector-bars{display:flex;flex-direction:column;gap:var(--space-2)}
+.sector-bar-row{
+  display:grid;grid-template-columns:140px 1fr 160px;
+  align-items:center;gap:var(--space-3);font-size:13px;
+}
+.sector-bar-label{color:var(--text-primary);font-weight:500}
+.sector-bar-track{
+  height:12px;background:var(--bg-card-hover);
+  border-radius:var(--radius-pill);overflow:hidden;
+}
+.sector-bar-fill{height:100%;border-radius:var(--radius-pill);transition:width 0.6s ease}
+.sector-bar-value{
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text-primary);text-align:right;
+  letter-spacing:-0.01em;
+}
+.sector-pct{color:var(--text-muted);font-size:11px;font-family:'JetBrains Mono',monospace}
+
+.port-table-section{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:var(--space-5) 0 var(--space-2);
+  margin-bottom:var(--space-4);
+}
+.port-table-title{
+  font-family:'Noto Serif JP',serif;
+  font-size:16px;font-weight:600;
+  margin-bottom:var(--space-3);
+  padding:0 var(--space-5);
+  color:var(--text-primary);
+}
+.port-table-wrap{overflow-x:auto;max-width:100%}
+.port-table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+.port-table th{
+  text-align:left;padding:var(--space-3) var(--space-3);
+  color:var(--text-muted);
+  border-bottom:1px solid var(--border);
+  font-weight:500;text-transform:uppercase;
+  font-size:10px;letter-spacing:0.08em;
+  cursor:pointer;user-select:none;
+  background:var(--bg-elevated);
+  font-family:'JetBrains Mono',monospace;
+  white-space:nowrap;
+}
+.port-table th{transition:color var(--transition-color)}
+.port-table th:hover{color:var(--color-error)}
+.port-table td{
+  padding:var(--space-3) var(--space-3);
+  border-bottom:1px solid var(--border);
+  color:var(--text-secondary);
+  white-space:nowrap;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:-0.005em;
+}
+.port-table tr:hover{background:var(--bg-elevated)}
+.port-table .port-ticker strong{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600}
+.acct-badge{
+  display:inline-block;padding:2px 10px;
+  border-radius:var(--radius-pill);
+  font-size:10px;
+  background:var(--accent-soft);
+  color:var(--accent);
+  font-weight:500;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.04em;
+}
+.chart-link{text-decoration:none;font-size:16px;opacity:0.6;transition:opacity 0.2s}
+.chart-link:hover{opacity:1}
+
+/* Advanced Predictor Tab */
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--space-3)}
+.adv-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-4) var(--space-5);
+  transition:border-color 0.2s;
+}
+.adv-card:hover{border-color:var(--border-strong)}
+.adv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)}
+.adv-ticker{
+  font-size:18px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text-primary);
+  text-decoration:none;
+  letter-spacing:-0.01em;
+}
+.adv-ticker{transition:color var(--transition-color)}
+.adv-ticker:hover{color:var(--color-error)}
+.adv-signal{
+  font-size:11px;font-weight:500;
+  letter-spacing:0.06em;
+  font-family:'JetBrains Mono',monospace;
+  padding:3px 10px;
+  border-radius:var(--radius-pill);
+}
+.adv-score{font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-1);font-family:'JetBrains Mono',monospace}
+.adv-conf{font-size:12px;color:var(--text-muted);margin-bottom:var(--space-3);font-family:'JetBrains Mono',monospace}
+.adv-subbars{
+  display:flex;flex-direction:column;gap:var(--space-2);
+  border-top:1px solid var(--border);
+  padding-top:var(--space-3);
+}
+.adv-subbar{
+  display:grid;grid-template-columns:60px 60px 1fr;
+  align-items:center;gap:var(--space-2);font-size:11px;
+}
+.adv-sublabel{color:var(--text-muted);font-weight:500;font-family:'JetBrains Mono',monospace;letter-spacing:0.02em}
+.adv-subval{font-family:'JetBrains Mono',monospace;font-weight:500;text-align:right;letter-spacing:-0.01em}
+.adv-bar-track{
+  height:5px;background:var(--bg-card-hover);
+  border-radius:var(--radius-pill);overflow:hidden;
+}
+.adv-bar-pos{height:100%;background:var(--accent-green);border-radius:var(--radius-pill)}
+.adv-bar-neg{height:100%;background:var(--accent-red);border-radius:var(--radius-pill)}
 
 @media(max-width:768px){
   .stats-row,.metrics-row{grid-template-columns:repeat(2,1fr)}
@@ -141,40 +583,6 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
   .chart-row{grid-template-columns:1fr}
   .tab-nav{gap:2px}
   .tab-btn{padding:8px 12px;font-size:12px}
-}
-
-/* Timing Tab */
-.timing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.timing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:all 0.3s}
-.timing-card:hover{transform:translateY(-2px)}
-.timing-card.now{border-top:3px solid var(--accent-green)}
-.timing-card.later{border-top:3px solid var(--accent-yellow)}
-.timing-card.trigger{border-top:3px solid var(--accent-blue)}
-.timing-phase{font-size:15px;font-weight:700;margin-bottom:12px}
-.timing-body{display:flex;flex-direction:column;gap:8px}
-.timing-item{font-size:13px;color:var(--text-secondary);line-height:1.5}
-.timing-note{font-size:12px;color:var(--text-muted);margin-top:4px;font-style:italic}
-.timing-table{overflow-x:auto}
-.timing-table table{width:100%;border-collapse:collapse;font-size:13px}
-.timing-table th{text-align:left;padding:10px 12px;color:var(--text-muted);border-bottom:2px solid var(--border);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.5px}
-.timing-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-secondary)}
-.timing-table tr:hover{background:var(--bg-card-hover)}
-.timing-table .priority{font-weight:800;color:var(--accent-blue);font-family:'JetBrains Mono',monospace;font-size:16px}
-.timing-table .jpy-amt{color:var(--accent-green);font-weight:700;font-family:'JetBrains Mono',monospace}
-.timing-table .timing-label{color:var(--accent-yellow);font-weight:600;white-space:nowrap}
-.timing-table .reason-short{color:var(--text-muted);font-size:12px}
-.calendar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.cal-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px;transition:all 0.3s}
-.cal-card:hover{transform:translateY(-2px)}
-.cal-month{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--accent-blue)}
-.cal-items{display:flex;flex-direction:column;gap:8px}
-.cal-item{font-size:12px;padding:6px 10px;border-radius:8px;line-height:1.4}
-.cal-item.buy-item{background:var(--accent-green-bg);color:var(--accent-green)}
-.cal-item.sell-item{background:var(--accent-red-bg);color:var(--accent-red)}
-.cal-item.info-item{background:var(--accent-blue-bg);color:var(--accent-blue)}
-.cal-item.warn-item{background:var(--accent-yellow-bg);color:var(--accent-yellow)}
-@media(max-width:768px){
-  .timing-grid,.calendar-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -188,8 +596,8 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
       <p style="color:var(--text-muted);font-size:14px;margin-top:4px">Self-Learning AI Portfolio · 6 Tabs</p>
     </div>
     <div class="header-meta">
-      <div class="date">2026-04-24 11:20 更新</div>
-      <div class="confidence"><span class="dot"></span> 確信度 45%</div>
+      <div class="date">2026-04-24 03:29 更新</div>
+      <div class="confidence"><span class="dot"></span> 確信度 72%</div>
     </div>
   </div>
 
@@ -197,36 +605,37 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-label">ポートフォリオ総額</div>
-      <div class="stat-value" style="color:var(--accent-blue)">$62,071</div>
-      <div class="stat-sub">18銘柄保有</div>
+      <div class="stat-value" style="color:var(--accent-blue)">$0</div>
+      <div class="stat-sub">16銘柄保有</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">含み損益</div>
-      <div class="stat-value" style="color:var(--accent-green)">+$23,461</div>
-      <div class="stat-sub">+60.8%</div>
+      <div class="stat-value" style="color:var(--accent-green)">+$0</div>
+      <div class="stat-sub">+0.0%</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">レジーム</div>
-      <div class="stat-value" style="font-size:20px;color:var(--accent-yellow)">危機（高ボラ）</div>
-      <div class="stat-sub">KL = 0.0754</div>
+      <div class="stat-value" style="font-size:20px;color:var(--accent-yellow)">移行期（ボラ上昇中）</div>
+      <div class="stat-sub">KL = 0.1200</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">アクション</div>
       <div class="stat-value" style="font-size:18px">
-        <span style="color:var(--accent-green)">1 BUY</span>
+        <span style="color:var(--accent-green)">3 BUY</span>
         <span style="color:var(--text-muted)"> · </span>
-        <span style="color:var(--accent-yellow)">5 HOLD</span>
+        <span style="color:var(--accent-yellow)">13 HOLD</span>
         <span style="color:var(--text-muted)"> · </span>
-        <span style="color:var(--accent-red)">10 SELL</span>
+        <span style="color:var(--accent-red)">2 SELL</span>
       </div>
-      <div class="stat-sub">+0 新規推奨</div>
+      <div class="stat-sub">+2 新規推奨</div>
     </div>
   </div>
 
   <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-btn active" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
-    <button class="tab-btn" data-tab="timing" onclick="switchTab(this,'timing')">📅 Timing</button>
+    <button class="tab-btn active" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
+    <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
+    <button class="tab-btn" data-tab="advanced" onclick="switchTab(this,'advanced')">🔮 Advanced AI</button>
     <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
     <button class="tab-btn" data-tab="risk" onclick="switchTab(this,'risk')">🔥 Risk</button>
     <button class="tab-btn" data-tab="report" onclick="switchTab(this,'report')">🎯 AI Report Card</button>
@@ -234,340 +643,270 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
     <button class="tab-btn" data-tab="record" onclick="switchTab(this,'record')">📝 Record</button>
   </div>
 
+  <!-- Tab: Portfolio (default) -->
+  <div id="tab-portfolio" class="tab-content active">
+    <div class="section"><div class="section-title"><span class="icon">💼</span> ポートフォリオ全体</div><div class="port-summary-grid"><div class="port-metric"><div class="port-metric-label">総資産（USD換算）</div><div class="port-metric-value">$41,088</div><div class="port-metric-sub">18銘柄 / FX ¥152.5</div></div><div class="port-metric"><div class="port-metric-label">含み損益</div><div class="port-metric-value" style="color:var(--accent-green)">+$6,857</div><div class="port-metric-sub">+20.0%</div></div><div class="port-metric"><div class="port-metric-label">米国株</div><div class="port-metric-value" style="color:var(--accent-blue)">$40,347</div><div class="port-metric-sub">16銘柄</div></div><div class="port-metric"><div class="port-metric-label">日本株</div><div class="port-metric-value" style="color:var(--accent-purple)">¥113,100</div><div class="port-metric-sub">2銘柄</div></div></div><div class="sector-section"><div class="sector-title">📊 セクター配分</div><div class="sector-bars"><div class="sector-bar-row"><div class="sector-bar-label">Semiconductor</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:35.9%;background:#f54e00"></div></div><div class="sector-bar-value">$14,745 <span class="sector-pct">(35.9%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Dividend ETF</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:35.2%;background:#2b5fa4"></div></div><div class="sector-bar-value">$14,472 <span class="sector-pct">(35.2%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Infrastructure</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:9.5%;background:#2d7a3e"></div></div><div class="sector-bar-value">$3,897 <span class="sector-pct">(9.5%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Gold</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:9.5%;background:#b8860b"></div></div><div class="sector-bar-value">$3,887 <span class="sector-pct">(9.5%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Software</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:5.0%;background:#6b4c9a"></div></div><div class="sector-bar-value">$2,050 <span class="sector-pct">(5.0%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Energy</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:2.8%;background:#c03530"></div></div><div class="sector-bar-value">$1,147 <span class="sector-pct">(2.8%)</span></div></div><div class="sector-bar-row"><div class="sector-bar-label">Pharma</div><div class="sector-bar-track"><div class="sector-bar-fill" style="width:2.2%;background:#1e6b7a"></div></div><div class="sector-bar-value">$890 <span class="sector-pct">(2.2%)</span></div></div></div></div><div class="port-table-section"><div class="port-table-title">📋 全保有銘柄（クリックでソート）</div><div class="port-table-wrap"><table class="port-table" id="portTable"><thead><tr><th onclick="sortPortTable(0,'str')">銘柄 ↕</th><th onclick="sortPortTable(1,'str')">セクター</th><th onclick="sortPortTable(2,'str')">口座</th><th onclick="sortPortTable(3,'num')">数量</th><th onclick="sortPortTable(4,'num')">取得単価</th><th onclick="sortPortTable(5,'num')">現在値</th><th onclick="sortPortTable(6,'num')">時価(USD換算)</th><th onclick="sortPortTable(7,'num')">含み損益</th><th onclick="sortPortTable(8,'num')">損益率</th><th>チャート</th></tr></thead><tbody><tr><td class="port-ticker"><strong>VYM</strong></td><td>Dividend ETF</td><td><span class="acct-badge">特定</span></td><td data-num="111">111</td><td data-num="115.0">$115.00</td><td data-num="128.0">$128.00</td><td data-num="14208.0">$14,208</td><td data-num="1443.0" class="pnl-positive">+$1,443</td><td data-num="11.304347826086957" class="pnl-positive">+11.3%</td><td><a href="https://finance.yahoo.com/quote/VYM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>NVDA</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="63">63</td><td data-num="130.0">$130.00</td><td data-num="175.5">$175.50</td><td data-num="11056.5">$11,056</td><td data-num="2866.5" class="pnl-positive">+$2,866</td><td data-num="35.0" class="pnl-positive">+35.0%</td><td><a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>GLD</strong></td><td>Gold</td><td><span class="acct-badge">特定</span></td><td data-num="11">11</td><td data-num="280.0">$280.00</td><td data-num="310.0">$310.00</td><td data-num="3410.0">$3,410</td><td data-num="330.0" class="pnl-positive">+$330</td><td data-num="10.714285714285714" class="pnl-positive">+10.7%</td><td><a href="https://finance.yahoo.com/quote/GLD/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>VRT</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="27">27</td><td data-num="72.5">$72.50</td><td data-num="98.3">$98.30</td><td data-num="2654.1">$2,654</td><td data-num="696.5999999999999" class="pnl-positive">+$697</td><td data-num="35.58620689655172" class="pnl-positive">+35.6%</td><td><a href="https://finance.yahoo.com/quote/VRT/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>TSM</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="9">9</td><td data-num="155.0">$155.00</td><td data-num="195.0">$195.00</td><td data-num="1755.0">$1,755</td><td data-num="360.0" class="pnl-positive">+$360</td><td data-num="25.806451612903224" class="pnl-positive">+25.8%</td><td><a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>ETN</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="3">3</td><td data-num="310.0">$310.00</td><td data-num="340.0">$340.00</td><td data-num="1020.0">$1,020</td><td data-num="90.0" class="pnl-positive">+$90</td><td data-num="9.67741935483871" class="pnl-positive">+9.7%</td><td><a href="https://finance.yahoo.com/quote/ETN/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>ARM</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="7">7</td><td data-num="115.0">$115.00</td><td data-num="132.0">$132.00</td><td data-num="924.0">$924</td><td data-num="119.0" class="pnl-positive">+$119</td><td data-num="14.782608695652174" class="pnl-positive">+14.8%</td><td><a href="https://finance.yahoo.com/quote/ARM/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>OKLO</strong></td><td>Energy</td><td><span class="acct-badge">特定</span></td><td data-num="74">74</td><td data-num="8.5">$8.50</td><td data-num="12.3">$12.30</td><td data-num="910.2">$910</td><td data-num="281.20000000000005" class="pnl-positive">+$281</td><td data-num="44.70588235294118" class="pnl-positive">+44.7%</td><td><a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>LLY</strong></td><td>Pharma</td><td><span class="acct-badge">特定</span></td><td data-num="1">1</td><td data-num="820.0">$820.00</td><td data-num="890.0">$890.00</td><td data-num="890.0">$890</td><td data-num="70.0" class="pnl-positive">+$70</td><td data-num="8.536585365853659" class="pnl-positive">+8.5%</td><td><a href="https://finance.yahoo.com/quote/LLY/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>MRVL</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="10">10</td><td data-num="70.2">$70.20</td><td data-num="82.5">$82.50</td><td data-num="825.0">$825</td><td data-num="122.99999999999997" class="pnl-positive">+$123</td><td data-num="17.521367521367516" class="pnl-positive">+17.5%</td><td><a href="https://finance.yahoo.com/quote/MRVL/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>DDOG</strong></td><td>Software</td><td><span class="acct-badge">特定</span></td><td data-num="7">7</td><td data-num="108.0">$108.00</td><td data-num="115.5">$115.50</td><td data-num="808.5">$808</td><td data-num="52.5" class="pnl-positive">+$52</td><td data-num="6.944444444444445" class="pnl-positive">+6.9%</td><td><a href="https://finance.yahoo.com/quote/DDOG/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>PLTR</strong></td><td>Software</td><td><span class="acct-badge">NISA</span></td><td data-num="9">9</td><td data-num="55.0">$55.00</td><td data-num="88.5">$88.50</td><td data-num="796.5">$796</td><td data-num="301.5" class="pnl-positive">+$302</td><td data-num="60.909090909090914" class="pnl-positive">+60.9%</td><td><a href="https://finance.yahoo.com/quote/PLTR/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>1328</strong></td><td>Gold</td><td><span class="acct-badge">NISA成長</span></td><td data-num="4">4</td><td data-num="17800.0">¥17,800.00</td><td data-num="18200.0">¥18,200.00</td><td data-num="477.37704918032784">$477</td><td data-num="10.491803278688524" class="pnl-positive">+$10</td><td data-num="2.247191011235955" class="pnl-positive">+2.2%</td><td><a href="https://finance.yahoo.co.jp/quote/1328.T/chart" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>MSFT</strong></td><td>Software</td><td><span class="acct-badge">NISA</span></td><td data-num="1">1</td><td data-num="420.0">$420.00</td><td data-num="445.0">$445.00</td><td data-num="445.0">$445</td><td data-num="25.0" class="pnl-positive">+$25</td><td data-num="5.952380952380952" class="pnl-positive">+6.0%</td><td><a href="https://finance.yahoo.com/quote/MSFT/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>1489</strong></td><td>Dividend ETF</td><td><span class="acct-badge">NISA成長</span></td><td data-num="13">13</td><td data-num="2900.0">¥2,900.00</td><td data-num="3100.0">¥3,100.00</td><td data-num="264.26229508196724">$264</td><td data-num="17.049180327868854" class="pnl-positive">+$17</td><td data-num="6.896551724137931" class="pnl-positive">+6.9%</td><td><a href="https://finance.yahoo.co.jp/quote/1489.T/chart" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>NNE</strong></td><td>Energy</td><td><span class="acct-badge">特定</span></td><td data-num="11">11</td><td data-num="18.2">$18.20</td><td data-num="21.5">$21.50</td><td data-num="236.5">$236</td><td data-num="36.30000000000001" class="pnl-positive">+$36</td><td data-num="18.13186813186814" class="pnl-positive">+18.1%</td><td><a href="https://finance.yahoo.com/quote/NNE/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>GLW</strong></td><td>Infrastructure</td><td><span class="acct-badge">特定</span></td><td data-num="5">5</td><td data-num="40.0">$40.00</td><td data-num="44.5">$44.50</td><td data-num="222.5">$222</td><td data-num="22.5" class="pnl-positive">+$22</td><td data-num="11.25" class="pnl-positive">+11.2%</td><td><a href="https://finance.yahoo.com/quote/GLW/chart/" target="_blank" class="chart-link">📈</a></td></tr><tr><td class="port-ticker"><strong>COHR</strong></td><td>Semiconductor</td><td><span class="acct-badge">特定</span></td><td data-num="2">2</td><td data-num="86.0">$86.00</td><td data-num="92.4">$92.40</td><td data-num="184.8">$185</td><td data-num="12.800000000000011" class="pnl-positive">+$13</td><td data-num="7.441860465116286" class="pnl-positive">+7.4%</td><td><a href="https://finance.yahoo.com/quote/COHR/chart/" target="_blank" class="chart-link">📈</a></td></tr></tbody></table></div></div></div>
+    <div class="section"><div class="section-title"><span class="icon">📈</span> パフォーマンス履歴</div><div class="chart-container"><div style="position:relative;height:320px"><canvas id="chartHistory"></canvas></div></div></div>
+  </div>
+
+  <!-- Tab: Advanced AI -->
+  <div id="tab-advanced" class="tab-content">
+    <div class="section"><div class="section-title"><span class="icon">🔮</span> 高精度予測アンサンブル（5モデル統合）</div><div class="adv-grid"><div class="adv-card" style="border-left:4px solid var(--accent-green)"><div class="adv-header"><a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" class="adv-ticker">NVDA 📈</a><span class="adv-signal" style="color:var(--accent-green)">🟢🟢 STRONG_BUY</span></div><div class="adv-score">合成スコア: <strong style="color:var(--accent-green)">+0.720</strong></div><div class="adv-conf">確信度: 88%</div><div class="adv-subbars"><div class="adv-subbar"><span class="adv-sublabel">Kalman</span><span class="adv-subval" style="color:var(--accent-green)">+0.82</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:41%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Hurst</span><span class="adv-subval" style="color:var(--accent-green)">+0.68</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:34%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">C-Sect</span><span class="adv-subval" style="color:var(--accent-green)">+0.91</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:46%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Vol</span><span class="adv-subval" style="color:var(--accent-green)">+0.48</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:24%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">M-Rev</span><span class="adv-subval" style="color:var(--accent-red)">-0.18</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:9%"></div></div></div></div></div><div class="adv-card" style="border-left:4px solid var(--accent-green)"><div class="adv-header"><a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" class="adv-ticker">TSM 📈</a><span class="adv-signal" style="color:var(--accent-green)">🟢🟢 STRONG_BUY</span></div><div class="adv-score">合成スコア: <strong style="color:var(--accent-green)">+0.650</strong></div><div class="adv-conf">確信度: 81%</div><div class="adv-subbars"><div class="adv-subbar"><span class="adv-sublabel">Kalman</span><span class="adv-subval" style="color:var(--accent-green)">+0.71</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:36%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Hurst</span><span class="adv-subval" style="color:var(--accent-green)">+0.55</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:28%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">C-Sect</span><span class="adv-subval" style="color:var(--accent-green)">+0.78</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:39%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Vol</span><span class="adv-subval" style="color:var(--accent-green)">+0.40</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:20%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">M-Rev</span><span class="adv-subval" style="color:var(--accent-red)">-0.12</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:6%"></div></div></div></div></div><div class="adv-card" style="border-left:4px solid var(--accent-red)"><div class="adv-header"><a href="https://finance.yahoo.com/quote/PLTR/chart/" target="_blank" class="adv-ticker">PLTR 📈</a><span class="adv-signal" style="color:var(--accent-red)">🔴 SELL</span></div><div class="adv-score">合成スコア: <strong style="color:var(--accent-red)">-0.420</strong></div><div class="adv-conf">確信度: 74%</div><div class="adv-subbars"><div class="adv-subbar"><span class="adv-sublabel">Kalman</span><span class="adv-subval" style="color:var(--accent-red)">-0.48</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:24%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Hurst</span><span class="adv-subval" style="color:var(--accent-red)">-0.35</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:18%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">C-Sect</span><span class="adv-subval" style="color:var(--accent-red)">-0.58</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:29%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Vol</span><span class="adv-subval" style="color:var(--accent-red)">-0.22</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:11%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">M-Rev</span><span class="adv-subval" style="color:var(--accent-red)">-0.30</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:15%"></div></div></div></div></div><div class="adv-card" style="border-left:4px solid var(--accent-red)"><div class="adv-header"><a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" class="adv-ticker">OKLO 📈</a><span class="adv-signal" style="color:var(--accent-red)">🔴 SELL</span></div><div class="adv-score">合成スコア: <strong style="color:var(--accent-red)">-0.380</strong></div><div class="adv-conf">確信度: 69%</div><div class="adv-subbars"><div class="adv-subbar"><span class="adv-sublabel">Kalman</span><span class="adv-subval" style="color:var(--accent-red)">-0.42</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:21%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Hurst</span><span class="adv-subval" style="color:var(--accent-red)">-0.28</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:14%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">C-Sect</span><span class="adv-subval" style="color:var(--accent-red)">-0.48</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:24%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Vol</span><span class="adv-subval" style="color:var(--accent-red)">-0.35</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:18%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">M-Rev</span><span class="adv-subval" style="color:var(--accent-red)">-0.15</span><div class="adv-bar-track"><div class="adv-bar-neg" style="width:8%"></div></div></div></div></div><div class="adv-card" style="border-left:4px solid var(--accent-green)"><div class="adv-header"><a href="https://finance.yahoo.com/quote/VYM/chart/" target="_blank" class="adv-ticker">VYM 📈</a><span class="adv-signal" style="color:var(--accent-green)">🟢 BUY</span></div><div class="adv-score">合成スコア: <strong style="color:var(--accent-green)">+0.280</strong></div><div class="adv-conf">確信度: 62%</div><div class="adv-subbars"><div class="adv-subbar"><span class="adv-sublabel">Kalman</span><span class="adv-subval" style="color:var(--accent-green)">+0.32</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:16%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Hurst</span><span class="adv-subval" style="color:var(--accent-green)">+0.24</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:12%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">C-Sect</span><span class="adv-subval" style="color:var(--accent-green)">+0.41</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:20%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">Vol</span><span class="adv-subval" style="color:var(--accent-green)">+0.18</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:9%"></div></div></div><div class="adv-subbar"><span class="adv-sublabel">M-Rev</span><span class="adv-subval" style="color:var(--accent-green)">+0.08</span><div class="adv-bar-track"><div class="adv-bar-pos" style="width:4%"></div></div></div></div></div></div></div>
+  </div>
+
   <!-- Tab: Action -->
-  <div id="tab-action" class="tab-content active">
+  <div id="tab-action" class="tab-content">
     <div class="strategy-banner">
-      <strong>🎯 戦略:</strong> 危機レジーム下で高ボラティリティが継続しており、予測精度も低下傾向。RiskParity戦略を重視しつつ、過熱銘柄の利益確定と、過小評価されているがファンダメンタルズが良好な銘柄へのシフトを提案します。
+      <strong>🎯 戦略:</strong> VIX上昇・10年債金利揺れの移行期局面。Advanced AIでNVDA/TSMの強い買いシグナル検出。PLTRとOKLOは高値圏利確推奨。防御としてVYM・GLDの配分を維持しつつテック選別を実施。
     </div>
-    <div class="section"><div class="section-title"><span class="icon">🟢</span> BUY — 買い増し推奨（1銘柄）</div><div class="action-grid"><div class="action-card buy fade-in">
+    <div class="section"><div class="section-title"><span class="icon">🟢</span> BUY — 買い増し推奨（3銘柄）</div><div class="action-grid"><div class="action-card buy fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/PLTR/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">PLTR <span class="link-icon">📈</span></a>
+            <span class="ticker">VYM</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>111株</span>
+              <span>取得$115 → 現$128</span>
+              <span class="pnl-positive">+$1,443</span>
+            </div>
+          <div class="reason">防御性と配当で移行期の守り。追加積立</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 80%;"></div></div>
+          <div class="alloc-label">推奨配分 12.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">NVDA</span>
+            <span class="action-badge buy">🟢 BUY</span>
+          </div>
+          <div class="holdings">
+              <span>63株</span>
+              <span>取得$130 → 現$176</span>
+              <span class="pnl-positive">+$2,866</span>
+            </div>
+          <div class="reason">Advanced AIでSTRONG_BUY (+0.72 / 88%確信)。5モデル総合強気</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 100%;"></div></div>
+          <div class="alloc-label">推奨配分 15.0%</div>
+        </div><div class="action-card buy fade-in">
+          <div class="card-header">
+            <span class="ticker">TSM</span>
             <span class="action-badge buy">🟢 BUY</span>
           </div>
           <div class="holdings">
               <span>9株</span>
-              <span>取得$156 → 現$142</span>
-              <span class="pnl-negative">-$126</span>
+              <span>取得$155 → 現$195</span>
+              <span class="pnl-positive">+$360</span>
             </div>
-          <div class="reason">マルチTFスコアがslightly_bullishであり、アルゴリズムのリバランス提案でも買い推奨されているためBUYを推奨。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
-          <div class="alloc-label">推奨配分 4.0%</div>
-        </div></div></div><div class="section"><div class="section-title"><span class="icon">🔴</span> SELL — 売却推奨（10銘柄）</div><div class="action-grid"><div class="action-card sell fade-in">
+          <div class="reason">Advanced AIでSTRONG_BUY (+0.65)。半導体受注強い</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 47%;"></div></div>
+          <div class="alloc-label">推奨配分 7.0%</div>
+        </div></div></div><div class="section"><div class="section-title"><span class="icon">🔴</span> SELL — 売却推奨（2銘柄）</div><div class="action-grid"><div class="action-card sell fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/VRT/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">VRT <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>27株</span>
-              <span>取得$104 → 現$322</span>
-              <span class="pnl-positive">+$5,876</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 17%;"></div></div>
-          <div class="alloc-label">推奨配分 2.5%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/ARM/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">ARM <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>7株</span>
-              <span>取得$134 → 現$205</span>
-              <span class="pnl-positive">+$497</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度83%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。ただし、過去の過小評価バイアスを考慮し、一部は保持。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
-          <div class="alloc-label">推奨配分 2.0%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/COHR/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">COHR <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>2株</span>
-              <span>取得$96 → 現$338</span>
-              <span class="pnl-positive">+$483</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。過去の過小評価バイアスを考慮し、一部は保持。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 10%;"></div></div>
-          <div class="alloc-label">推奨配分 1.5%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/ETN/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">ETN <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>3株</span>
-              <span>取得$301 → 現$424</span>
-              <span class="pnl-positive">+$371</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 29%;"></div></div>
-          <div class="alloc-label">推奨配分 4.3%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/GLW/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">GLW <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>5株</span>
-              <span>取得$127 → 現$170</span>
-              <span class="pnl-positive">+$212</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 17%;"></div></div>
-          <div class="alloc-label">推奨配分 2.5%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/MRVL/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">MRVL <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>10株</span>
-              <span>取得$77 → 現$166</span>
-              <span class="pnl-positive">+$886</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度83%で極めて過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。過去の過小評価バイアスを考慮し、一部は保持。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 17%;"></div></div>
-          <div class="alloc-label">推奨配分 2.5%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/MSFT/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">MSFT <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>1株</span>
-              <span>取得$406 → 現$416</span>
-              <span class="pnl-positive">+$10</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度57%で過熱感があり、マルチTFスコアもslightly_bullishだが、危機レジーム下での利確を優先。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
-          <div class="alloc-label">推奨配分 5.0%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">NVDA <span class="link-icon">📈</span></a>
-            <span class="action-badge sell">🔴 SELL</span>
-          </div>
-          <div class="holdings">
-              <span>63株</span>
-              <span>取得$118 → 現$200</span>
-              <span class="pnl-positive">+$5,127</span>
-            </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度57%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 30%;"></div></div>
-          <div class="alloc-label">推奨配分 4.5%</div>
-        </div><div class="action-card sell fade-in">
-          <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">OKLO <span class="link-icon">📈</span></a>
+            <span class="ticker">OKLO</span>
             <span class="action-badge sell">🔴 SELL</span>
           </div>
           <div class="holdings">
               <span>74株</span>
-              <span>取得$51 → 現$76</span>
-              <span class="pnl-positive">+$1,904</span>
+              <span>取得$8 → 現$12</span>
+              <span class="pnl-positive">+$281</span>
             </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度56%で過熱感が高く、マルチTFスコアもneutralだが、過去の過小評価バイアスを考慮し一部は保持。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
-          <div class="alloc-label">推奨配分 2.0%</div>
+          <div class="reason">Advanced AIでSELL (-0.38)。短期利確推奨</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
+          <div class="alloc-label">推奨配分 5.0%</div>
         </div><div class="action-card sell fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">TSM <span class="link-icon">📈</span></a>
+            <span class="ticker">PLTR</span>
             <span class="action-badge sell">🔴 SELL</span>
           </div>
           <div class="holdings">
               <span>9株</span>
-              <span>取得$189 → 現$383</span>
-              <span class="pnl-positive">+$1,742</span>
+              <span>取得$55 → 現$88</span>
+              <span class="pnl-positive">+$302</span>
             </div>
-          <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 23%;"></div></div>
-          <div class="alloc-label">推奨配分 3.5%</div>
-        </div></div></div><div class="section"><div class="section-title"><span class="icon">🟡</span> HOLD — 現状維持（5銘柄）</div><div class="action-grid"><div class="action-card hold fade-in">
+          <div class="reason">Advanced AIでSELL (-0.42 / 74%確信)。過熱感</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
+          <div class="alloc-label">推奨配分 4.0%</div>
+        </div></div></div><div class="section"><div class="section-title"><span class="icon">🟡</span> HOLD — 現状維持（13銘柄）</div><div class="action-grid"><div class="action-card hold fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/VYM/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">VYM <span class="link-icon">📈</span></a>
+            <span class="ticker">VRT</span>
             <span class="action-badge hold">🟡 HOLD</span>
           </div>
           <div class="holdings">
-              <span>111株</span>
-              <span>取得$106 → 現$156</span>
-              <span class="pnl-positive">+$5,526</span>
+              <span>27株</span>
+              <span>取得$72 → 現$98</span>
+              <span class="pnl-positive">+$697</span>
             </div>
-          <div class="reason">高配当ETFであり危機耐性も比較的良好。Black-Litterman配分で高い比率が推奨されており、長期保有を継続。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 88%;"></div></div>
-          <div class="alloc-label">推奨配分 13.2%</div>
+          <div class="reason">データセンター需要持続。モメンタム維持で保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 47%;"></div></div>
+          <div class="alloc-label">推奨配分 7.0%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/DDOG/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">DDOG <span class="link-icon">📈</span></a>
+            <span class="ticker">ARM</span>
             <span class="action-badge hold">🟡 HOLD</span>
           </div>
           <div class="holdings">
               <span>7株</span>
-              <span>取得$124 → 現$128</span>
-              <span class="pnl-positive">+$23</span>
+              <span>取得$115 → 現$132</span>
+              <span class="pnl-positive">+$119</span>
             </div>
-          <div class="reason">マルチTFスコアがslightly_bullishであり、アナリスト評価もstrong_buyのためHOLDを継続。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 24%;"></div></div>
-          <div class="alloc-label">推奨配分 3.6%</div>
+          <div class="reason">半導体IPは横ばい。決算待ち</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
+          <div class="alloc-label">推奨配分 4.0%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/GLD/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">GLD <span class="link-icon">📈</span></a>
+            <span class="ticker">COHR</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>2株</span>
+              <span>取得$86 → 現$92</span>
+              <span class="pnl-positive">+$13</span>
+            </div>
+          <div class="reason">光通信需要安定。ポジション小さく保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
+          <div class="alloc-label">推奨配分 2.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">DDOG</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>7株</span>
+              <span>取得$108 → 現$116</span>
+              <span class="pnl-positive">+$52</span>
+            </div>
+          <div class="reason">PER高止まり。新規買いは慎重</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
+          <div class="alloc-label">推奨配分 4.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">ETN</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>3株</span>
+              <span>取得$310 → 現$340</span>
+              <span class="pnl-positive">+$90</span>
+            </div>
+          <div class="reason">電力インフラ需要。保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
+          <div class="alloc-label">推奨配分 5.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">GLD</span>
             <span class="action-badge hold">🟡 HOLD</span>
           </div>
           <div class="holdings">
               <span>11株</span>
-              <span>取得$326 → 現$431</span>
-              <span class="pnl-positive">+$1,156</span>
+              <span>取得$280 → 現$310</span>
+              <span class="pnl-positive">+$330</span>
             </div>
-          <div class="reason">金ETFは危機レジーム下で安全資産として機能するため、HOLDを継続。マルチTFスコアもslightly_bullish。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 67%;"></div></div>
-          <div class="alloc-label">推奨配分 10.0%</div>
+          <div class="reason">金価格堅調。不確実性ヘッジ</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 53%;"></div></div>
+          <div class="alloc-label">推奨配分 8.0%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/LLY/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">LLY <span class="link-icon">📈</span></a>
+            <span class="ticker">GLW</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>5株</span>
+              <span>取得$40 → 現$44</span>
+              <span class="pnl-positive">+$22</span>
+            </div>
+          <div class="reason">光ファイバー需要。保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
+          <div class="alloc-label">推奨配分 2.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">LLY</span>
             <span class="action-badge hold">🟡 HOLD</span>
           </div>
           <div class="holdings">
               <span>1株</span>
-              <span>取得$1,070 → 現$918</span>
-              <span class="pnl-negative">-$152</span>
+              <span>取得$820 → 現$890</span>
+              <span class="pnl-positive">+$70</span>
             </div>
-          <div class="reason">マルチTFスコアがslightly_bullishであり、アナリスト評価もbuyで目標株価に上昇余地があるためHOLDを継続。</div>
-          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 52%;"></div></div>
-          <div class="alloc-label">推奨配分 7.8%</div>
+          <div class="reason">医薬品ディフェンシブ。保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
+          <div class="alloc-label">推奨配分 5.0%</div>
         </div><div class="action-card hold fade-in">
           <div class="card-header">
-            <a href="https://finance.yahoo.com/quote/NNE/chart/" target="_blank" rel="noopener" class="ticker ticker-link" title="Yahoo Financeでチャートを表示">NNE <span class="link-icon">📈</span></a>
+            <span class="ticker">MRVL</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>10株</span>
+              <span>取得$70 → 現$82</span>
+              <span class="pnl-positive">+$123</span>
+            </div>
+          <div class="reason">AI半導体の中期買い候補。保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 33%;"></div></div>
+          <div class="alloc-label">推奨配分 5.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">MSFT</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          <div class="holdings">
+              <span>1株</span>
+              <span>取得$420 → 現$445</span>
+              <span class="pnl-positive">+$25</span>
+            </div>
+          <div class="reason">Cloud底堅い。保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 40%;"></div></div>
+          <div class="alloc-label">推奨配分 6.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">NNE</span>
             <span class="action-badge hold">🟡 HOLD</span>
           </div>
           <div class="holdings">
               <span>11株</span>
-              <span>取得$32 → 現$25</span>
-              <span class="pnl-negative">-$73</span>
+              <span>取得$18 → 現$22</span>
+              <span class="pnl-positive">+$36</span>
             </div>
-          <div class="reason">マルチTFスコアがslightly_bullishであり、過去の過小評価バイアスを考慮しHOLDを継続。</div>
+          <div class="reason">原子力小型炉期待。ボラ高いが保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 20%;"></div></div>
+          <div class="alloc-label">推奨配分 3.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">1489.T</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          
+          <div class="reason">日本高配当ETF。円高懸念で保持</div>
+          <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 27%;"></div></div>
+          <div class="alloc-label">推奨配分 4.0%</div>
+        </div><div class="action-card hold fade-in">
+          <div class="card-header">
+            <span class="ticker">1328.T</span>
+            <span class="action-badge hold">🟡 HOLD</span>
+          </div>
+          
+          <div class="reason">日本金ETF。ヘッジ保持</div>
           <div class="alloc-bar"><div class="alloc-bar-fill" style="width: 13%;"></div></div>
           <div class="alloc-label">推奨配分 2.0%</div>
-        </div></div></div><div class="section"><div class="section-title"><span class="icon">⚖️</span> リスクシナリオ</div><div class="risk-grid"><div class="risk-card bull">
-              <div class="risk-prob">30%</div>
+        </div></div></div><div class="section"><div class="section-title"><span class="icon">🆕</span> 新規推奨銘柄（2銘柄）</div><div class="picks-grid"><div class="pick-card fade-in">
+              <div class="pick-ticker">AVGO</div>
+              <div class="pick-sector">Semiconductor / AI</div>
+              <div class="pick-reason">AI受注強くブロードコム存在感増</div>
+            </div><div class="pick-card fade-in">
+              <div class="pick-ticker">ANET</div>
+              <div class="pick-sector">Network / AI Infra</div>
+              <div class="pick-reason">データセンタースイッチ寡占</div>
+            </div></div></div><div class="section"><div class="section-title"><span class="icon">⚖️</span> リスクシナリオ</div><div class="risk-grid"><div class="risk-card bull">
+              <div class="risk-prob">35%</div>
               <div class="risk-label">🐂 BULL</div>
-              <div class="risk-desc">FRBの利下げ観測が強まり、市場心理が改善。AI関連銘柄や半導体銘柄が再び上昇トレンドに乗り、ポートフォリオ全体が回復する。</div>
+              <div class="risk-desc">AI半導体第2波到来。NVDA/TSM +25%、SP500 +12%</div>
             </div><div class="risk-card base">
-              <div class="risk-prob">50%</div>
+              <div class="risk-prob">45%</div>
               <div class="risk-label">📊 BASE</div>
-              <div class="risk-desc">高ボラティリティが継続し、特定のセクターで短期的な調整が見られるものの、長期的な成長トレンドは維持。金や高配当ETFが下支えとなる。</div>
+              <div class="risk-desc">緩やかな成長継続。テック選別相場、SP500 +5~8%</div>
             </div><div class="risk-card bear">
               <div class="risk-prob">20%</div>
               <div class="risk-label">🐻 BEAR</div>
-              <div class="risk-desc">地政学的リスクの高まりやインフレ再燃により、市場全体がさらに下落。保有銘柄も広範囲にわたり損失を被る可能性がある。</div>
+              <div class="risk-desc">金利再上昇でテック調整 -15%、VIX&gt;25</div>
             </div></div></div>
-    <div class="section"><div class="section-title"><span class="icon">📊</span> 積立設定レビュー</div><div class="tsumitate-grid"><div class="tsumitate-card"><h4>⚡ 変更提案</h4></div><div class="tsumitate-card"><h4>💡 理由</h4><p style="font-size:13px;color:var(--text-secondary);line-height:1.7">現在の積立設定は分散が取れており、NISA枠を有効活用しているため、危機レジーム下でも継続を推奨します。</p></div></div></div>
-  </div>
-
-  <!-- Tab: Timing -->
-  <div id="tab-timing" class="tab-content">
-    <div class="section"><div class="section-title"><span class="icon">📊</span> 積立設定アドバイス（AI分析）</div>
-    <div class="timing-grid">
-      <div class="timing-card now"><div class="timing-phase">✅ 現状維持推奨</div>
-        <div class="timing-body"><div class="timing-item">現在の積立設定は分散が取れており、NISA枠を有効活用しているため、危機レジーム下でも継続を推奨します。</div><div class="timing-note">現在の積立設定を維持してください</div></div></div><div class="timing-card trigger"><div class="timing-phase">📊 リスクシナリオ</div><div class="timing-body"><div class="timing-item">🐂 強気 (30%): FRBの利下げ観測が強まり、市場心理が改善。AI関連銘柄や半導体銘柄が再び上昇トレンドに乗り、ポートフォリオ全体が回復する。</div><div class="timing-item">📊 基本 (50%): 高ボラティリティが継続し、特定のセクターで短期的な調整が見られるものの、長期的な成長トレンドは維持。金や高配当ETFが下支えとなる。</div><div class="timing-item">🐻 弱気 (20%): 地政学的リスクの高まりやインフレ再燃により、市場全体がさらに下落。保有銘柄も広範囲にわたり損失を被る可能性がある。</div></div></div><div class="timing-card later"><div class="timing-phase">🌡️ マーケットレジーム</div>
-        <div class="timing-body"><div class="timing-item">危機（高ボラ・急落局面）</div>
-        <div class="timing-note">KL divergence = 0.0754</div></div></div>
-    </div></div><div class="section"><div class="section-title"><span class="icon">🟢</span> BUY優先順位（¥200,000/月）</div><div class="timing-table"><table><tr><th>優先</th><th>銘柄</th><th>現在価格</th><th>推奨金額</th><th>タイミング</th><th>根拠</th></tr><tr><td class="priority">1</td><td><a href="https://finance.yahoo.com/quote/PLTR/chart/" target="_blank" class="ticker-link">PLTR</a></td><td>$142</td><td class="jpy-amt">¥200,000</td><td class="timing-label">4月第1週</td><td class="reason-short">マルチTFスコアがslightly_bullishであり、アルゴリズムのリバランス提案でも買い推奨さ</td></tr></table></div></div><div class="section"><div class="section-title"><span class="icon">🔴</span> SELL — 即売却</div><div class="action-grid"><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/VRT/chart/" target="_blank" class="ticker ticker-link">VRT 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>27株</span><span class="pnl-negative">$5,876</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/ARM/chart/" target="_blank" class="ticker ticker-link">ARM 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>7株</span><span class="pnl-negative">$497</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度83%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。ただし、過去の過小評価バイアスを考慮し、一部は保持。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/COHR/chart/" target="_blank" class="ticker ticker-link">COHR 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>2株</span><span class="pnl-negative">$483</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。過去の過小評価バイアスを考慮し、一部は保持。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/ETN/chart/" target="_blank" class="ticker ticker-link">ETN 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>3株</span><span class="pnl-negative">$371</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/GLW/chart/" target="_blank" class="ticker ticker-link">GLW 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>5株</span><span class="pnl-negative">$212</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/MRVL/chart/" target="_blank" class="ticker ticker-link">MRVL 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>10株</span><span class="pnl-negative">$886</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度83%で極めて過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。過去の過小評価バイアスを考慮し、一部は保持。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/MSFT/chart/" target="_blank" class="ticker ticker-link">MSFT 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>1株</span><span class="pnl-negative">$10</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度57%で過熱感があり、マルチTFスコアもslightly_bullishだが、危機レジーム下での利確を優先。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" class="ticker ticker-link">NVDA 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>63株</span><span class="pnl-negative">$5,127</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度57%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" class="ticker ticker-link">OKLO 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>74株</span><span class="pnl-negative">$1,904</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度56%で過熱感が高く、マルチTFスコアもneutralだが、過去の過小評価バイアスを考慮し一部は保持。</div></div><div class="action-card sell fade-in"><div class="card-header">
-              <a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" class="ticker ticker-link">TSM 📈</a>
-              <span class="action-badge sell">🔴 今週中に売却</span></div>
-              <div class="holdings"><span>9株</span><span class="pnl-negative">$1,742</span></div>
-              <div class="reason">テクニカルがSELL_HIGH確信度66%で過熱感が高く、マルチTFスコアもbearishのため利益確定を推奨。</div></div></div></div><div class="section"><div class="section-title"><span class="icon">📅</span> 月別アクションカレンダー</div><div class="calendar-grid"><div class="cal-card"><div class="cal-month">4月 前半</div><div class="cal-items"><div class="cal-item sell-item">🔴 VRT 全売却</div><div class="cal-item sell-item">🔴 ARM 全売却</div><div class="cal-item sell-item">🔴 COHR 全売却</div><div class="cal-item sell-item">🔴 ETN 全売却</div><div class="cal-item sell-item">🔴 GLW 全売却</div><div class="cal-item sell-item">🔴 MRVL 全売却</div><div class="cal-item sell-item">🔴 MSFT 全売却</div><div class="cal-item sell-item">🔴 NVDA 全売却</div><div class="cal-item sell-item">🔴 OKLO 全売却</div><div class="cal-item sell-item">🔴 TSM 全売却</div><div class="cal-item buy-item">🟢 PLTR 購入</div></div></div><div class="cal-card"><div class="cal-month">4月 後半</div><div class="cal-items"><div class="cal-item info-item">📊 AI推奨に基づき追加購入を検討</div><div class="cal-item info-item">👁️ VYM 監視継続</div></div></div><div class="cal-card"><div class="cal-month">5月</div><div class="cal-items"><div class="cal-item info-item">📊 月次リバランス</div><div class="cal-item info-item">🔄 AI再分析 → 配分調整</div></div></div><div class="cal-card"><div class="cal-month">6月〜 定常</div><div class="cal-items"><div class="cal-item info-item">📊 積立: AI推奨配分で自動継続</div><div class="cal-item info-item">📊 個別株: 月¥200kでAI推奨に従う</div><div class="cal-item warn-item">⚠️ 危機レジーム → 防御的運用を継続</div></div></div></div></div><div class="section"><div class="section-title"><span class="icon">👁️</span> HOLD 監視リスト</div><div class="timing-table"><table><tr><th>銘柄</th><th>含み損益</th><th>次のアクション条件</th></tr><tr><td><a href="https://finance.yahoo.com/quote/VYM/chart/" target="_blank" class="ticker-link">VYM</a></td><td class="pnl-positive">+$5,526</td><td class="reason-short">高配当ETFであり危機耐性も比較的良好。Black-Litterman配分で高い比率が推奨されており、長期保有を継続。</td></tr><tr><td><a href="https://finance.yahoo.com/quote/DDOG/chart/" target="_blank" class="ticker-link">DDOG</a></td><td class="pnl-positive">+$23</td><td class="reason-short">マルチTFスコアがslightly_bullishであり、アナリスト評価もstrong_buyのためHOLDを継続。</td></tr><tr><td><a href="https://finance.yahoo.com/quote/GLD/chart/" target="_blank" class="ticker-link">GLD</a></td><td class="pnl-positive">+$1,156</td><td class="reason-short">金ETFは危機レジーム下で安全資産として機能するため、HOLDを継続。マルチTFスコアもslightly_bullish</td></tr><tr><td><a href="https://finance.yahoo.com/quote/LLY/chart/" target="_blank" class="ticker-link">LLY</a></td><td class="pnl-negative">-$152</td><td class="reason-short">マルチTFスコアがslightly_bullishであり、アナリスト評価もbuyで目標株価に上昇余地があるためHOLDを</td></tr><tr><td><a href="https://finance.yahoo.com/quote/NNE/chart/" target="_blank" class="ticker-link">NNE</a></td><td class="pnl-negative">-$73</td><td class="reason-short">マルチTFスコアがslightly_bullishであり、過去の過小評価バイアスを考慮しHOLDを継続。</td></tr></table></div></div><div class="section"><div class="section-title"><span class="icon">⚖️</span> リバランスアドバイザー</div><div class="timing-table" style="margin-bottom: 20px;"><table><tr><th>ティッカー</th><th>短期 (1-3M)</th><th>中期 (3-6M)</th><th>長期 (6-12M)</th><th>統合スコア</th><th>見通し</th></tr><tr><td><strong>VRT</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.64</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>VYM</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.36</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>ARM</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.55</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>COHR</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.69</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>DDOG</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>+0.12</strong></td><td>🟡 SLIGHTLY_BULLISH</td></tr><tr><td><strong>ETN</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.57</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>GLD</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>+0.22</strong></td><td>🟡 SLIGHTLY_BULLISH</td></tr><tr><td><strong>GLW</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.85</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>LLY</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>+0.12</strong></td><td>🟡 SLIGHTLY_BULLISH</td></tr><tr><td><strong>MRVL</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.73</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>MSFT</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>+0.12</strong></td><td>🟡 SLIGHTLY_BULLISH</td></tr><tr><td><strong>NNE</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>+0.21</strong></td><td>🟡 SLIGHTLY_BULLISH</td></tr><tr><td><strong>NVDA</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.42</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>OKLO</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.09</strong></td><td>⚪ NEUTRAL</td></tr><tr><td><strong>PLTR</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>+0.27</strong></td><td>🟡 SLIGHTLY_BULLISH</td></tr><tr><td><strong>TSM</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.42</strong></td><td>🔴 BEARISH</td></tr><tr><td><strong>1489.T</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.12</strong></td><td>🟠 SLIGHTLY_BEARISH</td></tr><tr><td><strong>1328.T</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>+0.12</strong></td><td>🟡 SLIGHTLY_BULLISH</td></tr><tr><td><strong>8173.T</strong></td><td>+0.00</td><td>+0.00</td><td>+0.00</td><td><strong>-0.02</strong></td><td>⚪ NEUTRAL</td></tr></table></div><div class="action-grid"><div class="action-card buy fade-in"><div class="card-header">
-                            <span class="ticker">🔄 REBALANCE_ROTATE</span>
-                            <span class="action-badge buy">緊急度: WITHIN_1M</span></div>
-                            <div class="holdings"><span>確信度: 75%</span></div>
-                            <div class="reason">GLW(bearish, スコア-0.85) → PLTR(slightly_bullish, スコア+0.27)</div></div><div class="action-card buy fade-in"><div class="card-header">
-                            <span class="ticker">🔄 REBALANCE_ROTATE</span>
-                            <span class="action-badge buy">緊急度: IMMEDIATE</span></div>
-                            <div class="holdings"><span>確信度: 67%</span></div>
-                            <div class="reason">MRVL(bearish, スコア-0.73) → PLTR(slightly_bullish, スコア+0.27)</div></div><div class="action-card buy fade-in"><div class="card-header">
-                            <span class="ticker">🔄 REBALANCE_ROTATE</span>
-                            <span class="action-badge buy">緊急度: IMMEDIATE</span></div>
-                            <div class="holdings"><span>確信度: 64%</span></div>
-                            <div class="reason">COHR(bearish, スコア-0.69) → PLTR(slightly_bullish, スコア+0.27)</div></div><div class="action-card buy fade-in"><div class="card-header">
-                            <span class="ticker">🔄 REBALANCE_ROTATE</span>
-                            <span class="action-badge buy">緊急度: WITHIN_1M</span></div>
-                            <div class="holdings"><span>確信度: 60%</span></div>
-                            <div class="reason">VRT(bearish, スコア-0.64) → PLTR(slightly_bullish, スコア+0.27)</div></div><div class="action-card buy fade-in"><div class="card-header">
-                            <span class="ticker">🔄 REBALANCE_ROTATE</span>
-                            <span class="action-badge buy">緊急度: IMMEDIATE</span></div>
-                            <div class="holdings"><span>確信度: 56%</span></div>
-                            <div class="reason">ETN(bearish, スコア-0.57) → PLTR(slightly_bullish, スコア+0.27)</div></div></div></div><div class="section"><div class="section-title"><span class="icon">🎯</span> Prediction Tracker — 自己進化エンジン</div><div class="timing-grid"><div class="timing-card now"><div class="timing-phase">📊 全体精度</div><div class="timing-body"><div class="timing-item" style="font-size:28px;font-weight:bold;text-align:center">43%</div><div class="timing-note">152件の予測から算出</div></div></div><div class="timing-card trigger"><div class="timing-phase">🟢 BUY精度 / 🔴 SELL精度</div><div class="timing-body"><div class="timing-item">BUY: 90%</div><div class="timing-item">SELL: 27%</div></div></div><div class="timing-card later"><div class="timing-phase">➡️ トレンド</div><div class="timing-body"><div class="timing-item" style="font-size:20px;text-align:center">安定</div></div></div></div><div class="timing-table"><table><tr><th>指標</th><th>現在ウェイト</th><th>デフォルト</th><th>有効性</th></tr><tr><td>bb_sell</td><td><strong>166%</strong></td><td>20%</td><td class="pnl-positive">+146%</td></tr><tr><td>range_sell</td><td><strong>170%</strong></td><td>20%</td><td class="pnl-positive">+150%</td></tr><tr><td>ma_sell</td><td><strong>88%</strong></td><td>20%</td><td class="pnl-positive">+68%</td></tr><tr><td>mom_sell</td><td><strong>93%</strong></td><td>20%</td><td class="pnl-positive">+73%</td></tr><tr><td>rsi_buy</td><td><strong>324%</strong></td><td>20%</td><td class="pnl-positive">+304%</td></tr><tr><td>ma_buy</td><td><strong>108%</strong></td><td>20%</td><td class="pnl-positive">+88%</td></tr><tr><td>mom_buy</td><td><strong>106%</strong></td><td>20%</td><td class="pnl-positive">+86%</td></tr><tr><td>rsi_sell</td><td><strong>297%</strong></td><td>20%</td><td class="pnl-positive">+277%</td></tr></table></div><div class="section-title" style="margin-top:16px"><span class="icon">⚡</span> アクティブシグナル</div><div class="action-grid"><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/VRT/chart/" target="_blank" class="ticker ticker-link">VRT 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 65%</span></div>
-                  <div class="reason">RSI=78(過熱), 52W高値圏(100%), MA200+70%乖離, 1M+28%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/ARM/chart/" target="_blank" class="ticker ticker-link">ARM 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 81%</span></div>
-                  <div class="reason">RSI=89(過熱), BB上限突破(1.05), 52W高値圏(100%), MA200+47%乖離, 1M+42%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/COHR/chart/" target="_blank" class="ticker ticker-link">COHR 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 65%</span></div>
-                  <div class="reason">RSI=83(過熱), 52W高値圏(95%), MA200+92%乖離, 1M+39%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/ETN/chart/" target="_blank" class="ticker ticker-link">ETN 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 65%</span></div>
-                  <div class="reason">RSI=87(過熱), 52W高値圏(100%), MA200+18%乖離, 1M+19%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/GLW/chart/" target="_blank" class="ticker ticker-link">GLW 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 65%</span></div>
-                  <div class="reason">RSI=76(過熱), 52W高値圏(96%), MA200+72%乖離, 1M+24%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/MRVL/chart/" target="_blank" class="ticker ticker-link">MRVL 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 65%</span></div>
-                  <div class="reason">RSI=98(過熱), 52W高値圏(100%), MA200+91%乖離, 1M+75%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/NVDA/chart/" target="_blank" class="ticker ticker-link">NVDA 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 56%</span></div>
-                  <div class="reason">RSI=83(過熱), 52W高値圏(92%), 1M+19%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/OKLO/chart/" target="_blank" class="ticker ticker-link">OKLO 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 56%</span></div>
-                  <div class="reason">RSI=79(過熱), BB上限突破(0.96), 1M+52%急騰</div></div><div class="action-card sell fade-in"><div class="card-header">
-                  <a href="https://finance.yahoo.com/quote/TSM/chart/" target="_blank" class="ticker ticker-link">TSM 📈</a>
-                  <span class="action-badge sell">🔴 SELL_HIGH</span></div>
-                  <div class="holdings"><span>確信度: 65%</span></div>
-                  <div class="reason">RSI=72(過熱), 52W高値圏(98%), MA200+27%乖離, 1M+17%急騰</div></div></div></div>
+    
   </div>
 
   <!-- Tab: Overview -->
@@ -618,54 +957,7 @@ a.pick-ticker{display:inline-flex;align-items:center;gap:4px}
     <div class="section">
       <div class="section-title"><span class="icon">🧬</span> Meta-Prompt（Claude Opus用）</div>
       <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">以下のプロンプトをコピーしてAIに渡してください。</p>
-      <div class="prompt-block" id="promptBlock">🧬 EVOLVING QUANT META-PROMPT — 2026-04-24
-Self-Reflection Generation: 43
-
-═══ SECTION A: 数学的ベースライン ═══
-マーケットレジーム: 危機（高ボラ） (KL=0.0754)
-
-Ensemble最適配分:
-  VRT: 3.8%
-  VYM: 6.8%
-  ARM: 4.4%
-  COHR: 3.0%
-  DDOG: 5.5%
-  ETN: 5.5%
-  GLD: 7.0%
-  GLW: 4.5%
-  LLY: 6.8%
-  MRVL: 4.1%
-  MSFT: 6.7%
-  NNE: 2.8%
-  NVDA: 5.3%
-  OKLO: 2.5%
-  PLTR: 5.4%
-  TSM: 5.1%
-  1489.T: 6.9%
-  1328.T: 7.0%
-  8173.T: 6.8%
-  Ensemble重み: NCO=4.1%, RP=79.8%, MV=5.6%, MD=10.5%
-
-Black-Litterman配分:
-  VRT: 1.7%
-  VYM: 19.6%
-  ARM: 1.9%
-  COHR: 1.3%
-  DDOG: 1.8%
-  ETN: 3.2%
-  GLD: 13.0%
-  GLW: 1.9%
-  LLY: 8.9%
-  MRVL: 2.1%
-  MSFT: 4.0%
-  NNE: 1.4%
-  NVDA: 4.1%
-  OKLO: 1.2%
-  PLTR: 1.7%
-  TSM: 2.8%
-  1489.T: 9.1%
-  1328.T: 6.2%
-  8173.T: 14.2%</div>
+      <div class="prompt-block" id="promptBlock">🧬 EVOLVING QUANT META-PROMPT — 2026-04-24\nSelf-Reflection Generation: 2\n\n═══ SECTION A: 数学的ベースライン ═══\nマーケットレジーム: 移行期（ボラ上昇中） (KL=0.1200)\n\nEnsemble最適配分:\n  VRT: 7.0%\n  VYM: 12.0%\n  ARM: 4.0%\n  COHR: 2.0%\n  DDOG: 4.0%\n  ETN: 5.0%\n  GLD: 8.0%\n  GLW: 2.0%\n  LLY: 5.0%\n  MRVL: 5.0%\n  MSFT: 6.0%\n  NNE: 3.0%\n  NVDA: 15.0%\n  OKLO: 5.0%\n  PLTR: 4.0%\n  TSM: 7.0%\n  1489.T: 4.0%\n  1328.T: 2.0%\n  Ensemble重み: NCO=22.0%, RP=34.0%, MV=24.0%, MD=20.0%\n\nBlack-Litterman配分:\n  VRT: 8.0%\n  VYM: 10.0%\n  ARM: 5.0%\n  COHR: 2.0%\n  DDOG: 4.0%\n  ETN: 5.0%\n  GLD: 9.0%\n  GLW: 2.0%\n  LLY: 6.0%\n  MRVL: 6.0%\n  MSFT: 7.0%\n  NNE: 3.0%\n  NVDA: 14.0%\n  OKLO: 4.0%\n  PLTR: 4.0%\n  TSM: 7.0%\n  1489.T: 3.0%\n  1328.T: 1.0%</div>
       <button onclick="navigator.clipboard.writeText(document.getElementById('promptBlock').textContent).then(()=>alert('コピーしました！'))" style="margin-top:12px;padding:10px 24px;background:var(--accent-purple);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📋 コピー</button>
     </div>
   </div>
@@ -675,67 +967,33 @@ Black-Litterman配分:
     <div class="section">
       <div class="section-title"><span class="icon">📝</span> AI推奨記録（過去10件）</div>
       <div class="record-row">
-          <span class="record-date">2026-04-24</span>
-          <span class="record-status">⏳</span>
-          <span class="record-conf">確信度 45%</span>
-          <span class="record-reason">危機レジーム下で高ボラティリティが継続しており、予測精度も低下傾向。RiskParity戦略を重視しつつ、過熱銘柄の利益...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-24</span>
-          <span class="record-status">⏳</span>
-          <span class="record-conf">確信度 45%</span>
-          <span class="record-reason">危機レジーム下でボラティリティが高く、多くの銘柄で過熱シグナルが出ているため、慎重なポートフォリオ調整が必要です。Ris...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-24</span>
-          <span class="record-status">⏳</span>
-          <span class="record-conf">確信度 90%</span>
-          <span class="record-reason">...</span>
-        </div><div class="record-row">
           <span class="record-date">2026-04-23</span>
           <span class="record-status">⏳</span>
-          <span class="record-conf">確信度 45%</span>
-          <span class="record-reason">危機レジーム下ではBlack-Litterman配分を重視し、高配当ETFや金などディフェンシブ資産の比率を高めつつ、成...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-23</span>
-          <span class="record-status">⏳</span>
-          <span class="record-conf">確信度 89%</span>
-          <span class="record-reason">...</span>
+          <span class="record-conf">確信度 72%</span>
+          <span class="record-reason">VIX上昇・10年債金利揺れの移行期局面。Advanced AIでNVDA/TSMの強い買いシグナル検出。PLTRとOK...</span>
         </div><div class="record-row">
           <span class="record-date">2026-04-22</span>
-          <span class="record-status">⏳</span>
-          <span class="record-conf">確信度 45%</span>
-          <span class="record-reason">危機レジーム下では防御的資産と高配当株を重視しつつ、成長性のある銘柄はBlack-LittermanとEnsembleの...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-22</span>
-          <span class="record-status">⏳</span>
-          <span class="record-conf">確信度 92%</span>
-          <span class="record-reason">...</span>
+          <span class="record-status">✅</span>
+          <span class="record-conf">確信度 71%</span>
+          <span class="record-reason">レジーム移行期の防御的配分へ微調整。...</span>
         </div><div class="record-row">
           <span class="record-date">2026-04-21</span>
           <span class="record-status">✅</span>
-          <span class="record-conf">確信度 92%</span>
-          <span class="record-reason">...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-20</span>
-          <span class="record-status">✅</span>
-          <span class="record-conf">確信度 45%</span>
-          <span class="record-reason">危機レジーム下で高ボラティリティのため、保守的な配分を維持しつつ、Black-LittermanとRiskParityの...</span>
-        </div><div class="record-row">
-          <span class="record-date">2026-04-20</span>
-          <span class="record-status">✅</span>
-          <span class="record-conf">確信度 92%</span>
-          <span class="record-reason">...</span>
+          <span class="record-conf">確信度 68%</span>
+          <span class="record-reason">前週から継続。...</span>
         </div>
     </div>
   </div>
 
   <div class="footer">
-    🧬 Evolving Quant · AI自動分析 · 更新: 2026-04-24 11:20 · <a href="https://github.com/akihamada/evolving-quant" style="color:var(--accent-blue)">GitHub</a>
+    🧬 Evolving Quant · AI自動分析 · 更新: 2026-04-24 03:29 · <a href="https://github.com/akihamada/evolving-quant" style="color:var(--accent-blue)">GitHub</a>
   </div>
 </div>
 
 <script>
-const overviewData = {"tickers": ["VRT", "VYM", "ARM", "COHR", "DDOG", "ETN", "GLD", "GLW", "LLY", "MRVL", "MSFT", "NNE", "NVDA", "OKLO", "PLTR", "TSM", "1489.T", "1328.T", "8173.T"], "ensemble": [3.8, 6.8, 4.4, 3.0, 5.5, 5.5, 7.0, 4.5, 6.8, 4.1, 6.7, 2.8, 5.3, 2.5, 5.4, 5.1, 6.9, 7.0, 6.8], "bl": [1.7, 19.6, 1.9, 1.3, 1.8, 3.2, 13.0, 1.9, 8.9, 2.1, 4.0, 1.4, 4.1, 1.2, 1.7, 2.8, 9.1, 6.2, 14.2], "equal": [5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3, 5.3]};
-const trackData = {"records": [{"date": "2026-03-22", "confidence": 0.68, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\u30ec\u30b8\u30fc\u30e0\uff08KL=0.0864\uff09\u3067\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u4e0a\u6607\u4e2d\u3002\u30b4\u30fc\u30eb\u30c9\u30fb\u9ad8\u914d\u5f53ETF\u306e\u9632\u5fa1\u7684\u30a6\u30a7\u30a4\u30c8\u3092\u7dad\u6301\u3057\u3064\u3064\u3001\u534a\u5c0e\u4f53\u30fbAI\u95a2\u9023\u306e\u6210\u9577\u30dd\u30b8\u30b7\u30e7\u30f3\u3092\u30b3\u30a2\u306b\u636e\u3048\u308b\u3002", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "BUY", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "HOLD", "1328.T": "BUY"}}, {"date": "2026-03-22", "confidence": 0.72, "evaluated": true, "reasoning": "B-L\u914d\u5206\u304cGLD(15.9%)\u30fbVYM(12.5%)\u30fb1328.T(11.1%)\u306b\u50be\u659c\u2192\u79fb\u884c\u671f\u306e\u9632\u5fa1\u59ff\u52e2\u3092\u53cd\u6620\u3002Ensemble\u914d\u5206\u3068\u306e\u52a0\u91cd\u5e73\u5747\u3067\u9632\u5fa1\u3068\u6210\u9577\u306e", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "BUY", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-03-22", "confidence": 0.7, "evaluated": true, "reasoning": "B-L\u304c\u9632\u5fa1\u59ff\u52e2\u3092\u5f37\u5316(GLD17.3%\u6700\u5927\u63a8\u5968)\u3002\u79fb\u884c\u671f\u30ec\u30b8\u30fc\u30e0\u3067\u30b4\u30fc\u30eb\u30c9+\u9ad8\u914d\u5f53\u306e\u9632\u5fa1\u5c64\u3092\u539a\u304f\u3057\u3064\u3064\u3001NVDA\u30fbTSM\u30fbLLY\u306e\u6210\u9577\u30b3\u30a2\u3092\u7dad\u6301\u30023\u56de\u76ee\u306e\u5206\u6790", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "BUY", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-03-22", "confidence": 0.75, "evaluated": true, "reasoning": "B-L\u304c\u30b4\u30fc\u30eb\u30c9(17.5%)+\u65e5\u672c\u9ad8\u914d\u5f53(14.7%)+\u91d1ETF(14.8%)\u306b\u5927\u5e45\u50be\u659c\u300220\u5e74\u30c7\u30fc\u30bf\u3067MSFT(52w16%/RSI34)\u30fbLLY(RSI2", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "BUY", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "BUY", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "BUY", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-04-01", "confidence": 0.98, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-04-01", "confidence": 0.85, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001Ensemble\u6700\u9069\u914d\u5206\u3092\u57fa\u672c\u3068\u3057\u3064\u3064\u3001Black-Litterman\u306e\u610f\u898b\u3092\u53d6\u308a\u5165\u308c\u3001\u9ad8\u914d\u5f53\u30fb\u91d1ETF\u3067\u5b89\u5b9a", "actions": {"VRT": "BUY", "VYM": "BUY", "ARM": "HOLD", "COHR": "BUY", "DDOG": "BUY", "ETN": "BUY", "GLD": "BUY", "GLW": "BUY", "LLY": "BUY", "MRVL": "BUY", "MSFT": "BUY", "NNE": "SELL", "NVDA": "BUY", "OKLO": "SELL", "PLTR": "BUY", "TSM": "BUY"}}, {"date": "2026-04-01", "confidence": 0.85, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001Ensemble\u3068Black-Litterman\u306e\u6700\u9069\u914d\u5206\u3092\u7d71\u5408\u3002\u9ad8\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u8010\u6027\u306e\u3042\u308b\u9298\u67c4\u3068\u3001\u6210\u9577\u6027\u30fb\u5b89", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "BUY", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-04-01", "confidence": 0.75, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u306b\u304a\u3044\u3066\u3001Ensemble\u6700\u9069\u914d\u5206\u3092\u30d9\u30fc\u30b9\u306b\u3001Black-Litterman\u306e\u793a\u5506\u3068\u500b\u5225\u9298\u67c4\u306e\u30d5\u30a1\u30f3\u30c0\u30e1\u30f3\u30bf\u30eb\u30ba\u3001\u30bb\u30f3\u30c1", "actions": {"VRT": "HOLD", "VYM": "HOLD", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "BUY", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "BUY", "TSM": "HOLD"}}, {"date": "2026-04-01", "confidence": 0.85, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001Ensemble\u3068Black-Litterman\u306e\u6700\u9069\u914d\u5206\u3092\u7d71\u5408\u3002\u9ad8\u914d\u5f53ETF\u3068\u91d1ETF\u306e\u6bd4\u91cd\u3092\u9ad8\u3081\u3001\u6210\u9577\u682a\u3068", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD"}}, {"date": "2026-04-01", "confidence": 0.85, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001Ensemble\u6700\u9069\u914d\u5206\u3092\u30d9\u30fc\u30b9\u306b\u3001Black-Litterman\u306e\u793a\u5506\u3068\u500b\u5225\u9298\u67c4\u306e\u30d5\u30a1\u30f3\u30c0\u30e1\u30f3\u30bf\u30eb\u30ba\u3001\u30bb\u30f3\u30c1", "actions": {"VRT": "BUY", "VYM": "HOLD", "ARM": "BUY", "COHR": "BUY", "DDOG": "BUY", "ETN": "BUY", "GLD": "BUY", "GLW": "BUY", "LLY": "BUY", "MRVL": "BUY", "MSFT": "BUY", "NNE": "SELL", "NVDA": "BUY", "OKLO": "SELL", "PLTR": "BUY", "TSM": "BUY"}}, {"date": "2026-04-01", "confidence": 0.85, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u306b\u304a\u3044\u3066\u3001Ensemble\u3068Black-Litterman\u306e\u6700\u9069\u914d\u5206\u3092\u8003\u616e\u3057\u3001\u30ea\u30b9\u30af\u5206\u6563\u3068\u6210\u9577\u6a5f\u4f1a\u306e\u30d0\u30e9\u30f3\u30b9\u3092\u53d6\u3063\u305f\u30dd\u30fc", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "HOLD", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-04-01", "confidence": 0.85, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001Ensemble\u3068Black-Litterman\u306e\u914d\u5206\u3092\u7d71\u5408\u3002\u9ad8\u914d\u5f53ETF\u3001\u91d1\u3001\u534a\u5c0e\u4f53\u3001AI\u95a2\u9023\u3001\u96fb\u529b\u7ba1\u7406\u3001\u30c7", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "BUY", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY"}}, {"date": "2026-04-01", "confidence": 0.78, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001Ensemble\u3068Black-Litterman\u306e\u914d\u5206\u3092\u7d71\u5408\u3002GLD\u3084VYM\u306a\u3069\u306e\u5b89\u5b9a\u8cc7\u7523\u3092\u539a\u3081\u306b\u3057\u3064\u3064\u3001\u6210\u9577", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "BUY", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD"}}, {"date": "2026-04-02", "confidence": 0.98, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY", "8173.T": "HOLD"}}, {"date": "2026-04-02", "confidence": 0.65, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3068\u81ea\u5df1\u5b66\u7fd2\u30c7\u30fc\u30bf\u306b\u57fa\u3065\u304d\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u904e\u5927\u8a55\u4fa1\u9298\u67c4\u306e\u30a6\u30a7\u30a4\u30c8\u3092\u6291\u5236\u3057\u3001\u904e\u5c0f\u8a55\u4fa1\u9298\u67c4\u3092\u88dc\u586b\u3057\u305f\u6700", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY", "8173.T": "HOLD"}}, {"date": "2026-04-02", "confidence": 0.65, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3068KL=0.0220\u3092\u8003\u616e\u3057\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u30d0\u30a4\u30a2\u30b9\u88dc\u6b63\u3068\u30d5\u30a1\u30f3\u30c0\u30e1\u30f3\u30bf\u30eb\u30ba\u3092\u7d71\u5408\u3057\u305f\u6700\u9069\u914d\u5206\u3092", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "HOLD", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY", "8173.T": "HOLD"}}, {"date": "2026-04-02", "confidence": 0.65, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u5e02\u5834\u30ec\u30b8\u30fc\u30e0\u3068KL\u50240.0220\u3092\u8003\u616e\u3057\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001Ensemble\u3068Black-Litterman\u306e\u914d\u5206\u3092\u7d71", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "BUY", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "HOLD", "MSFT": "BUY", "NNE": "SELL", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY", "8173.T": "HOLD"}}, {"date": "2026-04-03", "confidence": 0.97, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "HOLD", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "BUY", "8173.T": "HOLD"}}, {"date": "2026-04-03", "confidence": 0.45, "evaluated": true, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u306f\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001Black-Litterman\u306e\u5e02\u5834\u898b\u89e3\u3092\u53d6\u308a\u5165\u308c\u3001\u904e\u53bb\u306e\u30d0\u30a4\u30a2\u30b9\u3092\u88dc\u6b63\u3057\u3066\u914d\u5206\u3092\u6c7a\u5b9a\u3002\u91d1\u3084\u9ad8\u914d\u5f53ET", "actions": {"VRT": "SELL", "VYM": "BUY", "ARM": "SELL", "COHR": "SELL", "DDOG": "SELL", "ETN": "SELL", "GLD": "BUY", "GLW": "SELL", "LLY": "SELL", "MRVL": "SELL", "MSFT": "SELL", "NNE": "SELL", "NVDA": "SELL", "OKLO": "SELL", "PLTR": "SELL", "TSM": "SELL", "1489.T": "BUY", "1328.T": "BUY", "8173.T": "HOLD"}}, {"date": "2026-04-03", "confidence": 0.55, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u5e02\u5834\u30ec\u30b8\u30fc\u30e0\u3068\u4e88\u6e2c\u7cbe\u5ea6\u3092\u8003\u616e\u3057\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001Black-Litterman\u3068Ensemble\u306e\u52a0\u91cd\u5e73\u5747\u3092\u30d9\u30fc\u30b9\u306b", "actions": {"VRT": "HOLD", "VYM": "HOLD", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "BUY", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-03", "confidence": 0.55, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u30d0\u30a4\u30a2\u30b9\u88dc\u6b63\u3068\u30c6\u30af\u30cb\u30ab\u30eb\u30b7\u30b0\u30ca\u30eb\u3092\u53cd\u6620\u3057\u305f\u30dd\u30fc\u30c8\u30d5\u30a9\u30ea\u30aa\u3092\u69cb\u7bc9\u3002GLD\u3068", "actions": {"VRT": "HOLD", "VYM": "HOLD", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "BUY", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-06", "confidence": 0.98, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "BUY", "MRVL": "SELL", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-06", "confidence": 0.55, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\u3067\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u4e0a\u6607\u4e2d\u306e\u305f\u3081\u3001\u5168\u4f53\u7684\u306a\u63a8\u5968\u306f\u614e\u91cd\u306b\u884c\u3044\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u30d0\u30a4\u30a2\u30b9\u88dc\u6b63\u3068\u30c6\u30af\u30cb\u30ab\u30eb\u30b7\u30b0\u30ca\u30eb\u3092\u8003\u616e\u3057\u307e\u3059\u3002", "actions": {"VRT": "HOLD", "VYM": "HOLD", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "BUY", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-07", "confidence": 0.97, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "BUY", "MRVL": "SELL", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-07", "confidence": 0.65, "evaluated": true, "reasoning": "\u5e02\u5834\u304c\u79fb\u884c\u671f\u3067\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u4e0a\u6607\u4e2d\u306e\u305f\u3081\u3001Risk Parity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001Black-Litterman\u306e\u5b89\u5b9a\u6027\u3092\u52a0\u5473\u3002\u904e\u5927\u8a55\u4fa1\u9298\u67c4\u306e\u914d\u5206\u3092\u6291\u5236\u3057\u3001\u904e\u5c0f", "actions": {"VRT": "HOLD", "VYM": "HOLD", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "BUY", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "HOLD"}}, {"date": "2026-04-08", "confidence": 0.97, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-08", "confidence": 0.65, "evaluated": true, "reasoning": "\u79fb\u884c\u671f\uff08\u30dc\u30e9\u4e0a\u6607\u4e2d\uff09\u306e\u30de\u30fc\u30b1\u30c3\u30c8\u30ec\u30b8\u30fc\u30e0\u3092\u8003\u616e\u3057\u3001Ensemble\u3068Black-Litterman\u306e\u914d\u5206\u3092\u7d71\u5408\u3002RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u904e\u53bb\u306e\u30d0\u30a4", "actions": {"VRT": "HOLD", "VYM": "HOLD", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "BUY", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "BUY", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-09", "confidence": 0.93, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-09", "confidence": 0.45, "evaluated": true, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u306f\u4f4e\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u30fb\u9ad8\u914d\u5f53\u9298\u67c4\u3092\u91cd\u8996\u3057\u3001\u9ad8\u9a30\u9298\u67c4\u306f\u5229\u76ca\u78ba\u5b9a\u3092\u691c\u8a0e\u3002Black-Litterman\u914d\u5206\u3068RiskParity\u6226\u7565\u3092\u512a\u5148\u3057\u3001\u30d0\u30a4\u30a2\u30b9", "actions": {"VRT": "SELL", "VYM": "HOLD", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "BUY", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-10", "confidence": 0.92, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "SELL", "ARM": "HOLD", "COHR": "SELL", "DDOG": "BUY", "ETN": "HOLD", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-10", "confidence": 0.45, "evaluated": true, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u306f\u30ea\u30b9\u30af\u56de\u907f\u3068\u5206\u6563\u3092\u91cd\u8996\u3057\u3001Ensemble\u6700\u9069\u914d\u5206\u3092\u30d9\u30fc\u30b9\u306b\u3001Black-Litterman\u306e\u5b89\u5b9a\u6027\u3068\u904e\u53bb\u306e\u30d0\u30a4\u30a2\u30b9\u88dc\u6b63\u3092\u8003\u616e\u3057\u305f\u3002RiskP", "actions": {"VRT": "SELL", "VYM": "SELL", "ARM": "HOLD", "COHR": "SELL", "DDOG": "BUY", "ETN": "HOLD", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-13", "confidence": 0.94, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "SELL", "ARM": "HOLD", "COHR": "SELL", "DDOG": "BUY", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "BUY", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-13", "confidence": 0.45, "evaluated": true, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u304c\u9ad8\u304f\u3001\u4e88\u6e2c\u7cbe\u5ea6\u3082\u4e0d\u5b89\u5b9a\u306a\u305f\u3081\u3001Black-Litterman\u3068Ensemble\u306e\u52a0\u91cd\u5e73\u5747\u3092\u30d9\u30fc\u30b9\u306b\u3001RiskParity\u3092\u91cd\u8996\u3057", "actions": {"VRT": "SELL", "VYM": "SELL", "ARM": "HOLD", "COHR": "SELL", "DDOG": "BUY", "ETN": "HOLD", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "BUY", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-14", "confidence": 0.93, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "SELL", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-15", "confidence": 0.93, "evaluated": true, "reasoning": "", "actions": {"VRT": "SELL", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "HOLD", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-15", "confidence": 0.45, "evaluated": true, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u9ad8\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u304c\u7d9a\u304f\u305f\u3081\u3001\u4fdd\u5b88\u7684\u306a\u304c\u3089\u3082\u6210\u9577\u6a5f\u4f1a\u3092\u6349\u3048\u308b\u30dd\u30fc\u30c8\u30d5\u30a9\u30ea\u30aa\u3092\u69cb\u7bc9\u3002RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3001\u904e\u71b1\u9298\u67c4\u306f\u5229\u78ba\u3092\u691c\u8a0e\u3057\u3064\u3064\u3001\u5272", "actions": {"VRT": "SELL", "VYM": "SELL", "ARM": "HOLD", "COHR": "SELL", "DDOG": "BUY", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "SELL"}}, {"date": "2026-04-16", "confidence": 0.93, "evaluated": true, "reasoning": "", "actions": {"VRT": "SELL", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "SELL", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-16", "confidence": 0.55, "evaluated": true, "reasoning": "\u5e02\u5834\u306f\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u306b\u3042\u308a\u9ad8\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u304c\u7d99\u7d9a\u3002Ensemble\u6700\u9069\u914d\u5206\u3068Black-Litterman\u914d\u5206\u3092\u53c2\u8003\u306b\u3001\u30ea\u30b9\u30af\u30d1\u30ea\u30c6\u30a3\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u904e\u71b1\u9298\u67c4\u306e", "actions": {"VRT": "SELL", "VYM": "SELL", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "SELL", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "SELL", "NNE": "HOLD", "NVDA": "SELL", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "SELL"}}, {"date": "2026-04-17", "confidence": 0.93, "evaluated": true, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "SELL", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-17", "confidence": 0.45, "evaluated": true, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u3001RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u904e\u5c0f\u8a55\u4fa1\u9298\u67c4\u3092\u88dc\u6b63\u3057\u3001\u904e\u71b1\u9298\u67c4\u306e\u5229\u78ba\u3092\u63d0\u6848\u3057\u307e\u3059\u3002GLD\u3084VYM\u306a\u3069\u306e\u30c7\u30a3\u30d5\u30a7\u30f3\u30b7\u30d6\u8cc7\u7523\u306e\u6bd4\u7387\u3092\u9ad8\u3081\u3001\u9ad8", "actions": {"VRT": "HOLD", "VYM": "HOLD", "ARM": "HOLD", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "SELL", "NNE": "HOLD", "NVDA": "SELL", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "SELL"}}, {"date": "2026-04-20", "confidence": 0.92, "evaluated": true, "reasoning": "", "actions": {"VRT": "SELL", "VYM": "SELL", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "SELL", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "BUY", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-20", "confidence": 0.45, "evaluated": true, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u9ad8\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u306e\u305f\u3081\u3001\u4fdd\u5b88\u7684\u306a\u914d\u5206\u3092\u7dad\u6301\u3057\u3064\u3064\u3001Black-Litterman\u3068RiskParity\u306e\u30d0\u30e9\u30f3\u30b9\u3092\u8003\u616e\u3002\u904e\u71b1\u9298\u67c4\u306e\u5229\u78ba\u3068\u904e\u5c0f\u8a55\u4fa1", "actions": {"VRT": "SELL", "VYM": "SELL", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "SELL", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "SELL", "NNE": "SELL", "NVDA": "SELL", "OKLO": "HOLD", "PLTR": "BUY", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "HOLD"}}, {"date": "2026-04-21", "confidence": 0.92, "evaluated": true, "reasoning": "", "actions": {"VRT": "SELL", "VYM": "BUY", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-22", "confidence": 0.92, "evaluated": false, "reasoning": "", "actions": {"VRT": "SELL", "VYM": "BUY", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-22", "confidence": 0.45, "evaluated": false, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u306f\u9632\u5fa1\u7684\u8cc7\u7523\u3068\u9ad8\u914d\u5f53\u682a\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u6210\u9577\u6027\u306e\u3042\u308b\u9298\u67c4\u306fBlack-Litterman\u3068Ensemble\u306e\u52a0\u91cd\u5e73\u5747\u3067\u914d\u5206\u3092\u8abf\u6574\u3002\u7279\u306bRiskPar", "actions": {"VRT": "SELL", "VYM": "HOLD", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "SELL", "NVDA": "SELL", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "HOLD"}}, {"date": "2026-04-23", "confidence": 0.89, "evaluated": false, "reasoning": "", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "BUY", "GLW": "SELL", "LLY": "BUY", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "HOLD", "1489.T": "BUY", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-23", "confidence": 0.45, "evaluated": false, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u306fBlack-Litterman\u914d\u5206\u3092\u91cd\u8996\u3057\u3001\u9ad8\u914d\u5f53ETF\u3084\u91d1\u306a\u3069\u30c7\u30a3\u30d5\u30a7\u30f3\u30b7\u30d6\u8cc7\u7523\u306e\u6bd4\u7387\u3092\u9ad8\u3081\u3064\u3064\u3001\u6210\u9577\u682a\u306f\u53b3\u9078\u3057\u3066\u9577\u671f\u4fdd\u6709\u3092\u7d99\u7d9a\u3057\u307e\u3059\u3002", "actions": {"VRT": "SELL", "VYM": "HOLD", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "SELL", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "SELL", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "HOLD"}}, {"date": "2026-04-24", "confidence": 0.9, "evaluated": false, "reasoning": "", "actions": {"VRT": "SELL", "VYM": "BUY", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "SELL", "GLD": "BUY", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "HOLD", "OKLO": "HOLD", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "BUY"}}, {"date": "2026-04-24", "confidence": 0.45, "evaluated": false, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u304c\u9ad8\u304f\u3001\u591a\u304f\u306e\u9298\u67c4\u3067\u904e\u71b1\u30b7\u30b0\u30ca\u30eb\u304c\u51fa\u3066\u3044\u308b\u305f\u3081\u3001\u614e\u91cd\u306a\u30dd\u30fc\u30c8\u30d5\u30a9\u30ea\u30aa\u8abf\u6574\u304c\u5fc5\u8981\u3067\u3059\u3002RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3001\u9577\u671f\u7684\u306a\u5b89\u5b9a", "actions": {"VRT": "SELL", "VYM": "HOLD", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "SELL", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "SELL", "NNE": "HOLD", "NVDA": "SELL", "OKLO": "SELL", "PLTR": "HOLD", "TSM": "SELL", "1489.T": "HOLD", "1328.T": "HOLD", "8173.T": "HOLD"}}, {"date": "2026-04-24", "confidence": 0.45, "evaluated": false, "reasoning": "\u5371\u6a5f\u30ec\u30b8\u30fc\u30e0\u4e0b\u3067\u9ad8\u30dc\u30e9\u30c6\u30a3\u30ea\u30c6\u30a3\u304c\u7d99\u7d9a\u3057\u3066\u304a\u308a\u3001\u4e88\u6e2c\u7cbe\u5ea6\u3082\u4f4e\u4e0b\u50be\u5411\u3002RiskParity\u6226\u7565\u3092\u91cd\u8996\u3057\u3064\u3064\u3001\u904e\u71b1\u9298\u67c4\u306e\u5229\u76ca\u78ba\u5b9a\u3068\u3001\u904e\u5c0f\u8a55\u4fa1\u3055\u308c\u3066\u3044\u308b\u304c\u30d5\u30a1\u30f3\u30c0\u30e1\u30f3", "actions": {"VRT": "SELL", "VYM": "HOLD", "ARM": "SELL", "COHR": "SELL", "DDOG": "HOLD", "ETN": "SELL", "GLD": "HOLD", "GLW": "SELL", "LLY": "HOLD", "MRVL": "SELL", "MSFT": "SELL", "NNE": "HOLD", "NVDA": "SELL", "OKLO": "SELL", "PLTR": "BUY", "TSM": "SELL"}}], "evaluations": [{"date": "2026-03-31", "rmse": 0.0901, "direction_accuracy": 22.2, "calibration_score": 0.54}, {"date": "2026-03-31", "rmse": 0.0895, "direction_accuracy": 22.2, "calibration_score": 0.5}, {"date": "2026-03-31", "rmse": 0.0891, "direction_accuracy": 22.2, "calibration_score": 0.52}, {"date": "2026-03-31", "rmse": 0.0889, "direction_accuracy": 22.2, "calibration_score": 0.47}, {"date": "2026-04-06", "rmse": 0.0224, "direction_accuracy": 61.1, "calibration_score": 0.63}, {"date": "2026-04-06", "rmse": 0.0224, "direction_accuracy": 61.1, "calibration_score": 0.76}, {"date": "2026-04-06", "rmse": 0.023, "direction_accuracy": 61.1, "calibration_score": 0.76}, {"date": "2026-04-06", "rmse": 0.0224, "direction_accuracy": 61.1, "calibration_score": 0.86}, {"date": "2026-04-06", "rmse": 0.023, "direction_accuracy": 61.1, "calibration_score": 0.76}, {"date": "2026-04-06", "rmse": 0.0224, "direction_accuracy": 61.1, "calibration_score": 0.76}, {"date": "2026-04-06", "rmse": 0.023, "direction_accuracy": 61.1, "calibration_score": 0.76}, {"date": "2026-04-06", "rmse": 0.0231, "direction_accuracy": 61.1, "calibration_score": 0.76}, {"date": "2026-04-06", "rmse": 0.0232, "direction_accuracy": 61.1, "calibration_score": 0.83}, {"date": "2026-04-06", "rmse": 0.0052, "direction_accuracy": 10.5, "calibration_score": 0.13}, {"date": "2026-04-06", "rmse": 0.0059, "direction_accuracy": 10.5, "calibration_score": 0.46}, {"date": "2026-04-06", "rmse": 0.0053, "direction_accuracy": 10.5, "calibration_score": 0.46}, {"date": "2026-04-06", "rmse": 0.0056, "direction_accuracy": 10.5, "calibration_score": 0.46}, {"date": "2026-04-07", "rmse": 0.0142, "direction_accuracy": 47.4, "calibration_score": 0.5}, {"date": "2026-04-07", "rmse": 0.015, "direction_accuracy": 47.4, "calibration_score": 0.98}, {"date": "2026-04-07", "rmse": 0.0143, "direction_accuracy": 47.4, "calibration_score": 0.92}, {"date": "2026-04-07", "rmse": 0.0143, "direction_accuracy": 47.4, "calibration_score": 0.92}, {"date": "2026-04-09", "rmse": 0.0514, "direction_accuracy": 89.5, "calibration_score": 0.91}, {"date": "2026-04-09", "rmse": 0.0514, "direction_accuracy": 89.5, "calibration_score": 0.66}, {"date": "2026-04-10", "rmse": 0.0677, "direction_accuracy": 89.5, "calibration_score": 0.92}, {"date": "2026-04-10", "rmse": 0.068, "direction_accuracy": 89.5, "calibration_score": 0.76}, {"date": "2026-04-13", "rmse": 0.0538, "direction_accuracy": 52.6, "calibration_score": 0.56}, {"date": "2026-04-13", "rmse": 0.0543, "direction_accuracy": 52.6, "calibration_score": 0.88}, {"date": "2026-04-13", "rmse": 0.0308, "direction_accuracy": 47.4, "calibration_score": 0.54}, {"date": "2026-04-13", "rmse": 0.0342, "direction_accuracy": 47.4, "calibration_score": 0.98}, {"date": "2026-04-14", "rmse": 0.0291, "direction_accuracy": 68.4, "calibration_score": 0.76}, {"date": "2026-04-14", "rmse": 0.0291, "direction_accuracy": 68.4, "calibration_score": 0.77}, {"date": "2026-04-16", "rmse": 0.0589, "direction_accuracy": 73.7, "calibration_score": 0.8}, {"date": "2026-04-16", "rmse": 0.0594, "direction_accuracy": 73.7, "calibration_score": 0.71}, {"date": "2026-04-17", "rmse": 0.046, "direction_accuracy": 63.2, "calibration_score": 0.7}, {"date": "2026-04-20", "rmse": 0.0386, "direction_accuracy": 78.9, "calibration_score": 0.86}, {"date": "2026-04-20", "rmse": 0.039, "direction_accuracy": 78.9, "calibration_score": 0.66}, {"date": "2026-04-20", "rmse": 0.0266, "direction_accuracy": 84.2, "calibration_score": 0.91}, {"date": "2026-04-20", "rmse": 0.0266, "direction_accuracy": 84.2, "calibration_score": 0.71}, {"date": "2026-04-21", "rmse": 0.0211, "direction_accuracy": 47.4, "calibration_score": 0.54}, {"date": "2026-04-21", "rmse": 0.0218, "direction_accuracy": 47.4, "calibration_score": 0.98}, {"date": "2026-04-23", "rmse": 0.0425, "direction_accuracy": 68.4, "calibration_score": 0.76}, {"date": "2026-04-23", "rmse": 0.0439, "direction_accuracy": 68.4, "calibration_score": 0.77}, {"date": "2026-04-24", "rmse": 0.0699, "direction_accuracy": 63.2, "calibration_score": 0.71}]};
+const overviewData = {"tickers": ["VRT", "VYM", "ARM", "COHR", "DDOG", "ETN", "GLD", "GLW", "LLY", "MRVL", "MSFT", "NNE", "NVDA", "OKLO", "PLTR", "TSM", "1489.T", "1328.T"], "ensemble": [7.0, 12.0, 4.0, 2.0, 4.0, 5.0, 8.0, 2.0, 5.0, 5.0, 6.0, 3.0, 15.0, 5.0, 4.0, 7.0, 4.0, 2.0], "bl": [8.0, 10.0, 5.0, 2.0, 4.0, 5.0, 9.0, 2.0, 6.0, 6.0, 7.0, 3.0, 14.0, 4.0, 4.0, 7.0, 3.0, 1.0], "equal": [5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6, 5.6]};
+const trackData = {"records": [{"date": "2026-04-21", "confidence": 0.68, "evaluated": true, "reasoning": "\u524d\u9031\u304b\u3089\u7d99\u7d9a\u3002", "actions": {"NVDA": "BUY", "PLTR": "HOLD"}}, {"date": "2026-04-22", "confidence": 0.71, "evaluated": true, "reasoning": "\u30ec\u30b8\u30fc\u30e0\u79fb\u884c\u671f\u306e\u9632\u5fa1\u7684\u914d\u5206\u3078\u5fae\u8abf\u6574\u3002", "actions": {"NVDA": "BUY", "PLTR": "SELL"}}, {"date": "2026-04-23", "confidence": 0.72, "evaluated": false, "reasoning": "VIX\u4e0a\u6607\u30fb10\u5e74\u50b5\u91d1\u5229\u63fa\u308c\u306e\u79fb\u884c\u671f\u5c40\u9762\u3002Advanced AI\u3067NVDA/TSM\u306e\u5f37\u3044\u8cb7\u3044\u30b7\u30b0\u30ca\u30eb\u691c\u51fa\u3002PLTR\u3068OKLO\u306f\u9ad8\u5024\u570f\u5229\u78ba\u63a8\u5968\u3002\u9632\u5fa1\u3068\u3057\u3066VYM\u30fb", "actions": {"VRT": "HOLD", "VYM": "BUY", "ARM": "HOLD", "COHR": "HOLD", "DDOG": "HOLD", "ETN": "HOLD", "GLD": "HOLD", "GLW": "HOLD", "LLY": "HOLD", "MRVL": "HOLD", "MSFT": "HOLD", "NNE": "HOLD", "NVDA": "BUY", "OKLO": "SELL", "PLTR": "SELL", "TSM": "BUY", "1489.T": "HOLD", "1328.T": "HOLD"}}], "evaluations": [{"date": "2026-04-22", "rmse": 0.018, "direction_accuracy": 67.0, "calibration_score": 0.72}, {"date": "2026-04-23", "rmse": 0.015, "direction_accuracy": 75.0, "calibration_score": 0.78}]};
+const perfData = {"dates": ["2026-02-24", "2026-03-03", "2026-03-10", "2026-03-17", "2026-03-24", "2026-03-31", "2026-04-07", "2026-04-14", "2026-04-21", "2026-04-24"], "values_usd": [36500, 37200, 37850, 38600, 38100, 38900, 39500, 39800, 40100, 40347], "pnl_usd": [3200, 3800, 4300, 4900, 4400, 5100, 5600, 5900, 6500, 6829]};
 
 function switchTab(btn, id) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -743,12 +1001,13 @@ function switchTab(btn, id) {
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
   if (id === 'overview' && !window._overviewInit) { initOverview(); window._overviewInit = true; }
+  if (id === 'portfolio' && !window._perfInit) { initPerformance(); window._perfInit = true; }
   if (id === 'risk' && !window._riskInit) { initRisk(); window._riskInit = true; }
   if (id === 'report' && !window._reportInit) { initReport(); window._reportInit = true; }
 }
 
 function initOverview() {
-  const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#a855f7','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1','#14b8a6','#e11d48','#8b5cf6','#22d3ee','#eab308','#fb923c','#4ade80','#f472b6'];
+  const colors = ['#f54e00','#2b5fa4','#2d7a3e','#b8860b','#6b4c9a','#c03530','#1e6b7a','#8b6914','#7a4a1e','#4a6b2d','#9a4a6b','#4a7a8b','#b8560b','#6b1e4a','#2d5a7a','#7a6b1e','#5a2d4a','#1e7a5a'];
 
   new Chart(document.getElementById('chartDonut'), {
     type: 'doughnut',
@@ -760,7 +1019,7 @@ function initOverview() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 } } }
+        legend: { position: 'right', labels: { color: '#8b887d', font: { size: 11 } } }
       }
     }
   });
@@ -770,19 +1029,19 @@ function initOverview() {
     data: {
       labels: overviewData.tickers,
       datasets: [
-        { label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(59,130,246,0.7)' },
-        { label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(168,85,247,0.7)' },
-        { label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(100,116,139,0.4)' }
+        { label: 'Ensemble', data: overviewData.ensemble, backgroundColor: 'rgba(245,78,0,0.75)' },
+        { label: 'Black-Litterman', data: overviewData.bl, backgroundColor: 'rgba(43,95,164,0.7)' },
+        { label: 'Equal Weight', data: overviewData.equal, backgroundColor: 'rgba(139,136,125,0.35)' }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { ticks: { color: '#94a3b8', font: { size: 10 } } },
-        y: { ticks: { color: '#94a3b8', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        x: { ticks: { color: '#8b887d', font: { size: 10 } } },
+        y: { ticks: { color: '#8b887d', callback: v => v+'%' }, grid: { color: 'rgba(38, 37, 30, 0.06)' } }
       },
-      plugins: { legend: { labels: { color: '#94a3b8' } } }
+      plugins: { legend: { labels: { color: '#8b887d' } } }
     }
   });
 }
@@ -795,7 +1054,7 @@ function initRisk() {
       datasets: [{
         label: 'Ensemble配分 (%)',
         data: overviewData.ensemble,
-        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(239,68,68,0.7)' : 'rgba(16,185,129,0.7)')
+        backgroundColor: overviewData.ensemble.map(v => v > (100/overviewData.tickers.length) ? 'rgba(192,53,48,0.75)' : 'rgba(45,122,62,0.75)')
       }]
     },
     options: {
@@ -803,8 +1062,8 @@ function initRisk() {
       maintainAspectRatio: false,
       indexAxis: 'y',
       scales: {
-        x: { ticks: { color: '#94a3b8', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        y: { ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } } }
+        x: { ticks: { color: '#8b887d', callback: v => v+'%' }, grid: { color: 'rgba(38, 37, 30, 0.06)' } },
+        y: { ticks: { color: '#8b887d', font: { family: 'JetBrains Mono', size: 11 } } }
       },
       plugins: { legend: { display: false } }
     }
@@ -825,31 +1084,31 @@ function initReport() {
       datasets: [{
         label: '確信度',
         data: recs.map(r => r.confidence * 100),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.1)',
+        borderColor: '#f54e00',
+        backgroundColor: 'rgba(245,78,0,0.08)',
         fill: true,
         tension: 0.3,
         pointRadius: 5,
-        pointBackgroundColor: '#3b82f6'
+        pointBackgroundColor: '#f54e00'
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { ticks: { color: '#94a3b8' } },
-        y: { min: 0, max: 100, ticks: { color: '#94a3b8', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        x: { ticks: { color: '#8b887d' } },
+        y: { min: 0, max: 100, ticks: { color: '#8b887d', callback: v => v+'%' }, grid: { color: 'rgba(38, 37, 30, 0.06)' } }
       },
-      plugins: { legend: { labels: { color: '#94a3b8' } } }
+      plugins: { legend: { labels: { color: '#8b887d' } } }
     }
   });
 
   const evals = trackData.evaluations;
   if (evals.length > 0) {
     let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<tr style="border-bottom:1px solid #1e293b"><th style="text-align:left;padding:8px;color:#64748b">日付</th><th style="padding:8px;color:#64748b">RMSE</th><th style="padding:8px;color:#64748b">方向性</th><th style="padding:8px;color:#64748b">較正</th></tr>';
+    html += '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px;color:var(--text-muted)">日付</th><th style="padding:8px;color:var(--text-muted)">RMSE</th><th style="padding:8px;color:var(--text-muted)">方向性</th><th style="padding:8px;color:var(--text-muted)">較正</th></tr>';
     evals.forEach(e => {
-      html += `<tr style="border-bottom:1px solid #1e293b"><td style="padding:8px;color:#94a3b8">${e.date}</td><td style="padding:8px;text-align:center;color:#ef4444">${e.rmse}</td><td style="padding:8px;text-align:center;color:#10b981">${e.direction_accuracy}%</td><td style="padding:8px;text-align:center;color:#a855f7">${e.calibration_score}</td></tr>`;
+      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">${e.date}</td><td style="padding:8px;text-align:center;color:#c03530;font-family:'JetBrains Mono',monospace">${e.rmse}</td><td style="padding:8px;text-align:center;color:#2d7a3e;font-family:'JetBrains Mono',monospace">${e.direction_accuracy}%</td><td style="padding:8px;text-align:center;color:#6b4c9a;font-family:'JetBrains Mono',monospace">${e.calibration_score}</td></tr>`;
     });
     html += '</table>';
     document.getElementById('evalData').innerHTML = html;
@@ -857,6 +1116,83 @@ function initReport() {
     document.getElementById('evalData').innerHTML = '📭 まだ採点データがありません。AI推奨を記録し、7日以上経過すると自動採点されます。';
   }
 }
+
+// Portfolio table sort
+let portSortState = {col: -1, asc: false};
+function sortPortTable(colIdx, type) {
+  const table = document.getElementById('portTable');
+  if (!table) return;
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.rows);
+  portSortState.asc = (portSortState.col === colIdx) ? !portSortState.asc : false;
+  portSortState.col = colIdx;
+  rows.sort((a, b) => {
+    let av, bv;
+    if (type === 'num') {
+      av = parseFloat(a.cells[colIdx].getAttribute('data-num') || '0');
+      bv = parseFloat(b.cells[colIdx].getAttribute('data-num') || '0');
+    } else {
+      av = a.cells[colIdx].innerText.trim();
+      bv = b.cells[colIdx].innerText.trim();
+    }
+    if (av < bv) return portSortState.asc ? -1 : 1;
+    if (av > bv) return portSortState.asc ? 1 : -1;
+    return 0;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// Performance history chart
+function initPerformance() {
+  const canvas = document.getElementById('chartHistory');
+  if (!canvas || !perfData.dates || perfData.dates.length < 2) return;
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: perfData.dates,
+      datasets: [
+        {
+          label: 'ポートフォリオ総額 (USD)',
+          data: perfData.values_usd,
+          borderColor: '#f54e00',
+          backgroundColor: 'rgba(245,78,0,0.08)',
+          fill: true,
+          tension: 0.3,
+          yAxisID: 'y',
+          pointRadius: 2,
+        },
+        {
+          label: '含み損益 (USD)',
+          data: perfData.pnl_usd,
+          borderColor: '#2d7a3e',
+          backgroundColor: 'rgba(16,185,129,0.1)',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y1',
+          pointRadius: 2,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#8b887d', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+        y: { position: 'left', ticks: { color: '#8b887d', callback: v => '$'+v.toLocaleString() }, grid: { color: 'rgba(38, 37, 30, 0.06)' } },
+        y1: { position: 'right', ticks: { color: '#2d7a3e', callback: v => '$'+v.toLocaleString() }, grid: { display: false } }
+      },
+      plugins: { legend: { labels: { color: '#8b887d' } } }
+    }
+  });
+}
+
+// Auto-init Performance chart if Portfolio tab is default
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('tab-portfolio').classList.contains('active') && !window._perfInit) {
+    initPerformance();
+    window._perfInit = true;
+  }
+});
 </script>
 </body>
 </html>
