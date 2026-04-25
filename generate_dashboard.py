@@ -494,6 +494,147 @@ def build_learning_html(results: dict) -> str:
     return html
 
 
+def build_master_wisdom_html(results: dict) -> str:
+    """🎯 Master Wisdom タブ — Buffett 級9ファクター予測.
+
+    各銘柄ごとに 9ファクターのスコア + 重み + verdict を表示。
+    上部に Master Learning サマリー + ファクター別精度。
+    """
+    master_signals = results.get("master_signals", []) or []
+    master_learning = results.get("master_learning", {}) or {}
+
+    factor_jp = {
+        "quality_roe": "ROE品質",
+        "quality_margin": "利益率品質",
+        "value_earnings_yield": "Earnings Yield",
+        "value_fcf_yield": "FCF Yield",
+        "value_margin_of_safety": "Margin of Safety",
+        "momentum_composite": "テクニカル",
+        "contrarian_fear_greed": "Fear-Greed逆張り",
+        "contrarian_insider_pulse": "インサイダー脈動",
+        "risk_kelly": "Kelly基準",
+    }
+
+    if not master_signals and not master_learning:
+        return ('<div class="section"><p style="color:var(--text-muted);text-align:center;padding:40px">'
+                'Master Wisdom データはまだありません。次回 daily_evolution 実行後に表示されます。</p></div>')
+
+    html = '<div class="section"><div class="section-title"><span class="icon">🎯</span> Master Wisdom — Buffett 級9ファクター予測</div>'
+
+    # 学習サマリー
+    n_total = master_learning.get("n_total_evaluated", 0)
+    n_today = master_learning.get("n_evaluated", 0)
+    factor_accs = master_learning.get("factor_accuracies", {}) or {}
+    weights = master_learning.get("weights", {}) or {}
+
+    if factor_accs:
+        avg_acc = sum(factor_accs.values()) / len(factor_accs) if factor_accs else 0
+
+        html += '<div class="port-summary-grid">'
+        html += f'<div class="port-metric"><div class="port-metric-label">平均ファクター精度</div>'
+        html += f'<div class="port-metric-value">{avg_acc*100:.0f}%</div>'
+        html += f'<div class="port-metric-sub">9ファクター平均</div></div>'
+
+        html += f'<div class="port-metric"><div class="port-metric-label">累計評価</div>'
+        html += f'<div class="port-metric-value">{n_total}</div>'
+        html += f'<div class="port-metric-sub">本日 +{n_today} 新規</div></div>'
+
+        n_signals = len(master_signals)
+        n_strong = sum(1 for s in master_signals if "STRONG" in s.get("signal", ""))
+        html += f'<div class="port-metric"><div class="port-metric-label">予測銘柄</div>'
+        html += f'<div class="port-metric-value">{n_signals}</div>'
+        html += f'<div class="port-metric-sub">うちSTRONG: {n_strong}</div></div>'
+
+        regime_value = master_signals[0].get("regime", "?") if master_signals else "?"
+        regime_jp = {"low_vol": "低ボラ", "transition": "移行期", "crisis": "危機"}.get(regime_value, regime_value)
+        html += f'<div class="port-metric"><div class="port-metric-label">レジーム</div>'
+        html += f'<div class="port-metric-value" style="font-size:20px">{regime_jp}</div>'
+        html += f'<div class="port-metric-sub">適応的ウェイト</div></div>'
+        html += '</div>'
+
+    # ファクター別精度 + 重み バー
+    if factor_accs:
+        html += '<div class="sector-section"><div class="sector-title">⚙️ 9ファクターの学習状態</div>'
+        html += '<div class="sector-bars">'
+        for name in factor_accs.keys():
+            jp = factor_jp.get(name, name)
+            acc = factor_accs.get(name, 0) * 100
+            w = weights.get(name, 0)
+            decay = master_learning.get("factor_decay", {}).get(name, 1.0)
+            decay_str = "" if decay >= 0.99 else f' <span style="color:var(--accent-red)">decay {decay:.2f}</span>'
+            html += f'<div class="sector-bar-row">'
+            html += f'<div class="sector-bar-label">{jp}</div>'
+            html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{min(100,w*400):.0f}%;background:var(--accent)"></div></div>'
+            html += f'<div class="sector-bar-value">精度 {acc:.0f}% / W {w:.2%}{decay_str}</div>'
+            html += '</div>'
+        html += '</div></div>'
+
+    # 本日の発見
+    findings = master_learning.get("notable_findings", [])
+    if findings:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">💡</span> 本日の発見</div>'
+        html += '<div class="action-grid" style="grid-template-columns:1fr">'
+        for f in findings[:8]:
+            html += f'<div class="action-card" style="border-left:3px solid var(--accent)">'
+            html += f'<div class="reason" style="border-top:none;padding-top:0">{html_mod.escape(f)}</div>'
+            html += '</div>'
+        html += '</div>'
+
+    # 個別予測カード
+    if master_signals:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">📊</span> 個別銘柄スコア</div>'
+        html += '<div class="adv-grid">'
+        for s in master_signals[:18]:
+            sig = s.get("signal", "HOLD")
+            color, emoji = {
+                "STRONG_BUY":  ("var(--accent-green)", "🟢🟢"),
+                "BUY":         ("var(--accent-green)", "🟢"),
+                "HOLD":        ("var(--accent-yellow)", "🟡"),
+                "SELL":        ("var(--accent-red)", "🔴"),
+                "STRONG_SELL": ("var(--accent-red)", "🔴🔴"),
+            }.get(sig, ("var(--text-muted)", "⚪"))
+
+            ticker = s.get("ticker", "?")
+            score = s.get("composite_score", 0)
+            conf = s.get("confidence", 0)
+            kelly_pct = s.get("kelly_recommended_pct", 0) * 100
+            mos = s.get("margin_of_safety", 0)
+            url = yahoo_chart_url(ticker)
+
+            html += f'<div class="adv-card" style="border-left:4px solid {color}">'
+            html += f'<div class="adv-header"><a href="{url}" target="_blank" class="adv-ticker">{ticker} 📈</a>'
+            html += f'<span class="adv-signal" style="color:{color}">{emoji} {sig}</span></div>'
+            html += f'<div class="adv-score">合成: <strong>{score:+.3f}</strong> / 確信度 {conf:.0%} / Kelly {kelly_pct:+.1f}%</div>'
+            if mos:
+                mos_color = "var(--accent-green)" if mos > 0 else "var(--accent-red)"
+                html += f'<div class="adv-conf" style="color:{mos_color}">Margin of Safety: {mos*100:+.0f}%</div>'
+
+            # ファクター別ミニバー
+            html += '<div class="adv-subbars">'
+            fs = s.get("factor_scores", {})
+            for name in factor_accs.keys() if factor_accs else fs.keys():
+                f_data = fs.get(name, {})
+                if not f_data:
+                    continue
+                f_score = f_data.get("score", 0)
+                v_pct = abs(f_score) * 50
+                f_color = "var(--accent-green)" if f_score > 0 else "var(--accent-red)" if f_score < 0 else "var(--text-muted)"
+                jp = factor_jp.get(name, name)[:8]
+                html += f'<div class="adv-subbar">'
+                html += f'<span class="adv-sublabel">{jp}</span>'
+                html += f'<span class="adv-subval" style="color:{f_color}">{f_score:+.2f}</span>'
+                if f_score >= 0:
+                    html += f'<div class="adv-bar-track"><div class="adv-bar-pos" style="width:{v_pct:.0f}%"></div></div>'
+                else:
+                    html += f'<div class="adv-bar-track"><div class="adv-bar-neg" style="width:{v_pct:.0f}%"></div></div>'
+                html += '</div>'
+            html += '</div></div>'
+        html += '</div>'
+
+    html += '</div>'
+    return html
+
+
 def build_advanced_signals_html(results: dict) -> str:
     """🔮 高精度予測シグナルのHTMLを構築する。
 
@@ -690,6 +831,7 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
     portfolio_html = build_portfolio_html(holdings, results)
     advanced_html = build_advanced_signals_html(results)
     learning_html = build_learning_html(results)
+    master_wisdom_html = build_master_wisdom_html(results)
     performance_chart_html = build_performance_html()
     performance_json = build_performance_json()
 
@@ -1401,6 +1543,7 @@ a:focus-visible{{
   <div class="tab-nav">
     <button class="tab-btn active" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
     <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
+    <button class="tab-btn" data-tab="master" onclick="switchTab(this,'master')">🎯 Master Wisdom</button>
     <button class="tab-btn" data-tab="advanced" onclick="switchTab(this,'advanced')">🔮 Advanced AI</button>
     <button class="tab-btn" data-tab="learning" onclick="switchTab(this,'learning')">🧠 Learning</button>
     <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
@@ -1414,6 +1557,11 @@ a:focus-visible{{
   <div id="tab-portfolio" class="tab-content active">
     {portfolio_html}
     {performance_chart_html}
+  </div>
+
+  <!-- Tab: Master Wisdom (Buffett 級 9ファクター) -->
+  <div id="tab-master" class="tab-content">
+    {master_wisdom_html}
   </div>
 
   <!-- Tab: Learning -->

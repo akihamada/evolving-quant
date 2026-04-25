@@ -913,6 +913,8 @@ def run_daily_evolution() -> dict[str, Any]:
     # === 高精度予測アンサンブル + 自己学習サイクル統合 ===
     advanced_signals: list = []
     learning_result: dict = {}
+    master_signals: list = []
+    master_learning: dict = {}
     try:
         from advanced_predictor import (
             predict_all, archive_predictions, run_learning_cycle,
@@ -935,6 +937,91 @@ def run_daily_evolution() -> dict[str, Any]:
             learning_result.get("accuracy_recent", 0) * 100,
             learning_result.get("n_total_evaluated", 0),
         )
+
+        # === Master Wisdom Predictor (9ファクター統合 — Buffett 級) ===
+        try:
+            from master_predictor import (
+                predict_master_all, archive_master_predictions,
+                run_master_learning_cycle,
+            )
+
+            # ファンダメンタルズ収集 (yfinance.info)
+            fundamentals_map = {}
+            insider_map = {}
+            for t in available_tickers:
+                try:
+                    yf_t = yf.Ticker(t)
+                    fundamentals_map[t] = yf_t.info or {}
+                except Exception:
+                    fundamentals_map[t] = {}
+                insider_map[t] = {}  # data_fetcher 連携時に拡張
+
+            # Macro データ (VIX + 市場リターン)
+            macro = {}
+            try:
+                vix_data = yf.download("^VIX", period="2mo", progress=False)
+                if not vix_data.empty:
+                    vix_close = vix_data["Close"]
+                    if hasattr(vix_close, "columns"):
+                        vix_close = vix_close.iloc[:, 0]
+                    macro["vix"] = float(vix_close.dropna().iloc[-1])
+                spy_data = yf.download("^GSPC", period="2mo", progress=False)
+                if not spy_data.empty:
+                    spy_close = spy_data["Close"]
+                    if hasattr(spy_close, "columns"):
+                        spy_close = spy_close.iloc[:, 0]
+                    spy_close = spy_close.dropna()
+                    if len(spy_close) >= 30:
+                        macro["market_return_30d"] = float(
+                            (spy_close.iloc[-1] - spy_close.iloc[-30]) / spy_close.iloc[-30]
+                        )
+            except Exception as e:
+                logger.warning("Macro データ取得失敗: %s", e)
+
+            # 銘柄ごとのリターン統計（年率換算）
+            return_stats = {}
+            for t in available_tickers:
+                if t not in prices_dict or len(prices_dict[t]) < 60:
+                    continue
+                p = prices_dict[t]
+                log_returns = np.diff(np.log(np.maximum(p, 1e-9)))
+                expected_annual = float(np.mean(log_returns) * 252)
+                vol_annual = float(np.std(log_returns) * np.sqrt(252))
+                # 過去最大DD
+                cum = np.cumprod(1 + np.exp(log_returns) - 1)
+                peak = np.maximum.accumulate(cum)
+                dd_series = (cum - peak) / peak
+                max_dd = float(np.min(dd_series))
+                return_stats[t] = {
+                    "expected": expected_annual,
+                    "vol": vol_annual,
+                    "max_dd": max_dd,
+                }
+
+            # advanced の composite_score を技術スコアとして渡す
+            tech_scores = {s["ticker"]: s.get("composite_score", 0)
+                           for s in advanced_signals}
+
+            master_signals = predict_master_all(
+                tickers=available_tickers,
+                fundamentals_map=fundamentals_map,
+                technical_scores=tech_scores,
+                insider_map=insider_map,
+                macro_data=macro,
+                return_stats=return_stats,
+                regime=regime,
+            )
+            archive_master_predictions(master_signals)
+            master_learning = run_master_learning_cycle(prices_dict)
+            logger.info(
+                "🎯 Master Wisdom 学習: %d評価 / 累計 %d / findings %d件",
+                master_learning.get("n_evaluated", 0),
+                master_learning.get("n_total_evaluated", 0),
+                len(master_learning.get("notable_findings", [])),
+            )
+        except Exception as e:
+            logger.warning("Master Wisdom スキップ: %s", e)
+
     except Exception as e:
         logger.warning("高精度予測スキップ: %s", e)
 
@@ -954,6 +1041,8 @@ def run_daily_evolution() -> dict[str, Any]:
         "evolution_state": evolution_state,
         "advanced_signals": advanced_signals,
         "learning_summary": learning_result,
+        "master_signals": master_signals,
+        "master_learning": master_learning,
     }
 
     # トラックレコード保存
