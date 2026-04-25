@@ -494,6 +494,145 @@ def build_learning_html(results: dict) -> str:
     return html
 
 
+def build_strategy_lab_html(results: dict) -> str:
+    """🚀 Strategy Lab タブ — 学習加速 + 12項目強化群の状態."""
+    enh = results.get("enhancements", {}) or {}
+    if not enh:
+        return ('<div class="section"><p style="color:var(--text-muted);text-align:center;padding:40px">'
+                'Strategy Lab データがまだありません。次回 daily_evolution 実行後に表示されます。</p></div>')
+
+    html = '<div class="section"><div class="section-title"><span class="icon">🚀</span> Strategy Lab — 学習加速 + 12項目強化</div>'
+
+    # ========== 1. Walk-Forward Sharpe ==========
+    wf = enh.get("walk_forward", {}) or {}
+    if wf and wf.get("n_trades", 0) > 0:
+        sharpe = wf.get("sharpe", 0)
+        ann_ret = wf.get("annual_return", 0) * 100
+        win = wf.get("win_rate", 0) * 100
+        dd = wf.get("max_dd", 0) * 100
+        n_tr = wf.get("n_trades", 0)
+        sharpe_color = "var(--accent-green)" if sharpe >= 1.0 else "var(--accent-yellow)" if sharpe >= 0.5 else "var(--accent-red)"
+        html += '<div class="port-summary-grid">'
+        html += f'<div class="port-metric"><div class="port-metric-label">Sharpe Ratio</div>'
+        html += f'<div class="port-metric-value" style="color:{sharpe_color}">{sharpe:+.2f}</div>'
+        html += f'<div class="port-metric-sub">{n_tr} trades</div></div>'
+        html += f'<div class="port-metric"><div class="port-metric-label">年率リターン</div>'
+        html += f'<div class="port-metric-value">{ann_ret:+.1f}%</div>'
+        html += f'<div class="port-metric-sub">仮想実戦</div></div>'
+        html += f'<div class="port-metric"><div class="port-metric-label">勝率</div>'
+        html += f'<div class="port-metric-value">{win:.0f}%</div>'
+        html += f'<div class="port-metric-sub">予測の的中率</div></div>'
+        html += f'<div class="port-metric"><div class="port-metric-label">最大DD</div>'
+        html += f'<div class="port-metric-value" style="color:var(--accent-red)">{dd:.1f}%</div>'
+        html += f'<div class="port-metric-sub">仮想資産</div></div>'
+        html += '</div>'
+
+    # ========== 2. Meta-Learner ==========
+    meta = enh.get("meta_learner", {}) or {}
+    cal_size = enh.get("calibration_table_size", 0)
+    if meta or cal_size:
+        html += '<div class="sector-section"><div class="sector-title">🤖 メタ学習器 + 信頼度較正</div>'
+        html += '<div class="sector-bars">'
+        if meta.get("n_samples", 0) > 0:
+            acc = meta.get("accuracy", 0) * 100
+            html += f'<div class="sector-bar-row">'
+            html += f'<div class="sector-bar-label">Stacking 精度</div>'
+            html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{acc:.0f}%;background:var(--accent)"></div></div>'
+            html += f'<div class="sector-bar-value">{acc:.1f}% ({meta.get("n_samples", 0)} 件)</div>'
+            html += '</div>'
+        if cal_size:
+            html += f'<div class="sector-bar-row">'
+            html += f'<div class="sector-bar-label">較正テーブル</div>'
+            html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{min(100, cal_size*15):.0f}%;background:var(--color-success)"></div></div>'
+            html += f'<div class="sector-bar-value">{cal_size} bins</div>'
+            html += '</div>'
+        html += '</div></div>'
+
+    # ========== 3. Anomaly Detection ==========
+    anomaly = enh.get("anomaly", {}) or {}
+    if anomaly:
+        is_anom = anomaly.get("is_anomaly", False)
+        sev = anomaly.get("severity", 0) * 100
+        triggers = anomaly.get("triggers", [])
+        bg = "var(--accent-red-bg)" if is_anom else "var(--accent-green-bg)"
+        border = "var(--accent-red)" if is_anom else "var(--accent-green)"
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">⚠️</span> 異常検知 (黒い白鳥)</div>'
+        html += f'<div class="action-card" style="border-left:4px solid {border};background:{bg}">'
+        if is_anom:
+            html += f'<div class="card-header"><strong>🔴 異常検知 (severity {sev:.0f}%)</strong></div>'
+            for t in triggers:
+                html += f'<div class="reason" style="border-top:none;padding-top:0">• {html_mod.escape(t)}</div>'
+        else:
+            html += f'<div class="card-header"><strong>✅ マーケット正常</strong></div>'
+            html += '<div class="reason" style="border-top:none;padding-top:0">VIX / 30日リターン / 直近5日 とも安定範囲</div>'
+        html += '</div>'
+
+    # ========== 4. Sector Rotation ==========
+    sr = enh.get("sector_rotation", {}) or {}
+    if sr.get("hot_sectors") or sr.get("cold_sectors"):
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">🔥</span> セクターローテーション</div>'
+        html += '<div class="action-grid" style="grid-template-columns:1fr 1fr">'
+        if sr.get("hot_sectors"):
+            html += '<div class="action-card buy"><div class="card-header"><strong style="color:var(--accent-green)">🔥 Hot Sectors</strong></div>'
+            html += f'<div class="reason" style="border-top:none;padding-top:0">{", ".join(sr["hot_sectors"])}</div></div>'
+        if sr.get("cold_sectors"):
+            html += '<div class="action-card sell"><div class="card-header"><strong style="color:var(--accent-red)">❄️ Cold Sectors</strong></div>'
+            html += f'<div class="reason" style="border-top:none;padding-top:0">{", ".join(sr["cold_sectors"])}</div></div>'
+        html += '</div>'
+
+    # ========== 5. Stress Test ==========
+    stress = enh.get("stress_test", {}) or {}
+    scenarios = stress.get("scenarios", [])
+    if scenarios:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">🛡️</span> ストレステスト</div>'
+        html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
+        html += '<thead><tr><th>シナリオ</th><th>想定損益</th><th>評価</th></tr></thead><tbody>'
+        for sc in scenarios:
+            pnl = sc.get("portfolio_pnl_pct", 0)
+            pnl_color = "var(--accent-red)" if pnl < -5 else "var(--accent-yellow)" if pnl < 0 else "var(--accent-green)"
+            html += f'<tr><td style="white-space:normal">{html_mod.escape(sc.get("scenario", ""))}</td>'
+            html += f'<td style="color:{pnl_color}">{pnl:+.2f}%</td>'
+            html += f'<td>{sc.get("rating", "")}</td></tr>'
+        html += '</tbody></table></div></div>'
+
+    # ========== 6. Tax Recommendations ==========
+    tax_recs = enh.get("tax_recommendations", []) or []
+    if tax_recs:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">💰</span> 税効率推奨 (NISA/特定口座)</div>'
+        html += '<div class="action-grid">'
+        for r in tax_recs:
+            html += f'<div class="action-card">'
+            html += f'<div class="card-header"><strong>{r.get("ticker", "")} [{r.get("account", "").upper()}]</strong></div>'
+            html += f'<div class="holdings"><span>{r.get("shares", 0)}株</span><span>P&L ${r.get("pnl_usd", 0):+,.0f}</span></div>'
+            html += f'<div class="reason">{html_mod.escape(r.get("tax_priority", ""))}</div></div>'
+        html += '</div>'
+
+    # ========== 7. Realized P&L Feedback ==========
+    pnl_fb = enh.get("pnl_feedback", {}) or {}
+    if pnl_fb.get("matched_predictions", 0) > 0:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">📊</span> 実P&L フィードバック</div>'
+        html += '<div class="port-summary-grid">'
+        html += f'<div class="port-metric"><div class="port-metric-label">マッチ件数</div>'
+        html += f'<div class="port-metric-value">{pnl_fb.get("matched_predictions", 0)}</div>'
+        html += f'<div class="port-metric-sub">実購入×予測の照合</div></div>'
+        avg_r = pnl_fb.get("avg_realized_return_30d", 0) * 100
+        html += f'<div class="port-metric"><div class="port-metric-label">平均30日リターン</div>'
+        html += f'<div class="port-metric-value">{avg_r:+.1f}%</div>'
+        html += f'<div class="port-metric-sub">実体験ベース</div></div>'
+        win = pnl_fb.get("win_rate", 0) * 100
+        html += f'<div class="port-metric"><div class="port-metric-label">勝率</div>'
+        html += f'<div class="port-metric-value">{win:.0f}%</div>'
+        html += f'<div class="port-metric-sub">実購入の的中率</div></div>'
+        buy_acc = pnl_fb.get("buy_signal_accuracy", 0) * 100
+        html += f'<div class="port-metric"><div class="port-metric-label">BUY 精度</div>'
+        html += f'<div class="port-metric-value">{buy_acc:.0f}%</div>'
+        html += f'<div class="port-metric-sub">予測BUY → 実際UP</div></div>'
+        html += '</div>'
+
+    html += '</div>'
+    return html
+
+
 def build_master_wisdom_html(results: dict) -> str:
     """🎯 Master Wisdom タブ — Buffett 級9ファクター予測.
 
@@ -832,6 +971,7 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
     advanced_html = build_advanced_signals_html(results)
     learning_html = build_learning_html(results)
     master_wisdom_html = build_master_wisdom_html(results)
+    strategy_lab_html = build_strategy_lab_html(results)
     performance_chart_html = build_performance_html()
     performance_json = build_performance_json()
 
@@ -1544,6 +1684,7 @@ a:focus-visible{{
     <button class="tab-btn active" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
     <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
     <button class="tab-btn" data-tab="master" onclick="switchTab(this,'master')">🎯 Master Wisdom</button>
+    <button class="tab-btn" data-tab="lab" onclick="switchTab(this,'lab')">🚀 Strategy Lab</button>
     <button class="tab-btn" data-tab="advanced" onclick="switchTab(this,'advanced')">🔮 Advanced AI</button>
     <button class="tab-btn" data-tab="learning" onclick="switchTab(this,'learning')">🧠 Learning</button>
     <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
@@ -1562,6 +1703,11 @@ a:focus-visible{{
   <!-- Tab: Master Wisdom (Buffett 級 9ファクター) -->
   <div id="tab-master" class="tab-content">
     {master_wisdom_html}
+  </div>
+
+  <!-- Tab: Strategy Lab (12項目強化群) -->
+  <div id="tab-lab" class="tab-content">
+    {strategy_lab_html}
   </div>
 
   <!-- Tab: Learning -->

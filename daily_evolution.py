@@ -1019,6 +1019,129 @@ def run_daily_evolution() -> dict[str, Any]:
                 master_learning.get("n_total_evaluated", 0),
                 len(master_learning.get("notable_findings", [])),
             )
+
+            # ===== 🚀 強化レイヤー (12項目): Phase 1+2+3 統合 =====
+            from prediction_enhancements import (
+                build_calibration_from_history, calibrate_confidence,
+                load_calibration_table, walk_forward_sharpe,
+                train_stacking_meta, predict_with_meta, load_meta_learner,
+                detect_anomaly,
+            )
+            from portfolio_advisor_pro import (
+                detect_sector_rotation, adversarial_stress_test,
+                tax_aware_recommendation, realized_pnl_feedback,
+                SECTOR_GROUPS,
+            )
+            from master_predictor import load_master_history
+
+            # 1. 信頼度較正テーブルを更新
+            try:
+                m_history = load_master_history()
+                cal_table = build_calibration_from_history(m_history)
+                if cal_table:
+                    for s in master_signals:
+                        s["confidence_calibrated"] = round(
+                            calibrate_confidence(s.get("confidence", 0.5), cal_table), 3
+                        )
+            except Exception as e:
+                logger.warning("較正スキップ: %s", e)
+
+            # 2. Walk-Forward Sharpe 検証
+            try:
+                wf_result = walk_forward_sharpe(
+                    m_history.get("predictions", []), prices_dict,
+                    holding_days=30, min_confidence=0.6,
+                )
+            except Exception as e:
+                logger.warning("Walk-Forward スキップ: %s", e)
+                wf_result = {}
+
+            # 3. Stacking Meta-Learner 訓練 + 適用
+            try:
+                meta = train_stacking_meta(m_history)
+                if meta.get("weights"):
+                    for s in master_signals:
+                        fs = {n: f.get("score", 0)
+                              for n, f in s.get("factor_scores", {}).items()}
+                        s["meta_probability"] = round(
+                            predict_with_meta(fs, meta), 3
+                        )
+            except Exception as e:
+                logger.warning("メタ学習スキップ: %s", e)
+                meta = {}
+
+            # 4. 異常検知
+            try:
+                spy_arr = prices_dict.get("VYM")
+                recent_rets = []
+                if spy_arr is not None and len(spy_arr) > 5:
+                    log_r = np.diff(np.log(np.maximum(spy_arr[-6:], 1e-9)))
+                    recent_rets = log_r.tolist()
+                anomaly = detect_anomaly(macro, recent_rets)
+            except Exception as e:
+                logger.warning("異常検知スキップ: %s", e)
+                anomaly = {}
+
+            # 5. セクターローテーション
+            try:
+                sector_rot = detect_sector_rotation(
+                    prices_dict, SECTOR_GROUPS, lookback_30d=True,
+                )
+            except Exception as e:
+                logger.warning("セクターローテーションスキップ: %s", e)
+                sector_rot = {}
+
+            # 6. ストレステスト (現在のアンサンブル配分で)
+            try:
+                stress = adversarial_stress_test(
+                    ensemble_alloc, prices_dict,
+                )
+            except Exception as e:
+                logger.warning("ストレステストスキップ: %s", e)
+                stress = {}
+
+            # 7. 税効率推奨 + 実P&L フィードバック
+            tax_recs = []
+            pnl_feedback = {}
+            try:
+                purchase_log_path = Path(__file__).resolve().parent / "data" / "purchase_log.json"
+                holdings_path = Path(__file__).resolve().parent / "data" / "portfolio_holdings.json"
+                if holdings_path.exists():
+                    with open(holdings_path, encoding="utf-8") as f:
+                        h_data = json.load(f)
+                    # actions を最新 record から
+                    if track.get("records"):
+                        latest_actions = track["records"][-1].get("actions", {})
+                        tax_recs = tax_aware_recommendation(h_data, latest_actions)
+                if purchase_log_path.exists():
+                    with open(purchase_log_path, encoding="utf-8") as f:
+                        plog = json.load(f)
+                    pnl_feedback = realized_pnl_feedback(plog, m_history)
+            except Exception as e:
+                logger.warning("税/P&Lフィードバックスキップ: %s", e)
+
+            # 強化結果をまとめる
+            enhancements = {
+                "calibration_table_size": len(cal_table) if cal_table else 0,
+                "walk_forward": wf_result,
+                "meta_learner": {
+                    "n_samples": meta.get("n_samples", 0),
+                    "accuracy": meta.get("accuracy", 0),
+                },
+                "anomaly": anomaly,
+                "sector_rotation": sector_rot,
+                "stress_test": stress,
+                "tax_recommendations": tax_recs[:5],
+                "pnl_feedback": pnl_feedback,
+            }
+            # results は後で構築されるため、ローカル変数で保持
+            _enhancements_payload = enhancements
+            logger.info(
+                "🚀 強化レイヤー完了: WF Sharpe=%.2f / Meta acc=%.0f%% / 異常=%s",
+                wf_result.get("sharpe", 0),
+                meta.get("accuracy", 0) * 100,
+                "🔴" if anomaly.get("is_anomaly") else "✅"
+            )
         except Exception as e:
             logger.warning("Master Wisdom スキップ: %s", e)
 
@@ -1043,6 +1166,7 @@ def run_daily_evolution() -> dict[str, Any]:
         "learning_summary": learning_result,
         "master_signals": master_signals,
         "master_learning": master_learning,
+        "enhancements": locals().get("_enhancements_payload", {}),
     }
 
     # トラックレコード保存
