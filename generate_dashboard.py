@@ -494,6 +494,143 @@ def build_learning_html(results: dict) -> str:
     return html
 
 
+def build_history_html(results: dict) -> str:
+    """📚 History タブ — 30年歴史パターンと現在位置."""
+    patterns_path = BASE_DIR / "data" / "historical_patterns.json"
+    if not patterns_path.exists():
+        return ('<div class="section"><p style="color:var(--text-muted);text-align:center;padding:40px">'
+                '歴史パターンデータがまだありません。<br>'
+                '<code>python historical_pattern_extractor.py</code> を一度実行してください。</p></div>')
+    try:
+        with open(patterns_path, encoding="utf-8") as f:
+            patterns = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return '<div class="section"><p>歴史データ読み込みエラー</p></div>'
+
+    html = '<div class="section"><div class="section-title"><span class="icon">📚</span> 30年の歴史から学ぶ — Buffett 流統計</div>'
+
+    # 大暴落イベント
+    crashes_data = patterns.get("major_crashes", {})
+    crashes = crashes_data.get("events", [])
+    if crashes:
+        avg_depth = crashes_data.get("avg_depth", 0) * 100
+        avg_recovery = crashes_data.get("avg_recovery_days", 0)
+        html += '<div class="port-summary-grid">'
+        html += f'<div class="port-metric"><div class="port-metric-label">大暴落イベント</div>'
+        html += f'<div class="port-metric-value">{len(crashes)}</div>'
+        html += f'<div class="port-metric-sub">過去30年 (-15%超)</div></div>'
+        html += f'<div class="port-metric"><div class="port-metric-label">平均深さ</div>'
+        html += f'<div class="port-metric-value" style="color:var(--accent-red)">{avg_depth:.1f}%</div>'
+        html += f'<div class="port-metric-sub">底値時点</div></div>'
+        html += f'<div class="port-metric"><div class="port-metric-label">平均回復日数</div>'
+        html += f'<div class="port-metric-value">{avg_recovery:.0f}日</div>'
+        html += f'<div class="port-metric-sub">底値→前高値</div></div>'
+
+        cycles = patterns.get("bull_bear_cycles", {})
+        if cycles:
+            html += f'<div class="port-metric"><div class="port-metric-label">ブル/ベア</div>'
+            html += f'<div class="port-metric-value">{cycles.get("n_bull", 0)} / {cycles.get("n_bear", 0)}</div>'
+            html += f'<div class="port-metric-sub">平均{cycles.get("avg_bull_duration_days", 0):.0f}日 / {cycles.get("avg_bear_duration_days", 0):.0f}日</div></div>'
+        html += '</div>'
+
+    # 主要暴落リスト
+    if crashes:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">💥</span> 過去の主要暴落 (深い順)</div>'
+        sorted_crashes = sorted(crashes, key=lambda c: c.get("depth", 0))[:10]
+        html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
+        html += '<thead><tr><th>概算年</th><th>深さ</th><th>下落期間</th><th>回復日数</th></tr></thead><tbody>'
+        for c in sorted_crashes:
+            depth = c.get("depth", 0) * 100
+            yr = c.get("approx_year", "?")
+            dur = c.get("duration_days", 0)
+            rec = c.get("recovery_days")
+            rec_str = f"{rec}日" if rec else "未回復"
+            html += f'<tr><td>{yr}</td><td style="color:var(--accent-red)">{depth:.1f}%</td>'
+            html += f'<td>{dur}日</td><td>{rec_str}</td></tr>'
+        html += '</tbody></table></div></div>'
+
+    # VIX 分布 + 現在位置
+    vix_stats = patterns.get("vix_regimes", {})
+    if vix_stats:
+        pct = vix_stats.get("vix_percentiles", {})
+        cur_pct = vix_stats.get("current_vix_percentile", 50)
+        html += '<div class="sector-section" style="margin-top:20px">'
+        html += '<div class="sector-title">📊 VIX 30年分布 + 現在位置</div>'
+        html += '<div class="sector-bars">'
+        for label, key in [("中央値 (50%)", "p50"), ("75%", "p75"), ("90%", "p90"), ("95%", "p95"), ("99%", "p99"), ("最大観測", "max_observed")]:
+            v = pct.get(key, 0)
+            html += f'<div class="sector-bar-row">'
+            html += f'<div class="sector-bar-label">{label}</div>'
+            html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{min(100, v*2):.0f}%;background:var(--accent)"></div></div>'
+            html += f'<div class="sector-bar-value">VIX {v:.1f}</div>'
+            html += '</div>'
+        html += '</div>'
+        html += f'<p style="margin-top:12px;color:var(--text-muted);font-size:13px">現在の VIX は過去30年で <strong style="color:var(--text-primary)">{cur_pct} パーセンタイル</strong></p>'
+
+        freqs = vix_stats.get("frequencies", {})
+        if freqs:
+            html += '<div class="sector-bars" style="margin-top:12px">'
+            for r, jp in [("low_vol", "低ボラ (安定)"), ("transition", "移行期"), ("crisis", "危機")]:
+                f = freqs.get(r, 0) * 100
+                html += f'<div class="sector-bar-row">'
+                html += f'<div class="sector-bar-label">{jp}</div>'
+                html += f'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:{f:.0f}%;background:var(--accent-bright)"></div></div>'
+                html += f'<div class="sector-bar-value">{f:.0f}% の日</div>'
+                html += '</div>'
+            html += '</div>'
+        html += '</div>'
+
+    # Buffett 逆張り検証
+    buffett = patterns.get("buffett_contrarian_validation", {})
+    horizons = buffett.get("by_horizon", {})
+    if horizons:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">🎯</span> Buffett 逆張り検証 — VIX>30 で買えば...</div>'
+        html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
+        html += '<thead><tr><th>ホライズン</th><th>平均リターン</th><th>勝率</th><th>最高</th><th>最低</th><th>サンプル</th></tr></thead><tbody>'
+        h_jp = {"30d": "1ヶ月", "90d": "3ヶ月", "252d": "1年", "504d": "2年", "1260d": "5年"}
+        for hkey, h_data in horizons.items():
+            mean_ret = h_data.get("mean_return", 0) * 100
+            wr = h_data.get("win_rate", 0) * 100
+            mx = h_data.get("max", 0) * 100
+            mn = h_data.get("min", 0) * 100
+            n = h_data.get("n_observations", 0)
+            mean_color = "var(--accent-green)" if mean_ret > 0 else "var(--accent-red)"
+            wr_color = "var(--accent-green)" if wr > 60 else "var(--accent-yellow)" if wr > 50 else "var(--accent-red)"
+            html += f'<tr><td>{h_jp.get(hkey, hkey)}</td>'
+            html += f'<td style="color:{mean_color}">{mean_ret:+.1f}%</td>'
+            html += f'<td style="color:{wr_color}">{wr:.0f}%</td>'
+            html += f'<td style="color:var(--accent-green)">{mx:+.1f}%</td>'
+            html += f'<td style="color:var(--accent-red)">{mn:+.1f}%</td>'
+            html += f'<td>{n}</td></tr>'
+        html += '</tbody></table></div></div>'
+        validation = buffett.get("buffett_validation", "")
+        if validation:
+            html += f'<p style="margin-top:8px;color:var(--text-secondary);font-size:13px;font-style:italic">{html_mod.escape(validation)}</p>'
+
+    # 個別銘柄長期統計
+    ticker_stats = patterns.get("ticker_long_term_stats", {})
+    if ticker_stats:
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">📈</span> 個別銘柄 長期統計</div>'
+        html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
+        html += '<thead><tr><th>銘柄</th><th>履歴年数</th><th>年率リターン</th><th>年率ボラ</th><th>Sharpe</th><th>最大DD</th></tr></thead><tbody>'
+        sorted_tickers = sorted(ticker_stats.items(), key=lambda x: -x[1].get("sharpe", 0))
+        for t, s in sorted_tickers:
+            ar = s.get("annual_return", 0) * 100
+            av = s.get("annual_volatility", 0) * 100
+            sh = s.get("sharpe", 0)
+            dd = s.get("max_drawdown", 0) * 100
+            sh_color = "var(--accent-green)" if sh > 1.0 else "var(--accent-yellow)" if sh > 0.5 else "var(--accent-red)"
+            html += f'<tr><td><strong>{t}</strong></td><td>{s.get("history_years", 0):.1f}年</td>'
+            html += f'<td style="color:{"var(--accent-green)" if ar > 0 else "var(--accent-red)"}">{ar:+.1f}%</td>'
+            html += f'<td>{av:.1f}%</td>'
+            html += f'<td style="color:{sh_color}">{sh:+.2f}</td>'
+            html += f'<td style="color:var(--accent-red)">{dd:.1f}%</td></tr>'
+        html += '</tbody></table></div></div>'
+
+    html += '</div>'
+    return html
+
+
 def build_strategy_lab_html(results: dict) -> str:
     """🚀 Strategy Lab タブ — 学習加速 + 12項目強化群の状態."""
     enh = results.get("enhancements", {}) or {}
@@ -972,6 +1109,7 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
     learning_html = build_learning_html(results)
     master_wisdom_html = build_master_wisdom_html(results)
     strategy_lab_html = build_strategy_lab_html(results)
+    history_html = build_history_html(results)
     performance_chart_html = build_performance_html()
     performance_json = build_performance_json()
 
@@ -1685,6 +1823,7 @@ a:focus-visible{{
     <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
     <button class="tab-btn" data-tab="master" onclick="switchTab(this,'master')">🎯 Master Wisdom</button>
     <button class="tab-btn" data-tab="lab" onclick="switchTab(this,'lab')">🚀 Strategy Lab</button>
+    <button class="tab-btn" data-tab="history" onclick="switchTab(this,'history')">📚 History</button>
     <button class="tab-btn" data-tab="advanced" onclick="switchTab(this,'advanced')">🔮 Advanced AI</button>
     <button class="tab-btn" data-tab="learning" onclick="switchTab(this,'learning')">🧠 Learning</button>
     <button class="tab-btn" data-tab="overview" onclick="switchTab(this,'overview')">📊 Overview</button>
@@ -1708,6 +1847,11 @@ a:focus-visible{{
   <!-- Tab: Strategy Lab (12項目強化群) -->
   <div id="tab-lab" class="tab-content">
     {strategy_lab_html}
+  </div>
+
+  <!-- Tab: History (30年歴史パターン) -->
+  <div id="tab-history" class="tab-content">
+    {history_html}
   </div>
 
   <!-- Tab: Learning -->
