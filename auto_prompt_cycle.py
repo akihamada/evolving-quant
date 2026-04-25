@@ -457,16 +457,39 @@ def run_auto_cycle() -> bool:
         logger.error("ai_track_record.json が読み込めません")
         return False
 
-    prompt = generate_auto_prompt(results, track)
-    logger.info("📝 プロンプト生成完了 (%d文字)", len(prompt))
+    holdings = load_json(HOLDINGS_PATH) or {}
 
-    Path("/tmp/quant_latest_prompt.txt").write_text(prompt, encoding="utf-8")
+    # === モダン分析パス: Claude CLI (Max枠) → Gemini API → なし ===
+    response = None
 
-    if not send_to_antigravity(prompt):
-        logger.error("Antigravity への送信に失敗")
+    # 1. Claude CLI (Claude Max 枠で追加課金なし)
+    try:
+        from claude_analyst import analyze_portfolio as claude_analyze
+        logger.info("🤖 Claude CLI で分析中...")
+        response = claude_analyze(results, track, holdings)
+        if response:
+            logger.info("✅ Claude CLI 分析完了")
+    except ImportError:
+        logger.info("claude_analyst なし → Gemini にフォールバック")
+    except Exception as e:
+        logger.warning("Claude CLI 失敗: %s → Gemini にフォールバック", e)
+
+    # 2. Gemini API (.env の GEMINI_API_KEY 必須)
+    if not response:
+        try:
+            from gemini_analyst import analyze_portfolio as gemini_analyze
+            logger.info("🤖 Gemini 2.5 Flash で分析中...")
+            response = gemini_analyze(results, track, holdings)
+            if response:
+                logger.info("✅ Gemini 分析完了")
+        except ImportError:
+            logger.warning("gemini_analyst モジュールなし")
+        except Exception as e:
+            logger.warning("Gemini 失敗: %s", e)
+
+    if not response:
+        logger.error("Claude/Gemini 両方失敗 — Antigravity レガシーは廃止済み")
         return False
-
-    response = wait_for_response(WAIT_SECONDS)
     if not response:
         logger.warning("応答未取得。手動で Record タブから入力してください。")
         return False
