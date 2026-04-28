@@ -72,11 +72,14 @@ else
     log "✅ venv 確認済: ${VENV_DIR}"
 fi
 
-# --- 土曜日判定: 週次サマリーのみ ---
+# --- 土曜日判定: 週次サマリー + Slack DM 通知 ---
 if [ "$(date +%u)" -eq 6 ]; then
-    log "📊 土曜日: 週次サマリー生成のみ実行..."
+    log "📊 土曜日: 週次サマリー生成..."
     "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/weekly_summary.py"
-    log "🎉 週次サマリー完了"
+    log "📤 Slack 週次レポート送信..."
+    "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/slack_notifier.py" || \
+        log "⚠️  Slack 通知失敗（処理続行）"
+    log "🎉 週次処理完了"
     exit 0
 fi
 
@@ -102,6 +105,21 @@ if [ ${EXIT_CODE} -eq 0 ]; then
     else
         log "⚠️  Auto Prompt Cycle 失敗 (exit=${PROMPT_EXIT}) — 手動で Record タブから入力可能"
     fi
+
+    # --- Step 4: ダッシュボード生成 ---
+    log "🌐 ダッシュボード生成..."
+    "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/generate_dashboard.py" || \
+        log "⚠️  ダッシュボード生成失敗（処理続行）"
+
+    # --- Step 5: GitHub Pages へ Push ---
+    log "🚀 GitHub Pages へ Push..."
+    "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/push_dashboard.py" || \
+        log "⚠️  GitHub Push失敗（処理続行）"
+
+    # --- Step 6: Slack DM 平日アラート ---
+    log "📤 Slack 平日DM送信..."
+    "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/slack_notifier.py" || \
+        log "⚠️  Slack 通知失敗（処理続行）"
 else
     log "❌ Daily Evolution 失敗 (exit=${EXIT_CODE})"
 fi
