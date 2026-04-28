@@ -230,6 +230,61 @@ def build_track_record_data(track: dict) -> str:
     return json.dumps({"records": data, "evaluations": eval_data})
 
 
+# ==============================================================================
+# 用語集 — 専門用語は初出時に解説する
+# ==============================================================================
+
+GLOSSARY: dict[str, str] = {
+    "VIX": "VIX (恐怖指数) = S&P500オプション市場が織り込む向こう30日のボラティリティ。20以下で平穏、25超で警戒、30超で危機局面",
+    "ROE": "ROE (株主資本利益率) = 純利益 ÷ 株主資本。15%以上で優良企業、20%超でバフェットが好む経済的堀の証拠",
+    "PER": "PER (株価収益率) = 株価 ÷ 1株あたり利益。成長株は高くなる傾向。15倍は割安・25倍は普通・40倍超は割高の目安",
+    "FCF": "FCF (フリーキャッシュフロー) = 営業活動で稼いだ現金から設備投資を引いた残り。「企業が自由に使えるお金」",
+    "FCF Yield": "FCF Yield = FCF ÷ 時価総額。5%以上で割安、債券利回りより高ければ魅力的",
+    "DCF": "DCF (割引キャッシュフロー) = 将来のFCFを現在価値に割り引いて企業の本来価値を算出する手法。バフェットの「内在価値」評価軸",
+    "Margin of Safety": "安全域 (Margin of Safety) = 内在価値と市場価格の差。「30%安く買えるなら買う」というバフェット哲学の核",
+    "KL Divergence": "KLダイバージェンス = 2つの確率分布の「ずれ」を測る統計量。マーケットが平常時から逸脱している度合いを表現",
+    "Sharpe": "シャープレシオ (Sharpe) = (リターン − 無リスク金利) ÷ ボラティリティ。1.0以上で優秀、2.0超で卓越",
+    "Drawdown": "ドローダウン (DD) = 直近高値から最安値までの下落率。-20%超なら警戒、-30%超は重大な弱気局面",
+    "Kelly基準": "Kelly基準 = 期待リターンとボラティリティから「最適な賭け金」を導く数学公式。投資額の上限を決める指針",
+    "Kalman Filter": "カルマンフィルタ = ノイズ除去アルゴリズム。価格の真のトレンドを統計的に抽出",
+    "Hurst指数": "Hurst指数 = 価格時系列の「持続性」を測る指標。0.55超でトレンド継続、0.45未満で平均回帰傾向",
+    "Cross-Sectional": "Cross-Sectional Momentum = 同時点で複数銘柄を比較し、相対的に強い銘柄を買う戦略",
+    "Mean Reversion": "Mean Reversion (平均回帰) = 「価格は長期平均に戻る」という統計的傾向",
+    "Earnings Yield": "Earnings Yield = 1 ÷ PER。「株式の利回り換算」。国債利回りと比較してリスクプレミアムを評価",
+    "Insider": "インサイダー取引 = 経営陣による自社株売買。買いが増えると将来の業績に自信のサイン",
+    "Put/Call ratio": "Put/Call比率 = プットオプション ÷ コールオプション。1.0超で投資家が下落ヘッジに偏っている逆張りシグナル",
+    "Walk-Forward": "Walk-Forward検証 = 過去の予測を実取引と仮定して累積リターンを検証する方法",
+    "Black-Litterman": "ブラック・リッターマン (Black-Litterman) = 市場均衡 + 投資家の見解を統合する最適配分モデル",
+}
+
+
+def _explain(term: str, short: bool = False) -> str:
+    """用語に解説リンク (tooltip) を埋め込む。"""
+    expl = GLOSSARY.get(term, "")
+    if not expl:
+        return html_mod.escape(term)
+    if short:
+        return f'<span class="glossary-term" title="{html_mod.escape(expl)}">{html_mod.escape(term)}</span>'
+    return (f'<span class="glossary-term" title="{html_mod.escape(expl)}">{html_mod.escape(term)}'
+            f'<sup class="glossary-hint">?</sup></span>')
+
+
+def _glossary_section_html(terms: list[str]) -> str:
+    """記事の末尾に用語集を出力。"""
+    items = []
+    for t in terms:
+        if t in GLOSSARY:
+            items.append((t, GLOSSARY[t]))
+    if not items:
+        return ""
+    html = '<details class="db-glossary"><summary class="db-glossary-toggle">📚 この記事で使った用語の解説 (クリックで展開)</summary>'
+    html += '<dl class="db-glossary-list">'
+    for term, expl in items:
+        html += f'<dt>{html_mod.escape(term)}</dt><dd>{html_mod.escape(expl)}</dd>'
+    html += '</dl></details>'
+    return html
+
+
 def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
     """🗞️ 今日の分析レポート — AI による記事形式の市場ブリーフ.
 
@@ -286,13 +341,32 @@ def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
     html += f'<span class="db-meta-item">📈 含み損益: <strong style="color:{"var(--accent-green)" if total_pnl >= 0 else "var(--accent-red)"}">{"+" if total_pnl >= 0 else ""}${total_pnl:,.0f} ({total_pnl_pct:+.1f}%)</strong></span>'
     html += '</div></header>'
 
-    # === Lead paragraph ===
+    # === 長期保有方針バナー (常時表示) ===
+    html += '<div class="db-longterm-banner">'
+    html += '<span class="icon">🏛️</span>'
+    html += '<div><strong>本ポートフォリオの基本方針: 長期保有 (Buy &amp; Hold)</strong>'
+    html += '<p>短期の値動きでトレードはしません。<strong>「優れた企業を妥当な価格で買い、長く持つ」</strong>'
+    html += 'というバフェット流の哲学に従います。日々のシグナルは「方針の微修正」であり、'
+    html += '安易な売却 (BUY → SELL の往復) は税負担と機会損失を生むため避けます。</p></div></div>'
+
+    # === Lead paragraph (なぜそう判断したか + 出典) ===
     if ai_reasoning:
         html += '<section class="db-section">'
         html += '<h2 class="db-section-title">📰 リード — 本日の市場概況</h2>'
         html += f'<p class="db-lead">{html_mod.escape(ai_reasoning)}</p>'
-        html += f'<p class="db-meta-line">マーケットは現在 <strong>{regime_jp.split(" ")[1] if " " in regime_jp else regime_jp}</strong> にあり、KL ダイバージェンス {kl_val:.4f} は予測モデルの確信度を{"高め" if kl_val < 0.05 else "中程度に" if kl_val < 0.15 else "低く"}保っています。</p>'
-        html += '</section>'
+        html += '<aside class="db-source">'
+        html += '<strong>📌 なぜそう判断したか</strong>'
+        kl_judgment = (
+            "ほぼ平常時の分布に近く、予測の信頼度を高めに保てる" if kl_val < 0.05
+            else "通常から少しずれており、予測には慎重さが必要" if kl_val < 0.15
+            else "大きく逸脱しており、過去パターンが効きにくい異常局面"
+        )
+        html += (f'<p>マーケット状態は ' + _explain("KL Divergence") +
+                f' という統計指標で評価しています。今日の値は {kl_val:.4f} で、{kl_judgment}と判定しました。'
+                f'この指標は「現在の値動きの分布が、長期平均からどれだけ離れているか」を測ります。'
+                '0に近いほど通常時、大きいほど異常時です。</p>')
+        html += '<p>出典: マーケット価格データ (yfinance) ・ KL Divergence は内製エンジン daily_evolution.py で算出</p>'
+        html += '</aside></section>'
 
     # === マクロ・異常検知 ===
     if anomaly or sector_rot:
@@ -317,24 +391,64 @@ def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
             html += '</p>'
         html += '</section>'
 
-    # === キーアクション (BUY) ===
+    # === キーアクション (BUY) — 各銘柄の「なぜ」を厚めに解説 ===
     if buys:
         html += '<section class="db-section">'
         html += f'<h2 class="db-section-title">🟢 本日のBUY推奨 ({len(buys)}銘柄)</h2>'
+        html += '<p class="db-meta-line">各銘柄について、AIが買いと判断した理由・根拠データ・参考にした指標を解説します。</p>'
         for ticker, reason in buys[:6]:
             url = yahoo_chart_url(ticker)
-            # Master Wisdom 個別スコアを取得
             ms_match = next((s for s in master_signals if s.get("ticker") == ticker), None)
             master_note = ""
+            factor_table = ""
             if ms_match:
                 comp = ms_match.get("composite_score", 0)
                 conf = ms_match.get("confidence", 0)
-                master_note = f' <span class="db-master-tag">Master Wisdom: 合成{comp:+.2f} / 確信度{conf:.0%}</span>'
+                master_note = f' <span class="db-master-tag">9ファクター合成 {comp:+.2f} / 確信度 {conf:.0%}</span>'
+                fs = ms_match.get("factor_scores", {})
+                if fs:
+                    factor_table = '<details class="db-factor-detail"><summary>9ファクターの内訳を見る</summary><table class="db-factor-table"><tr><th>ファクター</th><th>スコア</th><th>判定</th></tr>'
+                    factor_jp = {
+                        "quality_roe": "経営効率 (ROE)",
+                        "quality_margin": "利益率の質",
+                        "value_earnings_yield": "Earnings Yield",
+                        "value_fcf_yield": "FCF Yield",
+                        "value_margin_of_safety": "安全域 (DCF)",
+                        "momentum_composite": "テクニカル統合",
+                        "contrarian_fear_greed": "Fear-Greed逆張り",
+                        "contrarian_insider_pulse": "インサイダー脈動",
+                        "risk_kelly": "Kelly基準サイズ",
+                    }
+                    for fname, fdata in fs.items():
+                        s = fdata.get("score", 0) if isinstance(fdata, dict) else fdata
+                        v = fdata.get("verdict", "") if isinstance(fdata, dict) else ""
+                        score_color = "var(--accent-green)" if s > 0 else "var(--accent-red)" if s < 0 else "var(--text-muted)"
+                        factor_table += f'<tr><td>{factor_jp.get(fname, fname)}</td><td style="color:{score_color}">{s:+.2f}</td><td>{html_mod.escape(v)}</td></tr>'
+                    factor_table += '</table><p class="db-meta-line">9つのファクター(指標)それぞれが [-1,+1] の範囲でスコアを出し、加重平均で合成スコアを算出しています。</p></details>'
             html += f'<article class="db-action-block db-buy">'
             html += f'<h3 class="db-action-title"><a href="{url}" target="_blank" class="ticker-link">{ticker} 📈</a>{master_note}</h3>'
             html += f'<p class="db-body">{html_mod.escape(reason)}</p>'
+            html += factor_table
             html += '</article>'
-        html += '</section>'
+        html += '<aside class="db-source">'
+        html += '<strong>📚 BUYの判断ロジック</strong>'
+        html += ('<p>Master Wisdom は9つの観点で銘柄を評価しています:</p>'
+                 '<ol><li><strong>経営効率</strong>: ' + _explain("ROE") + ' — 「同じ資本でどれだけ稼げるか」</li>'
+                 '<li><strong>利益率</strong>: 営業利益率の水準と安定性</li>'
+                 '<li><strong>株価妥当性</strong>: ' + _explain("PER") + 'を国債利回りと比較</li>'
+                 '<li><strong>キャッシュ生成力</strong>: ' + _explain("FCF Yield") + '</li>'
+                 '<li><strong>安全域</strong>: ' + _explain("DCF") + 'で算出した本来価値と現在価格の差 (' + _explain("Margin of Safety") + ')</li>'
+                 '<li><strong>テクニカル</strong>: ' + _explain("Kalman Filter") + 'などで価格トレンドを検出</li>'
+                 '<li><strong>逆張り</strong>: ' + _explain("VIX") + 'が高い時に「皆が恐れている時こそ買う」というバフェット哲学</li>'
+                 '<li><strong>スマートマネー</strong>: ' + _explain("Insider") + 'と' + _explain("Put/Call ratio") + '</li>'
+                 '<li><strong>リスク量</strong>: ' + _explain("Kelly基準") + 'での最適投資額</li></ol>')
+        html += '<p>これらを<strong>市場局面ごとに重み付け</strong>します。安定相場では成長性、危機局面では安全域を重視するように動的に調整しています。</p>'
+        html += ('<p><strong>BUY の意味 (長期保有の文脈で):</strong> '
+                 '本ポートフォリオでは「BUY = 翌日値上がりを狙う短期トレード」ではなく、'
+                 '<strong>「3〜10年保有する価値がある銘柄を買い増す」</strong>を意味します。'
+                 'シグナル変動による頻繁な売買は行いません。</p>')
+        html += '<p>出典: 9ファクター = master_predictor.py / 学習ジャーナル = data/master_learning_journal.json</p>'
+        html += '</aside></section>'
 
     # === キーアクション (SELL) ===
     if sells:
@@ -356,10 +470,13 @@ def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
     # === HOLD要約 ===
     if holds_count:
         html += '<section class="db-section">'
-        html += f'<h2 class="db-section-title">🟡 HOLD ({holds_count}銘柄)</h2>'
-        html += f'<p class="db-body">残り <strong>{holds_count}銘柄</strong> は現状維持を推奨。'
-        html += '長期保持を基本方針とし、明確な売買サインがない場合は積極的なトレードを避けます。'
-        html += 'バフェット流の「素晴らしい企業を妥当な価格で買い、長く保有する」哲学に従っています。</p>'
+        html += f'<h2 class="db-section-title">🟡 HOLD ({holds_count}銘柄) — 長期保有を継続</h2>'
+        html += f'<p class="db-body">残り <strong>{holds_count}銘柄</strong> は<strong>長期保有を継続</strong>します。'
+        html += '本ポートフォリオの基本方針は Buy &amp; Hold (バフェット流) であり、'
+        html += '日々のシグナルゆらぎでの売買は<strong>原則行いません</strong>。</p>'
+        html += '<p class="db-body">「素晴らしい企業を妥当な価格で買い、長く保有する」ことで、'
+        html += '<strong>複利成長</strong>と<strong>税繰延</strong>の恩恵を最大化します。'
+        html += '頻繁な売買は手数料・税金・タイミングミスのトリプルパンチで長期リターンを毀損します。</p>'
         html += '</section>'
 
     # === Walk-Forward 検証 ===
@@ -395,19 +512,36 @@ def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
             html += '</article>'
         html += '</section>'
 
-    # === 新規推奨銘柄 ===
+    # === 新規推奨銘柄 (非保有・長期候補) ===
     if new_picks:
         html += '<section class="db-section">'
-        html += f'<h2 class="db-section-title">🆕 新規購入候補 ({len(new_picks)}銘柄)</h2>'
+        html += f'<h2 class="db-section-title">🆕 新規購入候補 — 非保有の長期投資先 ({len(new_picks)}銘柄)</h2>'
+        html += '<p class="db-meta-line">現在保有していないが、Master Wisdom が「10年以上保有する価値あり」と判定した銘柄です。'
+        html += '短期の値上がりではなく、<strong>長期 (3〜10年) の複利成長</strong>を期待する候補として提示しています。</p>'
         for p in new_picks[:5]:
             ticker = p.get("ticker", "")
             url = yahoo_chart_url(ticker)
+            horizon = p.get("horizon", "長期 (3〜10年)")
+            quality_note = p.get("quality_note", "")
             html += f'<article class="db-pick-block">'
             html += f'<h3 class="db-action-title"><a href="{url}" target="_blank" class="ticker-link">{ticker} 📈</a>'
-            html += f' <span class="db-sector-tag">{html_mod.escape(p.get("sector", ""))}</span></h3>'
+            html += f' <span class="db-sector-tag">{html_mod.escape(p.get("sector", ""))}</span>'
+            html += f' <span class="db-master-tag">想定保有期間: {html_mod.escape(horizon)}</span></h3>'
             html += f'<p class="db-body">{html_mod.escape(p.get("reason", ""))}</p>'
+            if quality_note:
+                html += f'<p class="db-meta-line">📌 評価ポイント: {html_mod.escape(quality_note)}</p>'
             html += '</article>'
-        html += '</section>'
+        html += '<aside class="db-source">'
+        html += '<strong>📚 新規候補のスクリーニング基準 (長期保有前提)</strong>'
+        html += ('<ol><li><strong>'+ _explain("ROE") +' ≥ 15%</strong> が直近5年安定 — 経済的堀の証拠</li>'
+                 '<li><strong>'+ _explain("FCF Yield") +' ≥ 4%</strong> — 自由なキャッシュ生成力</li>'
+                 '<li><strong>'+ _explain("Margin of Safety") +' ≥ 20%</strong> — 内在価値より20%以上安く買える</li>'
+                 '<li><strong>負債比率が業界平均以下</strong> — 不況耐性</li>'
+                 '<li><strong>10年後も需要が見える事業モデル</strong> — 長期保有の前提</li></ol>')
+        html += '<p>これらは「3〜10年の保有を前提にした候補」であり、'
+        html += '短期トレードではありません。一度買ったら基本は売らず、複利でポートフォリオを成長させます。</p>'
+        html += '<p>出典: master_predictor.py の screening_universe (S&amp;P500 + 日本主要株) / 評価データ = data/master_screening_results.json</p>'
+        html += '</aside></section>'
 
     # === 積立アドバイス ===
     if tsumitate and (tsumitate.get("changes") or tsumitate.get("reasoning")):
@@ -439,9 +573,444 @@ def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
             html += '</ul>'
         html += '</section>'
 
-    html += f'<footer class="db-footer">'
-    html += f'<p class="db-meta-line">この分析は Master Wisdom AI (Buffett 級9ファクター + 30年歴史データ + Claude Sonnet) によって生成されました。'
-    html += f'毎日更新され、過去の予測精度を学習し続けています。</p>'
+    # === 用語集 (記事末尾) ===
+    used_terms = ["KL Divergence", "ROE", "PER", "FCF Yield", "DCF", "Margin of Safety",
+                  "VIX", "Sharpe", "Drawdown", "Kelly基準", "Kalman Filter",
+                  "Insider", "Put/Call ratio"]
+    html += _glossary_section_html(used_terms)
+
+    html += '<footer class="db-footer">'
+    html += '<p class="db-meta-line"><strong>📖 この記事の作り方</strong></p>'
+    html += '<ul class="db-source-list">'
+    html += '<li>マーケット価格データ: <em>yfinance</em> (Yahoo Finance APIラッパー)</li>'
+    html += '<li>9ファクター予測: <em>master_predictor.py</em> (バフェット哲学+現代統計学)</li>'
+    html += '<li>30年歴史パターン: <em>historical_pattern_extractor.py</em> (1987 Black Monday / 2000 Dot-com / 2008 GFC / 2020 COVID 等を含む)</li>'
+    html += '<li>AI 日本語コメント: <em>Claude Sonnet</em> (Anthropic) 経由で <em>auto_prompt_cycle.py</em> が分析</li>'
+    html += '<li>過去予測の答え合わせ: <em>data/master_prediction_history.json</em> に蓄積</li>'
+    html += '<li>自己学習: 7日後・30日後の実リターンと予測の方向一致率からウェイトを Bayesian 更新</li>'
+    html += '</ul>'
+    html += '<p class="db-meta-line">毎営業日 7時に launchd が自動更新。本記事は AI 生成のため、投資判断は最終的にご自身でお願いします。'
+    html += 'これは投資助言ではなく、自動化された分析レポートです。</p>'
+    html += '</footer></article>'
+    return html
+
+
+def build_weekly_brief_html(results: dict, track: dict, holdings: dict) -> str:
+    """📅 週次ブリーフ — 過去5営業日の振り返り + 来週展望.
+
+    AIが何を予測し、それが当たったか/外れたか、何を学んだかを記事化する。
+    """
+    today = datetime.now().strftime("%Y-%m-%d (%a)")
+    records = track.get("records", [])
+    last_7 = records[-7:] if len(records) > 0 else []
+
+    # 直近の評価
+    evaluations = track.get("evaluations", [])
+    recent_evals = evaluations[-5:] if evaluations else []
+
+    # ファクター精度 (master_learning から)
+    master_learning = results.get("master_learning", {}) or {}
+    factor_accs = master_learning.get("factor_accuracies", {}) or {}
+
+    enh = results.get("enhancements", {}) or {}
+    wf = enh.get("walk_forward", {}) or {}
+
+    html = '<article class="daily-brief"><header class="db-header">'
+    html += '<div class="db-eyebrow">WEEKLY REPORT — 直近1週間の振り返り</div>'
+    html += f'<h1 class="db-title">{today} 週次ポートフォリオレポート</h1>'
+    html += '<div class="db-meta">'
+    html += f'<span class="db-meta-item">📊 予測記録 <strong>{len(records)}件</strong></span>'
+    html += f'<span class="db-meta-item">✅ 採点済み <strong>{len(evaluations)}件</strong></span>'
+    html += '</div></header>'
+
+    # === 長期保有方針バナー ===
+    html += '<div class="db-longterm-banner">'
+    html += '<span class="icon">🏛️</span>'
+    html += '<div><strong>週次レビューの位置づけ</strong>'
+    html += '<p>このレポートは「売買の指示書」ではなく、<strong>長期保有戦略の進捗確認</strong>です。'
+    html += '1週間という単位は短期 (ノイズが多い) ですが、AI の学習が正しい方向に進んでいるか、'
+    html += '保有銘柄の長期ストーリーが崩れていないかをチェックする目的で作成しています。</p></div></div>'
+
+    # === 今週のハイライト ===
+    html += '<section class="db-section">'
+    html += '<h2 class="db-section-title">📌 今週のハイライト</h2>'
+    if recent_evals:
+        avg_dir = sum(e.get("predicted_vs_actual", {}).get("direction_accuracy", 0)
+                      for e in recent_evals) / len(recent_evals)
+        rating = "卓越" if avg_dir >= 0.7 else "良好" if avg_dir >= 0.6 else "普通" if avg_dir >= 0.5 else "要改善"
+        html += f'<p class="db-lead">直近{len(recent_evals)}回の予測の方向一致率は <strong>{avg_dir*100:.0f}%</strong> ({rating})。'
+        html += 'これは「BUY と判断した銘柄が実際に上昇したか / SELL と判断した銘柄が実際に下落したか」の的中率です。'
+        html += '50%なら偶然の的中率なので、それを超える数字は AI が市場の方向性を捉えていることを示します。</p>'
+    else:
+        html += '<p class="db-lead">まだ採点済みの予測がありません。予測から7営業日経過すると自動採点が始まります。</p>'
+
+    if wf.get("n_trades", 0) > 0:
+        sharpe = wf.get("sharpe", 0)
+        ann = wf.get("annual_return", 0) * 100
+        win = wf.get("win_rate", 0) * 100
+        html += '<aside class="db-source">'
+        html += '<strong>📊 Walk-Forward 検証 (仮想実戦)</strong>'
+        html += (f'<p>過去の確信度 ≥ 0.6 の予測を「実取引」と仮定して累積リターンを計算した結果、'
+                 f'シャープレシオ ' + _explain("Sharpe") +
+                 f' は <strong>{sharpe:+.2f}</strong>、年率リターン <strong>{ann:+.1f}%</strong>、'
+                 f'勝率 <strong>{win:.0f}%</strong> でした ({wf.get("n_trades", 0)}取引)。</p>')
+        html += '<p>シャープレシオは「リスク1単位あたりのリターン」で、値が高いほど効率的に運用できていることを示します。'
+        html += 'プロのファンドマネージャーで 1.0、卓越したヘッジファンドで 2.0+ が目安です。</p>'
+        html += '<p>出典: prediction_enhancements.walk_forward_sharpe / data/walk_forward_results.json</p>'
+        html += '</aside>'
+    html += '</section>'
+
+    # === 今週の予測精度トレンド ===
+    if factor_accs:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">⚙️ 9ファクターの精度ランキング</h2>'
+        html += '<p class="db-body">Master Wisdom が使う9つの予測ファクターを精度順に並べました。'
+        html += '精度が高いほど次回の予測でウェイトが上がり、低いものは縮小される自己進化の仕組みです。</p>'
+        sorted_factors = sorted(factor_accs.items(), key=lambda x: -x[1])
+        factor_jp = {
+            "quality_roe": "経営効率 (ROE)",
+            "quality_margin": "利益率の質",
+            "value_earnings_yield": "Earnings Yield",
+            "value_fcf_yield": "FCF Yield",
+            "value_margin_of_safety": "安全域 (DCF)",
+            "momentum_composite": "テクニカル統合",
+            "contrarian_fear_greed": "Fear-Greed逆張り",
+            "contrarian_insider_pulse": "インサイダー脈動",
+            "risk_kelly": "Kelly基準",
+        }
+        html += '<table class="db-factor-table"><tr><th>順位</th><th>ファクター</th><th>精度</th><th>評価</th></tr>'
+        for i, (fname, acc) in enumerate(sorted_factors, 1):
+            rating = "🌟 卓越" if acc >= 0.7 else "✅ 良好" if acc >= 0.6 else "⚠️ 普通" if acc >= 0.5 else "🔴 改善要"
+            html += f'<tr><td>{i}</td><td>{factor_jp.get(fname, fname)}</td><td>{acc*100:.1f}%</td><td>{rating}</td></tr>'
+        html += '</table>'
+        html += '<aside class="db-source">'
+        html += '<strong>📌 なぜ精度が変動するのか</strong>'
+        html += ('<p>市場の局面により有効なファクターは変わります。例えば成長相場ではテクニカル、危機局面では安全域 ('
+                 + _explain("DCF") + ') が効きます。'
+                 'システムは7日後/30日後の答え合わせを通じて、各ファクターの「真の予測力」を継続的に学習しています。</p>')
+        html += '<p>出典: data/master_factor_weights.json (Bayesian更新後の重み)</p>'
+        html += '</aside></section>'
+
+    # === 今週の「学び」 ===
+    findings = master_learning.get("notable_findings", []) or []
+    if findings:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">💡 今週 AI が学んだこと</h2>'
+        html += '<p class="db-body">過去予測との突き合わせから、次の発見がありました:</p>'
+        html += '<ul class="db-list">'
+        for f in findings[:10]:
+            html += f'<li>{html_mod.escape(f)}</li>'
+        html += '</ul>'
+        html += '<aside class="db-source">'
+        html += '<strong>🧠 自己進化のメカニズム</strong>'
+        html += '<p>毎日、過去の予測の方向と実際の値動きを比較します。当たっていればそのファクターの重みを上げ、外れていれば下げる。'
+        html += 'これを繰り返すことで、AI は「今のマーケットで何が効くか」を自分で学んでいきます。'
+        html += '人間が手動でパラメータを調整する必要はありません。</p>'
+        html += '<p>出典: data/master_learning_journal.json (日次の学習エントリ)</p>'
+        html += '</aside></section>'
+
+    # === 来週の展望 ===
+    latest = records[-1] if records else {}
+    risk_scenarios = latest.get("risk_scenarios", {})
+    if risk_scenarios:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">🔮 来週の展望 — 3シナリオ</h2>'
+        html += '<p class="db-body">今後1〜4週の市場展開について、Master Wisdom が3つの可能性を確率付きで予測しています。'
+        html += 'これは確定的な予言ではなく、「どれくらい起こりやすいか」の主観的確率です。</p>'
+        for key, emoji, jp in [("bull", "🐂", "Bull (強気)"), ("base", "📊", "Base (基本)"), ("bear", "🐻", "Bear (弱気)")]:
+            s = risk_scenarios.get(key, {})
+            prob = s.get("probability", 0) * 100
+            desc = s.get("description", "")
+            if not desc:
+                continue
+            html += f'<article class="db-scenario db-{key}">'
+            html += f'<div class="db-scenario-header"><span class="db-scenario-emoji">{emoji}</span>'
+            html += f'<span class="db-scenario-name">{jp}</span>'
+            html += f'<span class="db-scenario-prob">{prob:.0f}%</span></div>'
+            html += f'<p class="db-body">{html_mod.escape(desc)}</p></article>'
+        html += '</section>'
+
+    # === 非保有の長期候補ウォッチリスト ===
+    latest = records[-1] if records else {}
+    new_picks_w = latest.get("new_picks", [])
+    if new_picks_w:
+        html += '<section class="db-section">'
+        html += f'<h2 class="db-section-title">👀 今週の長期候補ウォッチ ({len(new_picks_w)}銘柄)</h2>'
+        html += '<p class="db-body">非保有のうち、Master Wisdom が今週「長期 (3〜10年) で監視したい」と判定した銘柄です。'
+        html += '今週すぐに買う必要はありません。<strong>「価格が割安まで下がるのを待つ」</strong>のがバフェット流の規律です。</p>'
+        html += '<ul class="db-list">'
+        for p in new_picks_w[:6]:
+            t = p.get("ticker", "")
+            sector = p.get("sector", "")
+            reason = p.get("reason", "")
+            html += f'<li><strong>{html_mod.escape(t)}</strong> <span class="db-sector-tag">{html_mod.escape(sector)}</span> — {html_mod.escape(reason)}</li>'
+        html += '</ul>'
+        html += '<aside class="db-source"><strong>📌 ウォッチリストの使い方</strong>'
+        html += '<p>気になる銘柄を「すぐ買う」のではなく「下がったら買う」候補として記録しておきます。'
+        html += '市場全体が ' + _explain("VIX") + ' > 25 になったとき、または個別株が内在価値の30%以下に下落したとき、'
+        html += '実際の買い (BUY タブに昇格) を検討します。</p></aside></section>'
+
+    # === 売却を急がないことの重要性 ===
+    sell_count_recent = sum(1 for r in last_7 for a in r.get("actions", {}).values() if a == "SELL")
+    if sell_count_recent > 0:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">🤔 売却シグナルとどう付き合うか</h2>'
+        html += f'<p class="db-body">直近1週間で SELL シグナルは <strong>{sell_count_recent}件</strong> 出ました。'
+        html += 'ただし長期保有方針では、<strong>シグナルが即「売り」を意味しない</strong>点に注意します。'
+        html += '本当に売却すべきは以下のケースに絞っています:</p>'
+        html += '<ol class="db-list">'
+        html += '<li>企業の <strong>長期ストーリーが崩壊</strong> (経済的堀の喪失、不正会計、業界構造の終焉)</li>'
+        html += '<li>株価が <strong>内在価値の2倍以上に高騰</strong> (極端な過大評価)</li>'
+        html += '<li>ポートフォリオの <strong>1銘柄集中度が30%超</strong> (リバランス目的)</li>'
+        html += '</ol>'
+        html += '<p class="db-body">単なる短期下落・ボラティリティ・テクニカル悪化は売却理由になりません。'
+        html += '「売らない」ことで税繰延と複利効果を最大化します。</p>'
+        html += '</section>'
+
+    # 用語集
+    used_terms = ["Sharpe", "DCF", "ROE", "FCF Yield", "Margin of Safety", "VIX"]
+    html += _glossary_section_html(used_terms)
+
+    html += '<footer class="db-footer">'
+    html += '<p class="db-meta-line">出典: ai_track_record.json (予測履歴) / master_prediction_history.json (Master Wisdom 記録) / walk_forward_results.json (実戦検証)</p>'
+    html += '<p class="db-meta-line">この週次レポートは毎週土曜日に自動更新され、Slack DM でも配信されます。'
+    html += '長期保有を前提とした自己進化型レポートです。</p>'
+    html += '</footer></article>'
+    return html
+
+
+def build_monthly_brief_html(results: dict, track: dict, holdings: dict) -> str:
+    """📊 月次ブリーフ — 過去30日の総括 + 来月の戦略.
+
+    月次パフォーマンス、ファクター進化、リスク管理の総合評価。
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+    month = datetime.now().strftime("%Y年%m月")
+
+    records = track.get("records", [])
+    evaluations = track.get("evaluations", [])
+    last_30_evals = evaluations[-30:] if evaluations else []
+
+    # パフォーマンス履歴
+    perf_path = BASE_DIR / "data" / "performance_history.json"
+    perf_history = []
+    if perf_path.exists():
+        try:
+            with open(perf_path, encoding="utf-8") as f:
+                perf_history = json.load(f).get("records", [])
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    master_learning = results.get("master_learning", {}) or {}
+    factor_accs = master_learning.get("factor_accuracies", {}) or {}
+
+    # 月次パフォーマンス
+    monthly_change_pct = None
+    monthly_pnl_change = None
+    if len(perf_history) >= 22:  # 約1ヶ月
+        first = perf_history[-22]
+        last = perf_history[-1]
+        if first.get("total_usd", 0) > 0:
+            monthly_change_pct = (last["total_usd"] - first["total_usd"]) / first["total_usd"] * 100
+            monthly_pnl_change = last.get("total_pnl_usd", 0) - first.get("total_pnl_usd", 0)
+
+    html = '<article class="daily-brief"><header class="db-header">'
+    html += '<div class="db-eyebrow">MONTHLY REPORT — 月次総括</div>'
+    html += f'<h1 class="db-title">{month}のポートフォリオ総括</h1>'
+    html += '<div class="db-meta">'
+    html += f'<span class="db-meta-item">📅 報告期間: 過去30日</span>'
+    html += f'<span class="db-meta-item">🧠 採点済み予測 <strong>{len(last_30_evals)}件</strong></span>'
+    html += '</div></header>'
+
+    # === 長期保有方針バナー ===
+    html += '<div class="db-longterm-banner">'
+    html += '<span class="icon">🏛️</span>'
+    html += '<div><strong>月次レビューの位置づけ — 長期保有の進捗確認</strong>'
+    html += '<p>1ヶ月は長期保有 (3〜10年) のうちの<strong>ほんの一部</strong>です。'
+    html += '月次パフォーマンスが良くても悪くても、「長期ストーリーが崩れていないか」を最重要視します。'
+    html += '短期の上げ下げに振り回されず、<strong>10年後の自分が今日のポートフォリオを見て後悔しないか</strong>を毎月確認します。</p></div></div>'
+
+    # === 月次パフォーマンスサマリー ===
+    html += '<section class="db-section">'
+    html += '<h2 class="db-section-title">📊 月次パフォーマンス</h2>'
+    if monthly_change_pct is not None:
+        color = "var(--accent-green)" if monthly_change_pct >= 0 else "var(--accent-red)"
+        sign = "+" if monthly_change_pct >= 0 else ""
+        html += f'<p class="db-lead">過去30日でポートフォリオ総額は <strong style="color:{color}">{sign}{monthly_change_pct:.1f}%</strong> 変動しました。'
+        if monthly_pnl_change is not None:
+            html += f'含み損益は <strong style="color:{color}">{sign}${monthly_pnl_change:,.0f}</strong> 推移。'
+        html += 'これを ' + _explain("Drawdown") + ' (過去最高値からの落ち込み) と比べて健全性を評価します。</p>'
+    else:
+        html += '<p class="db-lead">パフォーマンス履歴がまだ十分に蓄積されていません。1ヶ月の継続運用後に自動表示されます。</p>'
+
+    if last_30_evals:
+        avg_dir = sum(e.get("predicted_vs_actual", {}).get("direction_accuracy", 0)
+                      for e in last_30_evals) / len(last_30_evals)
+        avg_rmse = sum(e.get("predicted_vs_actual", {}).get("rmse", 0)
+                       for e in last_30_evals) / len(last_30_evals)
+        html += '<aside class="db-source">'
+        html += '<strong>🎯 月次予測精度</strong>'
+        html += (f'<p>過去30日の予測の方向一致率: <strong>{avg_dir*100:.1f}%</strong> '
+                 f'(50%が偶然、それを超える分が「AIの実力」)。'
+                 f'平均誤差 (RMSE): <strong>{avg_rmse:.4f}</strong></p>')
+        html += '<p>方向だけでなく「どれだけ動くか」も評価しているため、RMSE が小さいほど予測の解像度が高いことを示します。</p>'
+        html += '<p>出典: ai_track_record.json (evaluations セクション)</p>'
+        html += '</aside>'
+    html += '</section>'
+
+    # === ファクター進化の月次トレンド ===
+    if factor_accs:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">⚙️ ファクター進化の1ヶ月</h2>'
+        html += '<p class="db-body">9ファクターそれぞれが過去1ヶ月でどう「育った」かを表で示します。'
+        html += 'ウェイトの変化は「市場が何を要求するようになったか」のシグナルです。</p>'
+        factor_jp = {
+            "quality_roe": "経営効率 (ROE)",
+            "quality_margin": "利益率の質",
+            "value_earnings_yield": "Earnings Yield",
+            "value_fcf_yield": "FCF Yield",
+            "value_margin_of_safety": "安全域 (DCF)",
+            "momentum_composite": "テクニカル統合",
+            "contrarian_fear_greed": "Fear-Greed逆張り",
+            "contrarian_insider_pulse": "インサイダー脈動",
+            "risk_kelly": "Kelly基準",
+        }
+        html += '<table class="db-factor-table"><tr><th>ファクター</th><th>精度</th><th>意味</th></tr>'
+        for fname, acc in sorted(factor_accs.items(), key=lambda x: -x[1]):
+            meaning = ("市場の中核ドライバー" if acc >= 0.7
+                       else "概ね機能" if acc >= 0.6
+                       else "中立的シグナル" if acc >= 0.5
+                       else "現在の局面では効きにくい")
+            html += f'<tr><td>{factor_jp.get(fname, fname)}</td><td>{acc*100:.1f}%</td><td>{meaning}</td></tr>'
+        html += '</table>'
+        html += '</section>'
+
+    # === 大暴落歴史との比較 ===
+    patterns_path = BASE_DIR / "data" / "historical_patterns.json"
+    patterns = {}
+    if patterns_path.exists():
+        try:
+            with open(patterns_path, encoding="utf-8") as f:
+                patterns = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    vix_stats = patterns.get("vix_regimes", {})
+    if vix_stats:
+        cur_pct = vix_stats.get("current_vix_percentile", 50)
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">📚 30年歴史的視点</h2>'
+        html += '<p class="db-body">過去30年の市場データから、現在の位置を統計的に評価します。'
+        html += 'バフェット哲学:「歴史は完全には繰り返されないが、韻を踏む」</p>'
+        html += (f'<p class="db-body">現在の ' + _explain("VIX") +
+                 f' は過去30年で <strong>{cur_pct} パーセンタイル</strong> です。'
+                 f'これは「過去30年の{cur_pct}%の日々がこれより低かった」という意味です。'
+                 '高すぎる時は恐怖局面で「皆が恐れる時に貪欲になれ」(バフェット)、'
+                 '低すぎる時は楽観局面で「皆が貪欲な時に恐れろ」と判断します。</p>')
+
+        crashes = patterns.get("major_crashes", {})
+        if crashes.get("n_events", 0) > 0:
+            html += (f'<p class="db-body">過去30年では <strong>{crashes["n_events"]}回</strong> の大暴落 (60日以内に -15% 以上) を観測。'
+                     f'平均深さは <strong>{crashes.get("avg_depth", 0)*100:.0f}%</strong>、'
+                     f'平均回復日数は <strong>{crashes.get("avg_recovery_days", 0):.0f}日</strong>。'
+                     '主要イベント: 1987 Black Monday / 2000 Dot-com / 2008 GFC / 2020 COVID 等。</p>')
+
+        buffett = patterns.get("buffett_contrarian_validation", {})
+        h_252 = buffett.get("by_horizon", {}).get("252d")
+        if h_252:
+            mean = h_252.get("mean_return", 0) * 100
+            wr = h_252.get("win_rate", 0) * 100
+            html += '<aside class="db-source">'
+            html += '<strong>🎯 バフェット逆張りの統計検証</strong>'
+            html += (f'<p>過去30年で「VIX > 30 (恐怖局面) で買った場合、1年後に何%儲かったか」を検証した結果、'
+                     f'平均 <strong>{mean:+.1f}%</strong>、勝率 <strong>{wr:.0f}%</strong>。'
+                     '「他人が恐れる時に買う」という哲学はデータでも裏付けられています。</p>')
+            html += '<p>出典: data/historical_patterns.json (1990年代以降のSP500+VIX)</p>'
+            html += '</aside>'
+        html += '</section>'
+
+    # === 来月の戦略 ===
+    html += '<section class="db-section">'
+    html += '<h2 class="db-section-title">🎯 来月の戦略指針</h2>'
+    regime = results.get("regime", "unknown")
+    if regime == "low_vol":
+        strategy = ("低ボラ局面では <strong>Quality + Momentum</strong> を重視します。"
+                    "経営効率の高い企業 (ROE > 20%) を中心にトレンドフォロー。"
+                    "Cross-Sectional で相対的に強い銘柄に集中。")
+    elif regime == "transition":
+        strategy = ("移行期は <strong>Value + Risk管理</strong> を重視します。"
+                    "DCFで割安と判断される銘柄 (安全域あり) を選別し、"
+                    "Kelly基準で過剰なポジションを避けます。")
+    elif regime == "crisis":
+        strategy = ("危機局面では <strong>Contrarian + Margin of Safety</strong> を最大化します。"
+                    "バフェット流「皆が恐れる時に買う」を発動。"
+                    "ただし内在価値が確認できる優良銘柄に限定。")
+    else:
+        strategy = "市場局面の判定が確定次第、最適な戦略を提示します。"
+    html += f'<p class="db-body">{strategy}</p>'
+    html += '<p class="db-body">この戦略は固定ではなく、毎日の予測精度フィードバックで自動調整されます。'
+    html += '<strong>1ヶ月後の振り返り</strong>でこの判断が正しかったかが採点され、次回の戦略に反映されます。</p>'
+    html += '</section>'
+
+    # === 非保有の長期候補 (月次ウォッチリスト) ===
+    latest_m = records[-1] if records else {}
+    new_picks_m = latest_m.get("new_picks", [])
+    if new_picks_m:
+        html += '<section class="db-section">'
+        html += f'<h2 class="db-section-title">🆕 月次ウォッチ — 非保有の長期投資候補 ({len(new_picks_m)}銘柄)</h2>'
+        html += '<p class="db-body">Master Wisdom が今月「10年保有を前提に検討すべき」と評価した非保有銘柄です。'
+        html += '今すぐ買う必要はなく、<strong>「割安まで下がるのを待つ」</strong>ことが規律です。</p>'
+        html += '<ul class="db-list">'
+        for p in new_picks_m[:8]:
+            t = p.get("ticker", "")
+            sector = p.get("sector", "")
+            reason = p.get("reason", "")
+            horizon = p.get("horizon", "3〜10年")
+            html += (f'<li><strong>{html_mod.escape(t)}</strong> '
+                     f'<span class="db-sector-tag">{html_mod.escape(sector)}</span> '
+                     f'<span class="db-master-tag">想定保有: {html_mod.escape(horizon)}</span><br>'
+                     f'<span style="color:var(--text-secondary);font-size:14px">{html_mod.escape(reason)}</span></li>')
+        html += '</ul>'
+        html += '<aside class="db-source"><strong>📌 「買う」と「待つ」の判断基準</strong>'
+        html += ('<p>非保有候補は<strong>すぐ買わない</strong>のが原則です。以下の条件を満たしたときに実際の購入を検討します:</p>'
+                 '<ol><li>株価が <strong>内在価値の70%以下</strong> (' + _explain("Margin of Safety") + ' ≥ 30%)</li>'
+                 '<li><strong>' + _explain("VIX") + ' > 25</strong> でマーケット全体が恐怖局面</li>'
+                 '<li>個別株の <strong>30日リターン &lt; -15%</strong> で短期過剰売り</li>'
+                 '<li>長期ストーリー (経済的堀・需要・財務) に変化がない</li></ol>')
+        html += '<p>これらが揃わなければ、ウォッチリストに置いたまま「待つ」のが長期投資の規律です。</p>'
+        html += '<p>出典: master_predictor.py (スクリーニング) / data/master_screening_results.json</p>'
+        html += '</aside></section>'
+
+    # === 10年ストーリーチェックリスト ===
+    html += '<section class="db-section">'
+    html += '<h2 class="db-section-title">📋 月次「10年ストーリー」チェックリスト</h2>'
+    html += '<p class="db-body">保有銘柄について、毎月以下の項目を確認します。'
+    html += '<strong>1つでも崩れたら売却検討</strong>、すべて健在なら長期保有を継続します:</p>'
+    html += '<ol class="db-list">'
+    html += '<li><strong>経済的堀 (Economic Moat) は無傷か</strong> — ブランド・ネットワーク効果・スイッチコスト・規模の経済が劣化していないか</li>'
+    html += '<li><strong>10年後も需要が見える事業か</strong> — 業界構造の根本変化 (EV/AI/規制) で陳腐化していないか</li>'
+    html += '<li><strong>経営陣の質と資本配分</strong> — 自社株買い・配当・再投資が株主視点で行われているか</li>'
+    html += '<li><strong>財務健全性</strong> — 過剰負債・非合理な買収・会計の不審な変化がないか</li>'
+    html += '<li><strong>株価が内在価値の2倍を超えていないか</strong> — 極端な過大評価なら一部利確検討</li>'
+    html += '</ol>'
+    html += '<p class="db-body">これらは「定量的シグナル」を超えた<strong>定性的判断</strong>です。'
+    html += 'AI が完全に自動判定できる部分ではないため、毎月人間が目を通すべき項目として明示しています。</p>'
+    html += '</section>'
+
+    # 用語集
+    used_terms = ["VIX", "ROE", "PER", "FCF Yield", "DCF", "Margin of Safety",
+                  "Sharpe", "Drawdown", "Kelly基準", "Cross-Sectional", "Mean Reversion"]
+    html += _glossary_section_html(used_terms)
+
+    html += '<footer class="db-footer">'
+    html += '<p class="db-meta-line"><strong>📖 月次レポートの作り方</strong></p>'
+    html += '<ul class="db-source-list">'
+    html += '<li>パフォーマンス履歴: data/performance_history.json (yfinanceから日次更新)</li>'
+    html += '<li>予測評価: ai_track_record.json (7日経過後に自動採点)</li>'
+    html += '<li>30年歴史: data/historical_patterns.json (S&P500 + VIX 1990-現在)</li>'
+    html += '<li>ファクター学習: data/master_factor_weights.json (Bayesian更新)</li>'
+    html += '</ul>'
+    html += '<p class="db-meta-line">この月次レポートは毎月1日に自動更新されます。</p>'
     html += '</footer></article>'
     return html
 
@@ -1321,6 +1890,8 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
     track_json = build_track_record_data(track)
     prompt_text = generate_meta_prompt_text(results, track)
     daily_brief_html = build_daily_brief_html(results, track, holdings)
+    weekly_brief_html = build_weekly_brief_html(results, track, holdings)
+    monthly_brief_html = build_monthly_brief_html(results, track, holdings)
     portfolio_html = build_portfolio_html(holdings, results)
     advanced_html = build_advanced_signals_html(results)
     learning_html = build_learning_html(results)
@@ -2142,6 +2713,122 @@ a:focus-visible{{
   border-top:1px solid var(--border);
   text-align:center;
 }}
+.db-source-list{{
+  text-align:left;
+  margin:var(--space-2) auto;
+  max-width:680px;
+  padding-left:var(--space-4);
+  font-size:13px;
+  color:var(--text-muted);
+  line-height:1.85;
+}}
+.db-source-list li{{margin-bottom:4px}}
+.db-source-list em{{font-style:normal;color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px}}
+.glossary-term{{
+  text-decoration:underline dotted var(--accent);
+  text-underline-offset:3px;
+  cursor:help;
+}}
+.glossary-hint{{
+  display:inline-block;
+  margin-left:2px;
+  font-size:10px;
+  color:var(--accent);
+  background:var(--accent-soft);
+  padding:0 5px;
+  border-radius:50%;
+  vertical-align:super;
+  font-weight:700;
+}}
+.db-glossary{{
+  margin-top:var(--space-4);
+  padding:var(--space-3);
+  background:var(--bg-panel);
+  border-radius:var(--radius-md);
+  border:1px solid var(--border);
+}}
+.db-glossary-toggle{{
+  font-weight:600;
+  cursor:pointer;
+  color:var(--text-primary);
+  padding:var(--space-1) 0;
+  list-style:none;
+}}
+.db-glossary-toggle::-webkit-details-marker{{display:none}}
+.db-glossary-toggle::before{{content:"▶ ";font-size:11px;color:var(--accent)}}
+.db-glossary[open] .db-glossary-toggle::before{{content:"▼ "}}
+.db-glossary-list{{
+  margin-top:var(--space-2);
+  padding-left:0;
+  font-size:14px;
+}}
+.db-glossary-list dt{{
+  font-weight:700;
+  color:var(--accent);
+  margin-top:var(--space-2);
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+}}
+.db-glossary-list dd{{
+  margin:2px 0 var(--space-1) 0;
+  padding-left:var(--space-2);
+  color:var(--text-secondary);
+  line-height:1.7;
+  border-left:2px solid var(--border);
+}}
+.db-factor-detail{{
+  margin:var(--space-2) 0;
+  padding:var(--space-2);
+  background:var(--bg-panel);
+  border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+}}
+.db-factor-detail summary{{
+  cursor:pointer;
+  font-weight:600;
+  color:var(--accent);
+  font-size:13px;
+  padding:4px 0;
+}}
+.db-factor-table{{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  margin-top:var(--space-2);
+  font-family:'JetBrains Mono',monospace;
+}}
+.db-factor-table th,.db-factor-table td{{
+  padding:6px 10px;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+}}
+.db-factor-table th{{
+  background:var(--bg-panel);
+  color:var(--text-muted);
+  font-weight:600;
+  font-size:12px;
+}}
+.db-factor-table tr:hover td{{background:var(--accent-soft)}}
+.db-meta-line{{
+  font-size:13px;
+  color:var(--text-muted);
+  font-style:italic;
+  margin:var(--space-1) 0;
+  line-height:1.6;
+}}
+.db-longterm-banner{{
+  display:flex;
+  align-items:flex-start;
+  gap:var(--space-2);
+  margin:var(--space-3) 0;
+  padding:var(--space-3);
+  background:linear-gradient(135deg,var(--accent-soft) 0%,var(--bg-panel) 100%);
+  border-left:3px solid var(--accent);
+  border-radius:var(--radius-md);
+}}
+.db-longterm-banner .icon{{font-size:22px;line-height:1}}
+.db-longterm-banner strong{{color:var(--text-primary);display:block;margin-bottom:4px}}
+.db-longterm-banner p{{margin:0;font-size:14px;color:var(--text-secondary);line-height:1.7}}
 
 /* === レスポンシブ === */
 @media(max-width:768px){{
@@ -2220,7 +2907,9 @@ a:focus-visible{{
 
   <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-btn active" data-tab="brief" onclick="switchTab(this,'brief')">🗞️ Daily Brief</button>
+    <button class="tab-btn active" data-tab="brief" onclick="switchTab(this,'brief')">🗞️ Daily</button>
+    <button class="tab-btn" data-tab="weekly" onclick="switchTab(this,'weekly')">📅 Weekly</button>
+    <button class="tab-btn" data-tab="monthly" onclick="switchTab(this,'monthly')">📊 Monthly</button>
     <button class="tab-btn" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
     <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
     <button class="tab-btn" data-tab="master" onclick="switchTab(this,'master')">🎯 Master Wisdom</button>
@@ -2238,6 +2927,12 @@ a:focus-visible{{
   <!-- Tab: Portfolio (default) -->
   <div id="tab-brief" class="tab-content active">
     {daily_brief_html}
+  </div>
+  <div id="tab-weekly" class="tab-content">
+    {weekly_brief_html}
+  </div>
+  <div id="tab-monthly" class="tab-content">
+    {monthly_brief_html}
   </div>
   <div id="tab-portfolio" class="tab-content">
     {portfolio_html}
