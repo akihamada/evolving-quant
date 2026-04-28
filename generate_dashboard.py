@@ -2840,18 +2840,35 @@ a:focus-visible{{
   .tab-btn{{padding:8px 12px;font-size:12px}}
   .container{{padding:var(--space-3) var(--space-2)}}
   .header{{padding:var(--space-3);flex-direction:column;align-items:flex-start;gap:var(--space-2)}}
-  .header h1{{font-size:24px}}
+  .header h1{{font-size:20px}}
   .header-meta{{text-align:left}}
+  /* iPhone 大きいフォントを縮小 */
+  .stat-value{{font-size:20px}}
+  .stat-label{{font-size:10px}}
+  .stat-sub{{font-size:11px}}
+  .section-title{{font-size:15px}}
+  .section-title .icon{{font-size:18px}}
+  .port-metric-value{{font-size:18px !important}}
   /* Daily Brief モバイル最適化 */
-  .daily-brief{{font-size:15px;padding:var(--space-2) 0}}
-  .db-title{{font-size:24px;line-height:1.3}}
-  .db-section-title{{font-size:18px}}
-  .db-lead{{font-size:16px;line-height:1.85}}
-  .db-body{{font-size:15px}}
-  .db-action-title{{font-size:16px}}
+  .daily-brief{{font-size:14px;padding:var(--space-2) 0}}
+  .db-title{{font-size:20px;line-height:1.3}}
+  .db-eyebrow{{font-size:10px;letter-spacing:0.5px}}
+  .db-section-title{{font-size:16px}}
+  .db-lead{{font-size:15px;line-height:1.8}}
+  .db-body{{font-size:14px;line-height:1.75}}
+  .db-action-title{{font-size:15px}}
   .db-meta{{flex-direction:column;gap:var(--space-1)}}
+  .db-meta-item{{font-size:12px}}
+  .db-longterm-banner p{{font-size:13px}}
+  .db-longterm-banner strong{{font-size:14px}}
+  .db-longterm-banner .icon{{font-size:18px}}
+  .db-master-tag,.db-sector-tag{{font-size:10px;padding:1px 8px}}
+  .db-meta-line{{font-size:12px}}
+  .db-list{{font-size:14px;line-height:1.75}}
   /* テーブル横スクロール対応 */
   .port-table-section,.timing-table{{font-size:11px}}
+  .db-factor-table{{font-size:11px}}
+  .db-factor-table th,.db-factor-table td{{padding:4px 6px}}
 }}
 @media(min-width:769px){{
   .daily-brief{{font-size:17px}}
