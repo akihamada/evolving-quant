@@ -71,7 +71,11 @@ def yahoo_chart_url(ticker: str) -> str:
 
 
 def build_holdings_data(holdings: dict) -> list[dict]:
-    """portfolio_holdings.json から表示用データを構築する。"""
+    """portfolio_holdings.json から表示用データを構築する。
+
+    米国株 (us_stocks: tokutei / nisa) と日本株 (japan_stocks: 全サブセクション) を統合。
+    日本株は ticker を "<code>.T" 形式に揃える (config の actions マップと一致させる)。
+    """
     stocks = []
     for account_type in ["tokutei", "nisa"]:
         for s in holdings.get("us_stocks", {}).get(account_type, []):
@@ -82,6 +86,30 @@ def build_holdings_data(holdings: dict) -> list[dict]:
                 "price": round(s.get("current_price_usd", 0), 1),
                 "pnl": round(s.get("unrealized_pnl_usd", 0), 0),
                 "account": account_type.upper(),
+            })
+
+    # 日本株: 全サブセクションを読む (nisa_growth / nisa_tsumitate / tokutei 等が将来追加されても拾う)
+    fx = float(holdings.get("metadata", {}).get("fx_rate", {}).get("USD_JPY", 150)) or 150
+    jp_section = holdings.get("japan_stocks", {}) or {}
+    for sub_key, positions in jp_section.items():
+        if not isinstance(positions, list):
+            continue
+        for s in positions:
+            code = s.get("code", "") or s.get("ticker", "")
+            if not code:
+                continue
+            ticker = code if code.endswith(".T") else f"{code}.T"
+            shares = s.get("shares", 0) or 0
+            cost_jpy = float(s.get("cost_basis_jpy", 0) or 0)
+            price_jpy = float(s.get("current_price_jpy", 0) or 0)
+            pnl_jpy = (price_jpy - cost_jpy) * shares if cost_jpy > 0 else float(s.get("unrealized_pnl_jpy", 0) or 0)
+            stocks.append({
+                "ticker": ticker,
+                "shares": shares,
+                "cost": round(cost_jpy / fx, 1),
+                "price": round(price_jpy / fx, 1),
+                "pnl": round(pnl_jpy / fx, 0),
+                "account": sub_key.upper().replace("_", " "),
             })
     return stocks
 
@@ -1048,27 +1076,37 @@ def build_portfolio_html(holdings: dict, results: dict) -> str:
                 "pnl_pct": pnl_pct,
             })
 
-    # 日本株
-    for s in holdings.get("japan_stocks", {}).get("nisa_growth", []):
-        shares = s.get("shares", 0) or 0
-        cost = float(s.get("cost_basis_jpy", 0) or 0)
-        price = float(s.get("current_price_jpy", 0) or 0)
-        mv = price * shares
-        pnl = (price - cost) * shares if cost > 0 else 0
-        pnl_pct = (price - cost) / cost * 100 if cost > 0 else 0
-        code = s.get("code", "")
-        rows.append({
-            "ticker": code,
-            "sector": get_sector(f"{code}.T"),
-            "account": "NISA成長",
-            "currency": "JPY",
-            "shares": shares,
-            "cost": cost,
-            "price": price,
-            "market_value": mv,
-            "pnl": pnl,
-            "pnl_pct": pnl_pct,
-        })
+    # 日本株 — 全サブセクション (nisa_growth / nisa_tsumitate / tokutei 等) を読む
+    jp_account_label = {
+        "nisa_growth": "NISA成長",
+        "nisa_tsumitate": "NISA積立",
+        "tokutei": "特定",
+        "general": "一般",
+    }
+    jp_section = holdings.get("japan_stocks", {}) or {}
+    for sub_key, positions in jp_section.items():
+        if not isinstance(positions, list):
+            continue
+        for s in positions:
+            shares = s.get("shares", 0) or 0
+            cost = float(s.get("cost_basis_jpy", 0) or 0)
+            price = float(s.get("current_price_jpy", 0) or 0)
+            mv = price * shares
+            pnl = (price - cost) * shares if cost > 0 else 0
+            pnl_pct = (price - cost) / cost * 100 if cost > 0 else 0
+            code = s.get("code", "") or s.get("ticker", "").replace(".T", "")
+            rows.append({
+                "ticker": code,
+                "sector": get_sector(f"{code}.T"),
+                "account": jp_account_label.get(sub_key, sub_key),
+                "currency": "JPY",
+                "shares": shares,
+                "cost": cost,
+                "price": price,
+                "market_value": mv,
+                "pnl": pnl,
+                "pnl_pct": pnl_pct,
+            })
 
     if not rows:
         return '<div class="section"><p style="color:var(--text-muted)">保有データがありません。</p></div>'
