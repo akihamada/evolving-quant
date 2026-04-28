@@ -230,6 +230,222 @@ def build_track_record_data(track: dict) -> str:
     return json.dumps({"records": data, "evaluations": eval_data})
 
 
+def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
+    """🗞️ 今日の分析レポート — AI による記事形式の市場ブリーフ.
+
+    Daily Brief を生成。`claude_analyst` / `gemini_analyst` で得られた
+    最新の reasoning + action_reasons + risk_scenarios を物語として
+    構造化する。
+    """
+    records = track.get("records", [])
+    latest = records[-1] if records else {}
+    today = datetime.now().strftime("%Y-%m-%d (%a)")
+
+    regime = results.get("regime", "unknown")
+    kl_val = results.get("kl_value", 0)
+    regime_jp = {
+        "low_vol":    "🟢 低ボラティリティ（安定上昇局面）",
+        "transition": "🟡 移行期（ボラティリティ上昇中）",
+        "crisis":     "🔴 危機（高ボラティリティ・急落局面）",
+    }.get(regime, "⚪ 不明")
+
+    confidence = latest.get("confidence", 0)
+    ai_reasoning = latest.get("ai_reasoning") or latest.get("reasoning", "")
+    actions = latest.get("actions", {})
+    action_reasons = latest.get("action_reasons", {})
+    risk_scenarios = latest.get("risk_scenarios", {})
+    new_picks = latest.get("new_picks", [])
+    tsumitate = latest.get("tsumitate_advice", {})
+    rebalance_opinion = latest.get("rebalance_opinion", {})
+
+    # マスター Wisdom + Strategy Lab
+    master_signals = results.get("master_signals", []) or []
+    enh = results.get("enhancements", {}) or {}
+    wf = enh.get("walk_forward", {}) or {}
+    anomaly = enh.get("anomaly", {}) or {}
+    sector_rot = enh.get("sector_rotation", {}) or {}
+
+    # 保有サマリ
+    summary = holdings.get("us_stocks", {}).get("summary", {})
+    total_pnl = summary.get("total_unrealized_pnl", 0)
+    total_value = summary.get("total_market_value", 0)
+    total_pnl_pct = (total_pnl / (total_value - total_pnl) * 100) if total_value > total_pnl else 0
+
+    # アクション分類
+    buys = sorted([(t, action_reasons.get(t, "")) for t, a in actions.items() if a == "BUY"],
+                  key=lambda x: -len(x[1]))
+    sells = [(t, action_reasons.get(t, "")) for t, a in actions.items() if a == "SELL"]
+    holds_count = sum(1 for a in actions.values() if a == "HOLD")
+
+    html = '<article class="daily-brief"><header class="db-header">'
+    html += f'<div class="db-eyebrow">DAILY MARKET BRIEF — Powered by Master Wisdom AI</div>'
+    html += f'<h1 class="db-title">{today} のポートフォリオ分析</h1>'
+    html += f'<div class="db-meta">'
+    html += f'<span class="db-meta-item">📊 レジーム: <strong>{regime_jp}</strong></span>'
+    html += f'<span class="db-meta-item">🎯 AI 確信度: <strong>{confidence:.0%}</strong></span>'
+    html += f'<span class="db-meta-item">📈 含み損益: <strong style="color:{"var(--accent-green)" if total_pnl >= 0 else "var(--accent-red)"}">{"+" if total_pnl >= 0 else ""}${total_pnl:,.0f} ({total_pnl_pct:+.1f}%)</strong></span>'
+    html += '</div></header>'
+
+    # === Lead paragraph ===
+    if ai_reasoning:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">📰 リード — 本日の市場概況</h2>'
+        html += f'<p class="db-lead">{html_mod.escape(ai_reasoning)}</p>'
+        html += f'<p class="db-meta-line">マーケットは現在 <strong>{regime_jp.split(" ")[1] if " " in regime_jp else regime_jp}</strong> にあり、KL ダイバージェンス {kl_val:.4f} は予測モデルの確信度を{"高め" if kl_val < 0.05 else "中程度に" if kl_val < 0.15 else "低く"}保っています。</p>'
+        html += '</section>'
+
+    # === マクロ・異常検知 ===
+    if anomaly or sector_rot:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">🌐 マクロ環境</h2>'
+        if anomaly.get("is_anomaly"):
+            sev = anomaly.get("severity", 0) * 100
+            triggers = "、".join(anomaly.get("triggers", []))
+            html += f'<div class="db-callout db-callout-warn">'
+            html += f'<strong>⚠️ 異常検知 (深刻度 {sev:.0f}%)</strong>: {html_mod.escape(triggers)}。'
+            html += f'防御的ポジショニング推奨。</div>'
+        else:
+            html += '<p class="db-body">VIX、30日リターン、直近5日トレンドを総合的に評価し、'
+            html += '<strong>マーケットは正常範囲内</strong>と判断しています。'
+            html += '黒い白鳥イベントの兆候は検出されていません。</p>'
+
+        if sector_rot.get("hot_sectors"):
+            html += '<p class="db-body">'
+            html += f'🔥 直近30日で<strong>勢いのあるセクター</strong>: {", ".join(sector_rot["hot_sectors"])}。'
+            if sector_rot.get("cold_sectors"):
+                html += f' 一方<strong>勢いを失っているセクター</strong>: {", ".join(sector_rot["cold_sectors"])}。'
+            html += '</p>'
+        html += '</section>'
+
+    # === キーアクション (BUY) ===
+    if buys:
+        html += '<section class="db-section">'
+        html += f'<h2 class="db-section-title">🟢 本日のBUY推奨 ({len(buys)}銘柄)</h2>'
+        for ticker, reason in buys[:6]:
+            url = yahoo_chart_url(ticker)
+            # Master Wisdom 個別スコアを取得
+            ms_match = next((s for s in master_signals if s.get("ticker") == ticker), None)
+            master_note = ""
+            if ms_match:
+                comp = ms_match.get("composite_score", 0)
+                conf = ms_match.get("confidence", 0)
+                master_note = f' <span class="db-master-tag">Master Wisdom: 合成{comp:+.2f} / 確信度{conf:.0%}</span>'
+            html += f'<article class="db-action-block db-buy">'
+            html += f'<h3 class="db-action-title"><a href="{url}" target="_blank" class="ticker-link">{ticker} 📈</a>{master_note}</h3>'
+            html += f'<p class="db-body">{html_mod.escape(reason)}</p>'
+            html += '</article>'
+        html += '</section>'
+
+    # === キーアクション (SELL) ===
+    if sells:
+        html += '<section class="db-section">'
+        html += f'<h2 class="db-section-title">🔴 本日のSELL推奨 ({len(sells)}銘柄)</h2>'
+        for ticker, reason in sells:
+            url = yahoo_chart_url(ticker)
+            ms_match = next((s for s in master_signals if s.get("ticker") == ticker), None)
+            master_note = ""
+            if ms_match:
+                comp = ms_match.get("composite_score", 0)
+                master_note = f' <span class="db-master-tag">Master Wisdom: 合成{comp:+.2f}</span>'
+            html += f'<article class="db-action-block db-sell">'
+            html += f'<h3 class="db-action-title"><a href="{url}" target="_blank" class="ticker-link">{ticker} 📈</a>{master_note}</h3>'
+            html += f'<p class="db-body">{html_mod.escape(reason)}</p>'
+            html += '</article>'
+        html += '</section>'
+
+    # === HOLD要約 ===
+    if holds_count:
+        html += '<section class="db-section">'
+        html += f'<h2 class="db-section-title">🟡 HOLD ({holds_count}銘柄)</h2>'
+        html += f'<p class="db-body">残り <strong>{holds_count}銘柄</strong> は現状維持を推奨。'
+        html += '長期保持を基本方針とし、明確な売買サインがない場合は積極的なトレードを避けます。'
+        html += 'バフェット流の「素晴らしい企業を妥当な価格で買い、長く保有する」哲学に従っています。</p>'
+        html += '</section>'
+
+    # === Walk-Forward 検証 ===
+    if wf.get("n_trades", 0) > 0:
+        sharpe = wf.get("sharpe", 0)
+        ann_ret = wf.get("annual_return", 0) * 100
+        win = wf.get("win_rate", 0) * 100
+        rating = "卓越" if sharpe >= 1.5 else "良好" if sharpe >= 1.0 else "普通" if sharpe >= 0.5 else "要改善"
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">📊 戦略実証 (Walk-Forward)</h2>'
+        html += f'<p class="db-body">'
+        html += f'過去の予測を仮想実戦で検証した結果、<strong>シャープレシオ {sharpe:+.2f}</strong> ({rating})、'
+        html += f'年率リターン <strong>{ann_ret:+.1f}%</strong>、勝率 <strong>{win:.0f}%</strong> '
+        html += f'({wf.get("n_trades", 0)} 取引で算出)。'
+        html += 'これは「本当に儲かる戦略か」を統計的に裏付ける数値です。</p>'
+        html += '</section>'
+
+    # === リスクシナリオ ===
+    if risk_scenarios:
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">⚖️ リスクシナリオ — 今後の3つの可能性</h2>'
+        for key, emoji, jp in [("bull", "🐂", "Bull (強気)"), ("base", "📊", "Base (基本)"), ("bear", "🐻", "Bear (弱気)")]:
+            s = risk_scenarios.get(key, {})
+            prob = s.get("probability", 0) * 100
+            desc = s.get("description", "")
+            if not desc:
+                continue
+            html += f'<article class="db-scenario db-{key}">'
+            html += f'<div class="db-scenario-header"><span class="db-scenario-emoji">{emoji}</span>'
+            html += f'<span class="db-scenario-name">{jp}</span>'
+            html += f'<span class="db-scenario-prob">{prob:.0f}%</span></div>'
+            html += f'<p class="db-body">{html_mod.escape(desc)}</p>'
+            html += '</article>'
+        html += '</section>'
+
+    # === 新規推奨銘柄 ===
+    if new_picks:
+        html += '<section class="db-section">'
+        html += f'<h2 class="db-section-title">🆕 新規購入候補 ({len(new_picks)}銘柄)</h2>'
+        for p in new_picks[:5]:
+            ticker = p.get("ticker", "")
+            url = yahoo_chart_url(ticker)
+            html += f'<article class="db-pick-block">'
+            html += f'<h3 class="db-action-title"><a href="{url}" target="_blank" class="ticker-link">{ticker} 📈</a>'
+            html += f' <span class="db-sector-tag">{html_mod.escape(p.get("sector", ""))}</span></h3>'
+            html += f'<p class="db-body">{html_mod.escape(p.get("reason", ""))}</p>'
+            html += '</article>'
+        html += '</section>'
+
+    # === 積立アドバイス ===
+    if tsumitate and (tsumitate.get("changes") or tsumitate.get("reasoning")):
+        html += '<section class="db-section">'
+        html += '<h2 class="db-section-title">💰 積立設定アドバイス</h2>'
+        if tsumitate.get("reasoning"):
+            html += f'<p class="db-body">{html_mod.escape(tsumitate["reasoning"])}</p>'
+        if tsumitate.get("changes"):
+            html += '<ul class="db-list">'
+            for c in tsumitate["changes"][:5]:
+                html += f'<li>{html_mod.escape(c)}</li>'
+            html += '</ul>'
+        html += '</section>'
+
+    # === AI 自身の意見 (リバランスオピニオン) ===
+    if rebalance_opinion and rebalance_opinion.get("override_reason"):
+        agree = rebalance_opinion.get("agree_with_proposals", True)
+        html += '<section class="db-section">'
+        html += f'<h2 class="db-section-title">🧠 AI のリバランス見解</h2>'
+        html += '<p class="db-body">'
+        html += f'<strong>{"アルゴリズム提案に賛同" if agree else "独自見解を提示"}</strong>: '
+        html += html_mod.escape(rebalance_opinion["override_reason"])
+        html += '</p>'
+        swaps = rebalance_opinion.get("additional_swaps", [])
+        if swaps:
+            html += '<ul class="db-list">'
+            for s in swaps[:3]:
+                html += f'<li>{html_mod.escape(s.get("sell", "?"))} → {html_mod.escape(s.get("buy", "?"))}: {html_mod.escape(s.get("reason", ""))}</li>'
+            html += '</ul>'
+        html += '</section>'
+
+    html += f'<footer class="db-footer">'
+    html += f'<p class="db-meta-line">この分析は Master Wisdom AI (Buffett 級9ファクター + 30年歴史データ + Claude Sonnet) によって生成されました。'
+    html += f'毎日更新され、過去の予測精度を学習し続けています。</p>'
+    html += '</footer></article>'
+    return html
+
+
 def build_portfolio_html(holdings: dict, results: dict) -> str:
     """💼 Portfolio タブのHTML — 保有全体を一覧化。
 
@@ -1104,6 +1320,7 @@ def generate_html(results: dict, track: dict, holdings: dict) -> str:
     overview_json = build_overview_data(results)
     track_json = build_track_record_data(track)
     prompt_text = generate_meta_prompt_text(results, track)
+    daily_brief_html = build_daily_brief_html(results, track, holdings)
     portfolio_html = build_portfolio_html(holdings, results)
     advanced_html = build_advanced_signals_html(results)
     learning_html = build_learning_html(results)
@@ -1762,13 +1979,197 @@ a:focus-visible{{
 .adv-bar-pos{{height:100%;background:var(--accent-green);border-radius:var(--radius-pill)}}
 .adv-bar-neg{{height:100%;background:var(--accent-red);border-radius:var(--radius-pill)}}
 
+/* === Daily Brief 記事形式スタイル === */
+.daily-brief{{
+  max-width:760px;
+  margin:0 auto;
+  padding:var(--space-4) 0;
+  font-size:16px;
+  line-height:1.8;
+  color:var(--text-primary);
+}}
+.db-header{{
+  border-bottom:1px solid var(--border);
+  padding-bottom:var(--space-4);
+  margin-bottom:var(--space-5);
+}}
+.db-eyebrow{{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  color:var(--accent);
+  font-weight:600;
+  margin-bottom:var(--space-2);
+}}
+.db-title{{
+  font-size:34px;
+  font-weight:700;
+  letter-spacing:-0.025em;
+  line-height:1.25;
+  color:var(--text-primary);
+  margin-bottom:var(--space-3);
+  word-break:auto-phrase;
+}}
+.db-meta{{
+  display:flex;flex-wrap:wrap;gap:var(--space-3);
+  font-size:13px;color:var(--text-muted);
+  font-family:'JetBrains Mono',monospace;
+}}
+.db-meta-item{{display:inline-flex;align-items:center;gap:var(--space-half)}}
+.db-section{{
+  margin-bottom:var(--space-5);
+  padding-bottom:var(--space-4);
+  border-bottom:1px solid var(--border-subtle);
+}}
+.db-section:last-of-type{{border-bottom:none}}
+.db-section-title{{
+  font-size:22px;font-weight:700;
+  letter-spacing:-0.015em;
+  color:var(--text-primary);
+  margin-bottom:var(--space-3);
+  line-height:1.3;
+}}
+.db-lead{{
+  font-size:18px;
+  line-height:1.85;
+  color:var(--text-primary);
+  margin-bottom:var(--space-2);
+  font-weight:400;
+}}
+.db-body{{
+  font-size:15px;
+  line-height:1.85;
+  color:var(--text-secondary);
+  margin-bottom:var(--space-2);
+}}
+.db-body strong{{color:var(--text-primary);font-weight:600}}
+.db-meta-line{{
+  font-size:13px;
+  color:var(--text-muted);
+  font-style:italic;
+}}
+.db-callout{{
+  padding:var(--space-3);
+  border-radius:var(--radius-md);
+  margin:var(--space-3) 0;
+  border-left:3px solid var(--accent);
+  background:var(--bg-panel);
+}}
+.db-callout-warn{{border-left-color:var(--accent-red);background:var(--accent-red-bg)}}
+.db-action-block{{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-3) var(--space-4);
+  margin-bottom:var(--space-3);
+  border-left:3px solid var(--text-muted);
+}}
+.db-buy{{border-left-color:var(--accent-green)}}
+.db-sell{{border-left-color:var(--accent-red)}}
+.db-pick-block{{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-3) var(--space-4);
+  margin-bottom:var(--space-3);
+  border-left:3px solid var(--accent);
+}}
+.db-action-title{{
+  font-size:18px;
+  font-weight:600;
+  margin-bottom:var(--space-2);
+  display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);
+  line-height:1.4;
+}}
+.db-master-tag{{
+  font-size:11px;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--accent);
+  background:var(--accent-soft);
+  padding:2px 10px;
+  border-radius:var(--radius-pill);
+  font-weight:500;
+  letter-spacing:0;
+}}
+.db-sector-tag{{
+  font-size:11px;
+  color:var(--text-muted);
+  background:var(--bg-panel);
+  padding:2px 10px;
+  border-radius:var(--radius-pill);
+  font-weight:500;
+}}
+.db-scenario{{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:var(--space-3);
+  margin-bottom:var(--space-2);
+}}
+.db-bull{{border-left:3px solid var(--accent-green)}}
+.db-base{{border-left:3px solid var(--accent)}}
+.db-bear{{border-left:3px solid var(--accent-red)}}
+.db-scenario-header{{
+  display:flex;align-items:center;gap:var(--space-2);
+  margin-bottom:var(--space-1);
+}}
+.db-scenario-emoji{{font-size:22px}}
+.db-scenario-name{{
+  font-size:16px;font-weight:600;
+  color:var(--text-primary);
+}}
+.db-scenario-prob{{
+  margin-left:auto;
+  font-size:14px;
+  font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text-secondary);
+  padding:2px 10px;
+  background:var(--bg-panel);
+  border-radius:var(--radius-pill);
+}}
+.db-list{{
+  margin:var(--space-2) 0;
+  padding-left:var(--space-4);
+  font-size:15px;
+  line-height:1.85;
+  color:var(--text-secondary);
+}}
+.db-list li{{margin-bottom:var(--space-1)}}
+.db-footer{{
+  margin-top:var(--space-5);
+  padding-top:var(--space-3);
+  border-top:1px solid var(--border);
+  text-align:center;
+}}
+
+/* === レスポンシブ === */
 @media(max-width:768px){{
   .stats-row,.metrics-row{{grid-template-columns:repeat(2,1fr)}}
   .risk-grid,.tsumitate-grid{{grid-template-columns:1fr}}
   .action-grid{{grid-template-columns:1fr}}
   .chart-row{{grid-template-columns:1fr}}
-  .tab-nav{{gap:2px}}
+  .tab-nav{{gap:2px;padding:3px}}
   .tab-btn{{padding:8px 12px;font-size:12px}}
+  .container{{padding:var(--space-3) var(--space-2)}}
+  .header{{padding:var(--space-3);flex-direction:column;align-items:flex-start;gap:var(--space-2)}}
+  .header h1{{font-size:24px}}
+  .header-meta{{text-align:left}}
+  /* Daily Brief モバイル最適化 */
+  .daily-brief{{font-size:15px;padding:var(--space-2) 0}}
+  .db-title{{font-size:24px;line-height:1.3}}
+  .db-section-title{{font-size:18px}}
+  .db-lead{{font-size:16px;line-height:1.85}}
+  .db-body{{font-size:15px}}
+  .db-action-title{{font-size:16px}}
+  .db-meta{{flex-direction:column;gap:var(--space-1)}}
+  /* テーブル横スクロール対応 */
+  .port-table-section,.timing-table{{font-size:11px}}
+}}
+@media(min-width:769px){{
+  .daily-brief{{font-size:17px}}
+  .db-title{{font-size:38px}}
+  .db-lead{{font-size:19px}}
 }}
 </style>
 </head>
@@ -1819,7 +2220,8 @@ a:focus-visible{{
 
   <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-btn active" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
+    <button class="tab-btn active" data-tab="brief" onclick="switchTab(this,'brief')">🗞️ Daily Brief</button>
+    <button class="tab-btn" data-tab="portfolio" onclick="switchTab(this,'portfolio')">💼 Portfolio</button>
     <button class="tab-btn" data-tab="action" onclick="switchTab(this,'action')">🎯 Action</button>
     <button class="tab-btn" data-tab="master" onclick="switchTab(this,'master')">🎯 Master Wisdom</button>
     <button class="tab-btn" data-tab="lab" onclick="switchTab(this,'lab')">🚀 Strategy Lab</button>
@@ -1834,7 +2236,10 @@ a:focus-visible{{
   </div>
 
   <!-- Tab: Portfolio (default) -->
-  <div id="tab-portfolio" class="tab-content active">
+  <div id="tab-brief" class="tab-content active">
+    {daily_brief_html}
+  </div>
+  <div id="tab-portfolio" class="tab-content">
     {portfolio_html}
     {performance_chart_html}
   </div>
