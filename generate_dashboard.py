@@ -114,16 +114,37 @@ def build_holdings_data(holdings: dict) -> list[dict]:
     return stocks
 
 
+def _normalize_ticker(ticker: str) -> str:
+    """ticker を比較可能な正規形に揃える。
+    1489 / 1489.T / 1489.t を全て "1489.T" に統一。
+    """
+    if not ticker:
+        return ""
+    t = str(ticker).strip().upper()
+    if t.isdigit():
+        return f"{t}.T"
+    return t
+
+
+def _filter_new_picks_excluding_held(new_picks: list, held_tickers: set) -> list:
+    """new_picks から既保有 ticker を除外する。
+    1489 vs 1489.T のような表記揺れに対応するため正規化して比較。
+    """
+    held_norm = {_normalize_ticker(t) for t in held_tickers}
+    return [p for p in new_picks if _normalize_ticker(p.get("ticker", "")) not in held_norm]
+
+
 def build_action_cards(record: dict, stocks: list[dict]) -> str:
     """最新のtrack recordからアクションカードHTMLを生成する。"""
-    actions = record.get("actions", {})
-    reasons = record.get("action_reasons", {})
-    ai_alloc = record.get("ai_allocation", {})
+    # actions / reasons / ai_allocation のキーを全て正規化
+    actions = {_normalize_ticker(k): v for k, v in record.get("actions", {}).items()}
+    reasons = {_normalize_ticker(k): v for k, v in record.get("action_reasons", {}).items()}
+    ai_alloc = {_normalize_ticker(k): v for k, v in record.get("ai_allocation", {}).items()}
 
-    # stocks lookup
+    # stocks lookup (キーは正規化形 "1489.T" に統一)
     stock_map: dict[str, dict] = {}
     for s in stocks:
-        t = s["ticker"]
+        t = _normalize_ticker(s["ticker"])
         if t not in stock_map:
             stock_map[t] = {"shares": 0, "cost": 0, "price": s["price"], "pnl": 0}
         stock_map[t]["shares"] += s["shares"]
@@ -134,22 +155,41 @@ def build_action_cards(record: dict, stocks: list[dict]) -> str:
         stock_map[t]["pnl"] += s["pnl"]
 
     def card(ticker: str, action: str) -> str:
-        """個別カードHTMLを生成する。"""
+        """個別カードHTML — トレーディングアプリ風表示。"""
         css_class = action.lower()
         badge_emoji = {"BUY": "🟢", "HOLD": "🟡", "SELL": "🔴"}.get(action, "⚪")
-        sm = stock_map.get(ticker, {})
+        sm = stock_map.get(_normalize_ticker(ticker), {})
         pnl = sm.get("pnl", 0)
-        pnl_class = "pnl-positive" if pnl >= 0 else "pnl-negative"
-        pnl_str = f"+${pnl:,.0f}" if pnl >= 0 else f"-${abs(pnl):,.0f}"
+        cost = sm.get("cost", 0)
+        price = sm.get("price", 0)
+        shares = sm.get("shares", 0)
+        # P&L %
+        pnl_pct = (price - cost) / cost * 100 if cost > 0 else 0
+        is_profit = pnl >= 0
+        pnl_class = "pnl-positive" if is_profit else "pnl-negative"
+        arrow = "▲" if is_profit else "▼"
+        pnl_sign = "+" if is_profit else ""
+        pnl_str = f"{pnl_sign}${pnl:,.0f}"
+        pnl_pct_str = f"{pnl_sign}{pnl_pct:.2f}%"
         alloc_pct = ai_alloc.get(ticker, 0) * 100
         reason_text = html_mod.escape(reasons.get(ticker, ""))
 
         holdings_html = ""
-        if sm:
-            holdings_html = f'''<div class="holdings">
-              <span>{sm.get("shares",0)}株</span>
-              <span>取得${sm.get("cost",0):,.0f} → 現${sm.get("price",0):,.0f}</span>
-              <span class="{pnl_class}">{pnl_str}</span>
+        if sm and shares > 0:
+            holdings_html = f'''<div class="holdings-pro {pnl_class}">
+              <div class="holdings-row">
+                <span class="hold-label">保有</span>
+                <span class="hold-value">{shares}株</span>
+              </div>
+              <div class="holdings-row">
+                <span class="hold-label">取得 → 現在</span>
+                <span class="hold-value">${cost:,.1f} → ${price:,.1f}</span>
+              </div>
+              <div class="holdings-pnl">
+                <span class="pnl-arrow">{arrow}</span>
+                <span class="pnl-amount">{pnl_str}</span>
+                <span class="pnl-pct">({pnl_pct_str})</span>
+              </div>
             </div>'''
 
         return f'''<div class="action-card {css_class} fade-in">
@@ -160,12 +200,13 @@ def build_action_cards(record: dict, stocks: list[dict]) -> str:
           {holdings_html}
           <div class="reason">{reason_text}</div>
           <div class="alloc-bar"><div class="alloc-bar-fill" style="width: {min(alloc_pct * 6.67, 100):.0f}%;"></div></div>
-          <div class="alloc-label">推奨配分 {alloc_pct:.1f}%</div>
+          <div class="alloc-label">推奨配分 <strong>{alloc_pct:.1f}%</strong></div>
         </div>'''
 
+    # actions のキーも正規化 (1489 → 1489.T)
     groups = {"BUY": [], "SELL": [], "HOLD": []}
     for t, a in actions.items():
-        groups.setdefault(a, []).append(t)
+        groups.setdefault(a, []).append(_normalize_ticker(t))
 
     html = ""
     if groups.get("BUY"):
@@ -186,10 +227,13 @@ def build_action_cards(record: dict, stocks: list[dict]) -> str:
             html += card(t, "HOLD")
         html += '</div></div>'
 
-    # New picks
-    new_picks = record.get("new_picks", [])
+    # New picks (既保有を除外)
+    new_picks = _filter_new_picks_excluding_held(
+        record.get("new_picks", []),
+        set(stock_map.keys())
+    )
     if new_picks:
-        html += f'<div class="section"><div class="section-title"><span class="icon">🆕</span> 新規推奨銘柄（{len(new_picks)}銘柄）</div><div class="picks-grid">'
+        html += f'<div class="section"><div class="section-title"><span class="icon">🆕</span> 新規推奨銘柄（{len(new_picks)}銘柄・既保有除外済）</div><div class="picks-grid">'
         for p in new_picks:
             html += f'''<div class="pick-card fade-in">
               <div class="pick-ticker">{p.get("ticker","")}</div>
@@ -337,7 +381,8 @@ def build_daily_brief_html(results: dict, track: dict, holdings: dict) -> str:
     actions = latest.get("actions", {})
     action_reasons = latest.get("action_reasons", {})
     risk_scenarios = latest.get("risk_scenarios", {})
-    new_picks = latest.get("new_picks", [])
+    held_tickers_set = {s["ticker"] for s in build_holdings_data(holdings)}
+    new_picks = _filter_new_picks_excluding_held(latest.get("new_picks", []), held_tickers_set)
     tsumitate = latest.get("tsumitate_advice", {})
     rebalance_opinion = latest.get("rebalance_opinion", {})
 
@@ -760,7 +805,8 @@ def build_weekly_brief_html(results: dict, track: dict, holdings: dict) -> str:
 
     # === 非保有の長期候補ウォッチリスト ===
     latest = records[-1] if records else {}
-    new_picks_w = latest.get("new_picks", [])
+    held_w = {s["ticker"] for s in build_holdings_data(holdings)}
+    new_picks_w = _filter_new_picks_excluding_held(latest.get("new_picks", []), held_w)
     if new_picks_w:
         html += '<section class="db-section">'
         html += f'<h2 class="db-section-title">👀 今週の長期候補ウォッチ ({len(new_picks_w)}銘柄)</h2>'
@@ -982,7 +1028,8 @@ def build_monthly_brief_html(results: dict, track: dict, holdings: dict) -> str:
 
     # === 非保有の長期候補 (月次ウォッチリスト) ===
     latest_m = records[-1] if records else {}
-    new_picks_m = latest_m.get("new_picks", [])
+    held_m = {s["ticker"] for s in build_holdings_data(holdings)}
+    new_picks_m = _filter_new_picks_excluding_held(latest_m.get("new_picks", []), held_m)
     if new_picks_m:
         html += '<section class="db-section">'
         html += f'<h2 class="db-section-title">🆕 月次ウォッチ — 非保有の長期投資候補 ({len(new_picks_m)}銘柄)</h2>'
@@ -1194,12 +1241,15 @@ def build_portfolio_html(holdings: dict, results: dict) -> str:
     for r in rows_sorted:
         mv_usd = r["market_value"] if r["currency"] == "USD" else r["market_value"] / fx
         pnl_usd = r["pnl"] if r["currency"] == "USD" else r["pnl"] / fx
-        pnl_class = "pnl-positive" if pnl_usd >= 0 else "pnl-negative"
-        pnl_sign = "+" if pnl_usd >= 0 else ""
+        is_profit = pnl_usd >= 0
+        pnl_class = "pnl-positive" if is_profit else "pnl-negative"
+        pnl_sign = "+" if is_profit else "-"
+        arrow = "▲" if is_profit else "▼"
         cur_sym = "$" if r["currency"] == "USD" else "¥"
         url = yahoo_chart_url(r["ticker"] if r["currency"] == "USD" else f"{r['ticker']}.T")
+        row_class = "row-profit" if is_profit else "row-loss"
 
-        html += f'<tr>'
+        html += f'<tr class="{row_class}">'
         html += f'<td class="port-ticker"><strong>{r["ticker"]}</strong></td>'
         html += f'<td>{r["sector"]}</td>'
         html += f'<td><span class="acct-badge">{r["account"]}</span></td>'
@@ -1207,8 +1257,8 @@ def build_portfolio_html(holdings: dict, results: dict) -> str:
         html += f'<td data-num="{r["cost"]}">{cur_sym}{r["cost"]:,.2f}</td>'
         html += f'<td data-num="{r["price"]}">{cur_sym}{r["price"]:,.2f}</td>'
         html += f'<td data-num="{mv_usd}">${mv_usd:,.0f}</td>'
-        html += f'<td data-num="{pnl_usd}" class="{pnl_class}">{pnl_sign}${abs(pnl_usd):,.0f}</td>'
-        html += f'<td data-num="{r["pnl_pct"]}" class="{pnl_class}">{pnl_sign}{r["pnl_pct"]:.1f}%</td>'
+        html += f'<td data-num="{pnl_usd}" class="{pnl_class} pnl-cell"><span class="pnl-arrow-sm">{arrow}</span>{pnl_sign}${abs(pnl_usd):,.0f}</td>'
+        html += f'<td data-num="{r["pnl_pct"]}" class="{pnl_class} pnl-cell">{pnl_sign}{abs(r["pnl_pct"]):.2f}%</td>'
         html += f'<td><a href="{url}" target="_blank" class="chart-link">📈</a></td>'
         html += '</tr>'
 
@@ -2216,6 +2266,71 @@ a:focus-visible{{
 .tab-content.active{{display:block}}
 
 /* Strategy Banner — Notion warm white */
+/* === Trading Hero — ポートフォリオ総括 (Robinhood/Yahoo風) === */
+.trading-hero{{
+  background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-panel) 100%);
+  border-radius:var(--radius-lg);
+  padding:20px 24px;
+  margin-bottom:var(--space-3);
+  border:1px solid var(--border);
+  border-left:4px solid var(--text-muted);
+}}
+.trading-hero.hero-profit{{
+  border-left-color:var(--accent-green);
+  background:linear-gradient(135deg,rgba(26,174,57,0.08) 0%,var(--bg-card) 60%);
+}}
+.trading-hero.hero-loss{{
+  border-left-color:var(--accent-red);
+  background:linear-gradient(135deg,rgba(221,91,0,0.08) 0%,var(--bg-card) 60%);
+}}
+.trading-hero-label{{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--text-muted);
+  font-weight:600;
+  margin-bottom:6px;
+}}
+.trading-hero-row{{
+  display:flex;align-items:baseline;gap:10px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:-0.02em;
+}}
+.trading-hero-arrow{{
+  font-size:24px;
+  font-weight:700;
+  line-height:1;
+}}
+.trading-hero.hero-profit .trading-hero-arrow,
+.trading-hero.hero-profit .trading-hero-value,
+.trading-hero.hero-profit .trading-hero-pct{{color:var(--accent-green)}}
+.trading-hero.hero-loss .trading-hero-arrow,
+.trading-hero.hero-loss .trading-hero-value,
+.trading-hero.hero-loss .trading-hero-pct{{color:var(--accent-red)}}
+.trading-hero-value{{
+  font-size:36px;
+  font-weight:700;
+  line-height:1;
+}}
+.trading-hero-pct{{
+  font-size:18px;
+  font-weight:600;
+  padding:4px 10px;
+  border-radius:var(--radius-pill);
+  background:rgba(255,255,255,0.04);
+}}
+.trading-hero.hero-profit .trading-hero-pct{{background:rgba(26,174,57,0.12)}}
+.trading-hero.hero-loss .trading-hero-pct{{background:rgba(221,91,0,0.12)}}
+.trading-hero-sub{{
+  margin-top:10px;
+  font-size:13px;
+  color:var(--text-secondary);
+  display:flex;flex-wrap:wrap;gap:8px;
+  align-items:center;
+}}
+.trading-hero-sub strong{{color:var(--text-primary);font-family:'JetBrains Mono',monospace}}
+.trading-hero-sub .dot-sep{{color:var(--text-subtle)}}
+
 .strategy-banner{{
   background:var(--bg-panel);
   border:1px solid var(--border);
@@ -2280,6 +2395,54 @@ a:focus-visible{{
 }}
 .pnl-positive{{color:var(--accent-green)}}
 .pnl-negative{{color:var(--accent-red)}}
+
+/* === Trading-App 風 保有情報ブロック === */
+.holdings-pro{{
+  background:var(--bg-panel);
+  border-radius:var(--radius-sm);
+  padding:8px 10px;
+  margin:6px 0;
+  font-family:'JetBrains Mono',monospace;
+  border-left:3px solid var(--text-muted);
+}}
+.holdings-pro.pnl-positive{{
+  border-left-color:var(--accent-green);
+  background:linear-gradient(90deg,rgba(26,174,57,0.08) 0%,var(--bg-panel) 60%);
+}}
+.holdings-pro.pnl-negative{{
+  border-left-color:var(--accent-red);
+  background:linear-gradient(90deg,rgba(221,91,0,0.08) 0%,var(--bg-panel) 60%);
+}}
+.holdings-row{{
+  display:flex;justify-content:space-between;
+  font-size:11px;color:var(--text-muted);
+  margin-bottom:3px;
+}}
+.holdings-row .hold-label{{color:var(--text-subtle);font-weight:500}}
+.holdings-row .hold-value{{color:var(--text-primary);font-weight:600}}
+.holdings-pnl{{
+  display:flex;align-items:baseline;gap:6px;
+  margin-top:6px;padding-top:6px;
+  border-top:1px solid var(--border);
+}}
+.holdings-pro.pnl-positive .holdings-pnl{{color:var(--accent-green)}}
+.holdings-pro.pnl-negative .holdings-pnl{{color:var(--accent-red)}}
+.pnl-arrow{{
+  font-size:14px;
+  font-weight:700;
+  display:inline-block;
+  line-height:1;
+}}
+.pnl-amount{{
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+}}
+.pnl-pct{{
+  font-size:12px;
+  font-weight:600;
+  opacity:0.85;
+}}
 .reason{{
   font-size:13px;color:var(--text-secondary);
   line-height:1.6;
@@ -2526,6 +2689,10 @@ a:focus-visible{{
   font-variant-numeric:tabular-nums;
 }}
 .port-table tr:hover{{background:var(--bg-card-hover)}}
+.port-table tr.row-profit td.pnl-cell{{background:rgba(26,174,57,0.06)}}
+.port-table tr.row-loss td.pnl-cell{{background:rgba(221,91,0,0.06)}}
+.port-table .pnl-cell{{font-weight:700;font-size:13px}}
+.port-table .pnl-arrow-sm{{display:inline-block;margin-right:3px;font-size:10px;line-height:1}}
 .port-table .port-ticker strong{{color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700}}
 .acct-badge{{
   display:inline-block;padding:2px 10px;
@@ -2880,6 +3047,12 @@ a:focus-visible{{
   .header{{padding:var(--space-3);flex-direction:column;align-items:flex-start;gap:var(--space-2)}}
   .header h1{{font-size:20px}}
   .header-meta{{text-align:left}}
+  /* iPhone Trading Hero 縮小 */
+  .trading-hero{{padding:14px 16px}}
+  .trading-hero-value{{font-size:28px}}
+  .trading-hero-arrow{{font-size:20px}}
+  .trading-hero-pct{{font-size:14px;padding:3px 8px}}
+  .trading-hero-sub{{font-size:11px;gap:6px}}
   /* iPhone 大きいフォントを縮小 */
   .stat-value{{font-size:20px}}
   .stat-label{{font-size:10px}}
@@ -3021,6 +3194,21 @@ a:focus-visible{{
 
   <!-- Tab: Action -->
   <div id="tab-action" class="tab-content">
+    <div class="trading-hero {('hero-profit' if total_pnl >= 0 else 'hero-loss')}">
+      <div class="trading-hero-label">ポートフォリオ含み損益 (USD換算)</div>
+      <div class="trading-hero-row">
+        <div class="trading-hero-arrow">{'▲' if total_pnl >= 0 else '▼'}</div>
+        <div class="trading-hero-value">{'+' if total_pnl >= 0 else '-'}${abs(total_pnl):,.0f}</div>
+        <div class="trading-hero-pct">{'+' if total_pnl >= 0 else '-'}{abs(pnl_pct):.2f}%</div>
+      </div>
+      <div class="trading-hero-sub">
+        <span>総資産 <strong>${total_usd:,.0f}</strong></span>
+        <span class="dot-sep">·</span>
+        <span>{len(stocks)}銘柄</span>
+        <span class="dot-sep">·</span>
+        <span>{date_str}</span>
+      </div>
+    </div>
     <div class="strategy-banner">
       <strong>🎯 戦略:</strong> {reasoning}
     </div>
