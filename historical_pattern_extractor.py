@@ -361,6 +361,165 @@ def validate_buffett_contrarian(
 # ==============================================================================
 
 
+def compute_synthetic_vix(spy_arr: np.ndarray, window: int = 21) -> np.ndarray:
+    """1990年以前の合成VIX = 過去21日実現ボラティリティの年率化.
+
+    実物のVIXは1990年以降しか存在しないが、過去の実現ボラを年率化したものは
+    VIXと強い相関 (約0.7-0.8) を持つ。代用指標として使用。
+    """
+    if spy_arr is None or len(spy_arr) < window + 1:
+        return np.array([])
+    log_ret = np.diff(np.log(np.maximum(spy_arr, 1e-9)))
+    synth = np.zeros(len(log_ret))
+    for i in range(window, len(log_ret)):
+        synth[i] = float(np.std(log_ret[i - window:i])) * np.sqrt(252) * 100
+    synth[:window] = synth[window]
+    return synth
+
+
+def merge_real_and_synthetic_vix(spy_arr: np.ndarray, vix_real: np.ndarray) -> np.ndarray:
+    """実VIX (1990年〜) を優先し、それより前を合成VIXで補完。
+    出力長は spy_arr (の log return) と揃える。
+    """
+    if spy_arr is None or len(spy_arr) < 30:
+        return vix_real if vix_real is not None else np.array([])
+    synth = compute_synthetic_vix(spy_arr)
+    if vix_real is None or len(vix_real) == 0:
+        return synth
+    n_real = len(vix_real)
+    n_synth = len(synth)
+    if n_real >= n_synth:
+        return vix_real[-n_synth:]
+    pad = synth[: n_synth - n_real]
+    return np.concatenate([pad, vix_real])
+
+
+def compute_buy_signal(
+    spy_arr: np.ndarray,
+    vix_arr: np.ndarray,
+    buffett: dict[str, Any],
+    vix_stats: dict[str, Any],
+) -> dict[str, Any]:
+    """現在の市場状態から「買いシグナル」(0-100) を算出する。
+
+    100に近いほど「歴史的に買い場」(VIX高+下落幅大+市場恐怖)、
+    0に近いほど「割高で待機」(VIX低+高値圏+市場楽観)。
+
+    Returns:
+        {
+          "score": 0-100,
+          "rating": "extreme_buy" | "strong_buy" | "neutral" | "wait" | "avoid",
+          "components": {...},
+          "historical_analogs": [{"approx_year": int, "vix": float, "dd": float, "fwd_1y": float}]
+        }
+    """
+    if spy_arr is None or len(spy_arr) < 252 or vix_arr is None or len(vix_arr) < 252:
+        return {"score": 50, "rating": "neutral", "components": {}, "historical_analogs": []}
+
+    n = min(len(spy_arr), len(vix_arr))
+    s = spy_arr[-n:]
+    v = vix_arr[-n:]
+
+    cur_vix = float(v[-1])
+    cur_price = float(s[-1])
+    high_252d = float(np.max(s[-252:]))
+    drawdown_pct = (cur_price - high_252d) / high_252d * 100  # 直近1年高値からの下落%
+    ret_30d = (cur_price - float(s[-21])) / float(s[-21]) * 100 if len(s) > 21 else 0
+
+    # 各コンポーネントを 0-100 スコアに変換
+    # VIX score: VIXが高いほど「皆が恐れている」= 買いシグナル
+    cur_vix_pct = vix_stats.get("current_vix_percentile", 50) if vix_stats else 50
+    vix_score = float(cur_vix_pct)  # 0-100
+
+    # Drawdown score: 下落幅が大きいほど買い場
+    # -30%超で100、-15%で60、0%で20、+5%で0
+    dd_score = max(0.0, min(100.0, (-drawdown_pct) * 3 + 20))
+
+    # 30-day return score: 短期下落ほど買い場
+    # -15%以下で100、-5%で60、0%で40、+5%で20、+10%以上で0
+    ret_score = max(0.0, min(100.0, -ret_30d * 4 + 40))
+
+    # 加重合成: VIX 50%, DD 30%, 30d return 20%
+    score = vix_score * 0.5 + dd_score * 0.3 + ret_score * 0.2
+    score = round(max(0.0, min(100.0, score)), 1)
+
+    # 評価ラベル
+    if score >= 80:
+        rating = "extreme_buy"
+        rating_jp = "🔥 歴史的バイ・チャンス"
+    elif score >= 65:
+        rating = "strong_buy"
+        rating_jp = "🟢 強い買いシグナル"
+    elif score >= 45:
+        rating = "neutral"
+        rating_jp = "🟡 中立 — 様子見"
+    elif score >= 25:
+        rating = "wait"
+        rating_jp = "🟠 待機 — 高値圏"
+    else:
+        rating = "avoid"
+        rating_jp = "🔴 過熱 — 新規買い控え"
+
+    # 歴史的類似: 過去で「(VIX, DD) が今日に近い日」TOP5 を抽出
+    analogs: list[dict] = []
+    if len(s) > 252 + 21:
+        cur_vec = np.array([cur_vix, drawdown_pct])
+        # 標準化用: 全期間 std
+        vix_std = float(np.std(v[:-1])) or 1.0
+        # DDをサンプル全体で計算
+        # 過去252日からのDDを計算 (rollingmax)
+        rolling_max = np.maximum.accumulate(s)
+        dd_arr = (s - rolling_max) / rolling_max * 100
+        dd_std = float(np.std(dd_arr)) or 1.0
+        n_total = len(s) - 252
+        dists = []
+        for i in range(252, n_total):
+            past_vec = np.array([float(v[i]), float(dd_arr[i])])
+            d = float(np.sqrt(((past_vec - cur_vec) / np.array([vix_std, dd_std])) ** 2).sum())
+            dists.append((i, d))
+        dists.sort(key=lambda x: x[1])
+        # 近い順に5件 (近すぎる日を除外: 過去252日以内は除外)
+        cutoff_recent = len(s) - 252
+        seen_years = set()
+        for idx, d in dists:
+            if idx >= cutoff_recent:
+                continue
+            yr = _idx_to_year(idx, len(s))
+            if yr in seen_years:
+                continue
+            seen_years.add(yr)
+            # 1年後の forward return
+            fwd_idx = idx + 252
+            if fwd_idx < len(s):
+                fwd_1y = (float(s[fwd_idx]) - float(s[idx])) / float(s[idx]) * 100
+            else:
+                fwd_1y = None
+            analogs.append({
+                "approx_year": yr,
+                "vix": round(float(v[idx]), 1),
+                "drawdown_pct": round(float(dd_arr[idx]), 1),
+                "fwd_return_1y_pct": round(fwd_1y, 1) if fwd_1y is not None else None,
+            })
+            if len(analogs) >= 5:
+                break
+
+    return {
+        "score": score,
+        "rating": rating,
+        "rating_jp": rating_jp,
+        "components": {
+            "vix_score": round(vix_score, 1),
+            "drawdown_score": round(dd_score, 1),
+            "ret_30d_score": round(ret_score, 1),
+            "current_vix": round(cur_vix, 2),
+            "current_vix_percentile": cur_vix_pct,
+            "drawdown_from_1y_high_pct": round(drawdown_pct, 2),
+            "return_30d_pct": round(ret_30d, 2),
+        },
+        "historical_analogs": analogs,
+    }
+
+
 def extract_all_patterns(
     spy_arr: Optional[np.ndarray],
     vix_arr: Optional[np.ndarray],
@@ -418,6 +577,21 @@ def extract_all_patterns(
             yr = buffett["by_horizon"]["252d"]
             logger.info("  🎯 Buffett逆張り: VIX>30で買えば1年後 平均%+.1f%% (勝率%.0f%%)",
                         yr["mean_return"] * 100, yr["win_rate"] * 100)
+
+    # 4.5 Buy Signal — 「いつ買えばいいか」スコア
+    if spy_arr is not None and vix_arr is not None:
+        buy_sig = compute_buy_signal(
+            spy_arr,
+            vix_arr,
+            payload.get("buffett_contrarian_validation", {}),
+            payload.get("vix_regimes", {}),
+        )
+        payload["buy_signal"] = buy_sig
+        logger.info("  🎯 Buy Signal: %.1f (%s) — VIX %.1f / DD %.1f%% / 30d %+.1f%%",
+                    buy_sig["score"], buy_sig.get("rating", "?"),
+                    buy_sig["components"].get("current_vix", 0),
+                    buy_sig["components"].get("drawdown_from_1y_high_pct", 0),
+                    buy_sig["components"].get("return_30d_pct", 0))
 
     # 5. 個別銘柄サマリー
     ticker_summary = {}
@@ -484,13 +658,18 @@ def main() -> None:
         spy_arr = s.dropna().values
         logger.info("  S&P500: %.1f年", len(spy_arr) / 252)
 
-    vix_arr = None
+    vix_real = None
     if not vix.empty:
         v = vix["Close"]
         if hasattr(v, "columns"):
             v = v.iloc[:, 0]
-        vix_arr = v.dropna().values
-        logger.info("  VIX: %.1f年", len(vix_arr) / 252)
+        vix_real = v.dropna().values
+        logger.info("  VIX (実物): %.1f年", len(vix_real) / 252)
+
+    # 1990年以前は実物VIXがないので合成VIX (実現ボラ年率化) で補完
+    vix_arr = merge_real_and_synthetic_vix(spy_arr, vix_real) if spy_arr is not None else vix_real
+    if vix_arr is not None:
+        logger.info("  VIX (実物+合成): %.1f年", len(vix_arr) / 252)
 
     ticker_data = yf.download(tickers, period="max", progress=False)
     ticker_close = ticker_data["Close"] if "Close" in ticker_data else ticker_data

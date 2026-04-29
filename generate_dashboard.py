@@ -1406,6 +1406,135 @@ def build_learning_html(results: dict) -> str:
     return html
 
 
+def build_buy_signal_hero(buy_sig: dict) -> str:
+    """🎯 Buy Signal メーター — 「いつ買えばいいか」を一目で."""
+    if not buy_sig:
+        return ""
+    score = buy_sig.get("score", 50)
+    rating = buy_sig.get("rating", "neutral")
+    rating_jp = buy_sig.get("rating_jp", "中立")
+    comp = buy_sig.get("components", {}) or {}
+    analogs = buy_sig.get("historical_analogs", []) or []
+
+    # 5段階ゾーン
+    rating_class_map = {
+        "extreme_buy": "buy-extreme",
+        "strong_buy": "buy-strong",
+        "neutral": "buy-neutral",
+        "wait": "buy-wait",
+        "avoid": "buy-avoid",
+    }
+    cls = rating_class_map.get(rating, "buy-neutral")
+
+    # メーターのバー位置 (0-100)
+    cur_vix = comp.get("current_vix", 0)
+    cur_vix_pct = comp.get("current_vix_percentile", 50)
+    dd = comp.get("drawdown_from_1y_high_pct", 0)
+    r30 = comp.get("return_30d_pct", 0)
+    vix_score = comp.get("vix_score", 50)
+    dd_score = comp.get("drawdown_score", 0)
+    r30_score = comp.get("ret_30d_score", 40)
+
+    html = f'<div class="buy-signal-hero {cls}">'
+    html += '<div class="bsh-label">🎯 Buy Signal — 「いつ買えばいいか」スコア</div>'
+    html += '<div class="bsh-main">'
+    html += f'<div class="bsh-score-block">'
+    html += f'<div class="bsh-score">{score:.0f}</div>'
+    html += f'<div class="bsh-score-max">/100</div>'
+    html += '</div>'
+    html += f'<div class="bsh-rating">'
+    html += f'<div class="bsh-rating-text">{rating_jp}</div>'
+    html += f'<div class="bsh-rating-sub">VIX {cur_vix:.1f} / 1年高値から {dd:+.1f}% / 30日 {r30:+.1f}%</div>'
+    html += '</div>'
+    html += '</div>'
+
+    # 5ゾーンメーター
+    html += '<div class="bsh-meter-wrap">'
+    html += '<div class="bsh-meter">'
+    html += '<div class="bsh-zone bsh-z-avoid" style="flex:25"><span>避ける</span></div>'
+    html += '<div class="bsh-zone bsh-z-wait" style="flex:20"><span>待機</span></div>'
+    html += '<div class="bsh-zone bsh-z-neutral" style="flex:20"><span>中立</span></div>'
+    html += '<div class="bsh-zone bsh-z-strong" style="flex:15"><span>買い</span></div>'
+    html += '<div class="bsh-zone bsh-z-extreme" style="flex:20"><span>歴史的好機</span></div>'
+    html += f'<div class="bsh-needle" style="left:{score:.1f}%"><div class="bsh-needle-bar"></div><div class="bsh-needle-tip">▼</div></div>'
+    html += '</div>'
+    html += '<div class="bsh-meter-scale"><span>0</span><span>25</span><span>45</span><span>65</span><span>80</span><span>100</span></div>'
+    html += '</div>'
+
+    # コンポーネント分解
+    html += '<div class="bsh-components">'
+    for label, val, score_val, hint in [
+        ("VIX (恐怖指数)", f"{cur_vix:.1f} ({cur_vix_pct}%ile)", vix_score, "高いほど買い (50%重み)"),
+        ("1年高値からの下落", f"{dd:+.1f}%", dd_score, "下落幅が大きいほど買い (30%重み)"),
+        ("30日リターン", f"{r30:+.1f}%", r30_score, "短期下落ほど買い (20%重み)"),
+    ]:
+        html += '<div class="bsh-comp">'
+        html += f'<div class="bsh-comp-label">{label}</div>'
+        html += f'<div class="bsh-comp-value">{val}</div>'
+        html += f'<div class="bsh-comp-bar"><div class="bsh-comp-fill" style="width:{score_val:.0f}%"></div></div>'
+        html += f'<div class="bsh-comp-hint">{hint}</div>'
+        html += '</div>'
+    html += '</div>'
+
+    # 歴史的アナログ
+    if analogs:
+        html += '<div class="bsh-analogs">'
+        html += '<div class="bsh-analogs-title">📅 今日と似た過去の局面 — その後1年でどうなったか</div>'
+        html += '<table class="bsh-analog-table"><thead><tr>'
+        html += '<th>概算年</th><th>当時 VIX</th><th>当時 下落幅</th><th>1年後リターン</th>'
+        html += '</tr></thead><tbody>'
+        for a in analogs:
+            yr = a.get("approx_year", "?")
+            v = a.get("vix", 0)
+            d = a.get("drawdown_pct", 0)
+            f1y = a.get("fwd_return_1y_pct")
+            if f1y is None:
+                f1y_str = "<span style='color:var(--text-muted)'>未確定</span>"
+                f1y_class = ""
+            else:
+                f1y_str = f"{f1y:+.1f}%"
+                f1y_class = "pnl-positive" if f1y >= 0 else "pnl-negative"
+            html += f'<tr><td>{yr}</td><td>{v:.1f}</td><td>{d:+.1f}%</td>'
+            html += f'<td class="{f1y_class}"><strong>{f1y_str}</strong></td></tr>'
+        html += '</tbody></table>'
+        # 平均
+        valid_returns = [a.get("fwd_return_1y_pct") for a in analogs if a.get("fwd_return_1y_pct") is not None]
+        if valid_returns:
+            avg_fwd = sum(valid_returns) / len(valid_returns)
+            avg_class = "pnl-positive" if avg_fwd >= 0 else "pnl-negative"
+            html += f'<div class="bsh-analog-avg">'
+            html += f'類似{len(valid_returns)}局面の<strong>1年後平均リターン</strong>: '
+            html += f'<span class="{avg_class}"><strong>{avg_fwd:+.1f}%</strong></span>'
+            html += '</div>'
+        html += '</div>'
+
+    # 解説
+    html += '<details class="bsh-explainer">'
+    html += '<summary>📖 Buy Signal の計算方法と読み方 (クリックで展開)</summary>'
+    html += '<div class="bsh-explainer-body">'
+    html += '<p><strong>スコアの計算</strong>: 以下3指標を加重合成して 0-100 に正規化:</p>'
+    html += '<ul>'
+    html += '<li><strong>VIX パーセンタイル × 50%</strong> — 過去30年で今日の VIX が何%目に位置するか</li>'
+    html += '<li><strong>1年高値からの下落幅 × 30%</strong> — -30%超で満点、0%で20点</li>'
+    html += '<li><strong>30日リターン × 20%</strong> — 短期下落を捉える</li>'
+    html += '</ul>'
+    html += '<p><strong>5段階の意味</strong>:</p>'
+    html += '<ul>'
+    html += '<li><strong>80-100 (歴史的好機)</strong>: 30年で稀な恐怖局面。バフェット曰く「貪欲になれ」</li>'
+    html += '<li><strong>65-80 (強い買い)</strong>: 明確な弱気相場。新規買いを進める</li>'
+    html += '<li><strong>45-65 (中立)</strong>: 通常時。長期保有を継続、新規は控えめ</li>'
+    html += '<li><strong>25-45 (待機)</strong>: 高値圏。新規買いは慎重に</li>'
+    html += '<li><strong>0-25 (避ける)</strong>: 過熱。バフェット曰く「皆が貪欲な時は恐れろ」</li>'
+    html += '</ul>'
+    html += '<p><strong>歴史的アナログ</strong>: 過去30〜100年の中で「今日と似た VIX + 下落幅」だった日を5件抽出し、'
+    html += 'それぞれの1年後リターンを表示。<strong>平均が +15〜20% を超えていれば、歴史的には買い場</strong>と言えます。</p>'
+    html += '<p>📂 計算: <code>historical_pattern_extractor.compute_buy_signal()</code></p>'
+    html += '</div></details>'
+
+    html += '</div>'
+    return html
+
+
 def build_history_html(results: dict) -> str:
     """📚 History タブ — 30年歴史パターンと現在位置."""
     patterns_path = BASE_DIR / "data" / "historical_patterns.json"
@@ -1420,6 +1549,11 @@ def build_history_html(results: dict) -> str:
         return '<div class="section"><p>歴史データ読み込みエラー</p></div>'
 
     html = '<div class="section"><div class="section-title"><span class="icon">📚</span> 30年の歴史から学ぶ — Buffett 流統計</div>'
+
+    # === 🎯 Buy Signal — 「いつ買えばいいか」を一目で ===
+    buy_sig = patterns.get("buy_signal", {}) or {}
+    if buy_sig:
+        html += build_buy_signal_hero(buy_sig)
 
     # === タブ全体の趣旨説明 ===
     html += '<div class="explainer-box">'
@@ -2645,6 +2779,239 @@ a:focus-visible{{
 
 /* Sections & Cards */
 .section{{margin-bottom:var(--space-5)}}
+
+/* === Buy Signal Hero — 「いつ買えばいいか」メーター === */
+.buy-signal-hero{{
+  background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-panel) 100%);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:24px 28px;
+  margin:var(--space-3) 0 var(--space-4) 0;
+  border-left:6px solid var(--text-muted);
+}}
+.buy-signal-hero.buy-extreme{{
+  border-left-color:#1aae39;
+  background:linear-gradient(135deg,rgba(26,174,57,0.18) 0%,var(--bg-card) 60%);
+  box-shadow:0 0 30px rgba(26,174,57,0.15);
+}}
+.buy-signal-hero.buy-strong{{
+  border-left-color:#1aae39;
+  background:linear-gradient(135deg,rgba(26,174,57,0.10) 0%,var(--bg-card) 60%);
+}}
+.buy-signal-hero.buy-neutral{{border-left-color:#c08532}}
+.buy-signal-hero.buy-wait{{border-left-color:#dd5b00;background:linear-gradient(135deg,rgba(221,91,0,0.06) 0%,var(--bg-card) 60%)}}
+.buy-signal-hero.buy-avoid{{border-left-color:var(--accent-red);background:linear-gradient(135deg,rgba(221,91,0,0.10) 0%,var(--bg-card) 60%)}}
+.bsh-label{{
+  font-size:11px;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text-muted);font-weight:600;margin-bottom:14px;
+}}
+.bsh-main{{
+  display:flex;align-items:center;gap:24px;
+  margin-bottom:18px;
+  flex-wrap:wrap;
+}}
+.bsh-score-block{{
+  display:flex;align-items:baseline;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:-0.04em;
+}}
+.bsh-score{{
+  font-size:72px;font-weight:800;line-height:1;
+  color:var(--text-primary);
+}}
+.buy-signal-hero.buy-extreme .bsh-score,
+.buy-signal-hero.buy-strong .bsh-score{{color:#1aae39}}
+.buy-signal-hero.buy-wait .bsh-score{{color:#dd5b00}}
+.buy-signal-hero.buy-avoid .bsh-score{{color:var(--accent-red)}}
+.bsh-score-max{{
+  font-size:24px;font-weight:600;
+  color:var(--text-muted);margin-left:6px;
+}}
+.bsh-rating-text{{
+  font-size:24px;font-weight:700;
+  color:var(--text-primary);line-height:1.2;
+  margin-bottom:6px;
+}}
+.bsh-rating-sub{{
+  font-size:13px;color:var(--text-secondary);
+  font-family:'JetBrains Mono',monospace;
+}}
+.bsh-meter-wrap{{margin:18px 0}}
+.bsh-meter{{
+  position:relative;
+  display:flex;
+  height:36px;
+  border-radius:var(--radius-pill);
+  overflow:hidden;
+  border:1px solid var(--border);
+}}
+.bsh-zone{{
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);
+  text-shadow:0 1px 2px rgba(0,0,0,0.3);
+  letter-spacing:0.02em;
+  white-space:nowrap;
+}}
+.bsh-z-avoid{{background:linear-gradient(90deg,#c43f00 0%,#e07014 100%)}}
+.bsh-z-wait{{background:linear-gradient(90deg,#e07014 0%,#dd9a00 100%)}}
+.bsh-z-neutral{{background:linear-gradient(90deg,#dd9a00 0%,#a4b820 100%)}}
+.bsh-z-strong{{background:linear-gradient(90deg,#a4b820 0%,#1aae39 100%)}}
+.bsh-z-extreme{{background:linear-gradient(90deg,#1aae39 0%,#10803a 100%)}}
+.bsh-needle{{
+  position:absolute;top:-6px;bottom:-6px;
+  width:0;
+  transform:translateX(-50%);
+  z-index:5;
+  pointer-events:none;
+}}
+.bsh-needle-bar{{
+  position:absolute;top:0;bottom:0;left:-2px;
+  width:4px;
+  background:var(--text-primary);
+  box-shadow:0 0 8px rgba(255,255,255,0.4);
+  border-radius:2px;
+}}
+.bsh-needle-tip{{
+  position:absolute;top:-22px;left:50%;
+  transform:translateX(-50%);
+  color:var(--text-primary);
+  font-size:18px;
+  font-weight:700;
+  text-shadow:0 1px 2px rgba(0,0,0,0.4);
+}}
+.bsh-meter-scale{{
+  display:flex;justify-content:space-between;
+  margin-top:8px;font-size:11px;
+  color:var(--text-muted);font-family:'JetBrains Mono',monospace;
+  padding:0 2px;
+}}
+.bsh-meter-scale span{{flex:1;text-align:center}}
+.bsh-meter-scale span:first-child{{text-align:left}}
+.bsh-meter-scale span:last-child{{text-align:right}}
+
+.bsh-components{{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-top:20px;
+}}
+.bsh-comp{{
+  background:var(--bg-panel);
+  border-radius:var(--radius-md);
+  padding:12px 14px;
+  border:1px solid var(--border);
+}}
+.bsh-comp-label{{
+  font-size:11px;color:var(--text-muted);
+  font-weight:600;text-transform:uppercase;
+  letter-spacing:0.04em;
+  margin-bottom:4px;
+}}
+.bsh-comp-value{{
+  font-size:18px;font-weight:700;
+  color:var(--text-primary);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:-0.01em;
+  margin-bottom:8px;
+}}
+.bsh-comp-bar{{
+  height:6px;border-radius:var(--radius-pill);
+  background:var(--bg-card);overflow:hidden;
+  margin-bottom:6px;
+}}
+.bsh-comp-fill{{
+  height:100%;border-radius:var(--radius-pill);
+  background:linear-gradient(90deg,#dd5b00 0%,#dd9a00 50%,#1aae39 100%);
+}}
+.bsh-comp-hint{{
+  font-size:10.5px;color:var(--text-subtle);
+  font-style:italic;
+}}
+
+.bsh-analogs{{
+  margin-top:20px;
+  padding-top:16px;
+  border-top:1px solid var(--border);
+}}
+.bsh-analogs-title{{
+  font-size:13px;font-weight:700;
+  color:var(--text-primary);margin-bottom:10px;
+}}
+.bsh-analog-table{{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  font-family:'JetBrains Mono',monospace;
+}}
+.bsh-analog-table th{{
+  padding:8px 10px;
+  text-align:left;
+  color:var(--text-muted);
+  font-size:11px;font-weight:600;
+  border-bottom:1px solid var(--border);
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}}
+.bsh-analog-table td{{
+  padding:8px 10px;
+  color:var(--text-secondary);
+  border-bottom:1px solid var(--border-subtle);
+}}
+.bsh-analog-table tr:hover td{{background:var(--bg-card-hover)}}
+.bsh-analog-avg{{
+  margin-top:10px;
+  padding:10px 14px;
+  background:var(--bg-panel);
+  border-radius:var(--radius-sm);
+  font-size:14px;
+  text-align:center;
+  border:1px dashed var(--border);
+}}
+
+.bsh-explainer{{
+  margin-top:18px;
+  padding:0;
+  background:var(--bg-panel);
+  border-radius:var(--radius-md);
+  border:1px solid var(--border);
+}}
+.bsh-explainer summary{{
+  cursor:pointer;
+  padding:10px 14px;
+  font-weight:600;
+  font-size:13px;
+  color:var(--text-primary);
+  list-style:none;
+}}
+.bsh-explainer summary::-webkit-details-marker{{display:none}}
+.bsh-explainer summary::before{{content:"▶ ";color:var(--accent);font-size:11px}}
+.bsh-explainer[open] summary::before{{content:"▼ "}}
+.bsh-explainer-body{{
+  padding:0 14px 14px 14px;
+  font-size:13px;color:var(--text-secondary);
+  line-height:1.75;
+  border-top:1px solid var(--border);
+}}
+.bsh-explainer-body ul{{padding-left:20px;margin:6px 0}}
+.bsh-explainer-body li{{margin-bottom:4px}}
+.bsh-explainer-body strong{{color:var(--text-primary)}}
+.bsh-explainer-body code{{
+  background:var(--bg-card);padding:1px 6px;
+  border-radius:4px;font-size:11px;color:var(--accent);
+}}
+
+@media(max-width:768px){{
+  .buy-signal-hero{{padding:16px 18px}}
+  .bsh-score{{font-size:54px}}
+  .bsh-score-max{{font-size:18px}}
+  .bsh-rating-text{{font-size:18px}}
+  .bsh-rating-sub{{font-size:11px}}
+  .bsh-main{{gap:14px}}
+  .bsh-components{{grid-template-columns:1fr;gap:10px}}
+  .bsh-zone{{font-size:9px}}
+  .bsh-analog-table{{font-size:11px}}
+  .bsh-analog-table th,.bsh-analog-table td{{padding:5px 6px}}
+}}
 
 /* === Explainer (読み物・解説) === */
 .explainer-box{{
