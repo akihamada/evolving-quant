@@ -1287,6 +1287,45 @@ def build_learning_html(results: dict) -> str:
 
     html = '<div class="section"><div class="section-title"><span class="icon">🧠</span> 自己学習サイクル</div>'
 
+    # === Learning 解説 ===
+    html += '<div class="explainer-box">'
+    html += '<div class="explainer-title">🧠 自己学習とはどういう仕組みか</div>'
+    html += '<p>このシステムは <strong>「予測 → 答え合わせ → 修正」</strong>のループを毎日自動で回しています。'
+    html += '人間が手動でパラメータを調整しなくても、過去の的中率を見て自動でアルゴリズムが改善されていきます。</p>'
+    html += '<div class="explainer-title" style="margin-top:14px;font-size:14px">学習サイクルの流れ</div>'
+    html += '<ol class="explainer-list">'
+    html += '<li><strong>毎朝7時に予測を出す</strong>: 各銘柄について「BUY/HOLD/SELL」と確信度 (0〜1)、'
+    html += 'リスクシナリオ (Bull/Base/Bear) を <code>ai_track_record.json</code> に保存。</li>'
+    html += '<li><strong>7日後・30日後に自動採点</strong>: 当時の予測と実際の値動きを照合。'
+    html += '「BUYと言った銘柄は本当に上がったか?」「Bullシナリオの確率は妥当だったか?」を計測。</li>'
+    html += '<li><strong>方向一致率 / RMSE / Calibration を計算</strong>: 採点結果を <code>evaluations</code> として記録。</li>'
+    html += '<li><strong>各ファクターの精度に応じてウェイトを Bayesian 更新</strong>: '
+    html += '当たれば信頼度↑、外れれば信頼度↓。</li>'
+    html += '<li><strong>その日の「学び」を学習ジャーナルに記録</strong>: 「どのファクターが効いたか」「どの局面で外したか」を文字で残す。</li>'
+    html += '</ol>'
+    html += '<div class="explainer-title" style="margin-top:14px;font-size:14px">主要指標の意味</div>'
+    html += '<dl class="explainer-dl">'
+    html += '<dt>方向一致率 (Direction Accuracy)</dt>'
+    html += '<dd>BUYと予測した銘柄が実際に上昇したか / SELLが下落したかの的中率。<strong>50%は偶然、'
+    html += '60%超で実力あり、70%超は卓越</strong>。これが最も基本的な「AI が市場を読めているか」の指標。</dd>'
+    html += '<dt>RMSE (二乗平均誤差)</dt>'
+    html += '<dd>予測リターンと実際のリターンの「平均的なズレ」。'
+    html += '値が小さいほど精密に予測できている。0.05 (5%) なら「平均5%の誤差」。'
+    html += '方向だけでなく「どれだけ動くか」の解像度を測る。</dd>'
+    html += '<dt>Calibration Score</dt>'
+    html += '<dd>確信度の正しさ。「確信度70%と言った時、実際に70%の確率で当たっているか」を測る。'
+    html += '<strong>1.0 が完璧、0.7 でも実用的、0.5未満はキャリブレーション要</strong>。'
+    html += 'AI が <strong>謙虚に予測しているか</strong>を表す。</dd>'
+    html += '</dl>'
+    html += '<p class="explainer-takeaway">💡 <strong>なぜ7日後/30日後の2段階か?</strong> '
+    html += '7日は「短期のノイズ」、30日は「中期のトレンド」の答え合わせ。'
+    html += '異なる時間軸でファクターの効き方が違うため、両方測ることで「どのファクターが短期向き / 長期向き」が分かります。'
+    html += '長期保有方針なので、特に <strong>30日採点</strong>を重視しています。</p>'
+    html += '<p class="explainer-source">📂 予測記録: <code>ai_track_record.json</code> / '
+    html += '学習エントリ: <code>data/learning_journal.json</code> / '
+    html += 'ファクター精度: <code>data/master_factor_weights.json</code></p>'
+    html += '</div>'
+
     # サマリーメトリクス
     acc_recent = (learning.get("accuracy_recent", 0) or 0) * 100
     acc_30 = (learning.get("accuracy_30d", 0) or 0) * 100
@@ -1382,12 +1421,50 @@ def build_history_html(results: dict) -> str:
 
     html = '<div class="section"><div class="section-title"><span class="icon">📚</span> 30年の歴史から学ぶ — Buffett 流統計</div>'
 
+    # === タブ全体の趣旨説明 ===
+    html += '<div class="explainer-box">'
+    html += '<div class="explainer-title">📖 このページの目的</div>'
+    html += '<p>このタブは <strong>「過去30年の市場で何が起きたか」</strong>を統計的に振り返り、'
+    html += '今のマーケットがその歴史のどこに位置するかを把握するためのものです。</p>'
+    html += '<blockquote class="explainer-quote">'
+    html += '「歴史は完全には繰り返されないが、韻を踏む」 ― マーク・トウェイン (バフェットがしばしば引用)'
+    html += '</blockquote>'
+    html += '<p>ウォーレン・バフェットは「市場のタイミングを当てる天才」ではありません。'
+    html += '<strong>彼が実際にやってきたのは「歴史的な平均と比べて今が割高か割安かを判断すること」</strong>です。'
+    html += 'このページは同じことを統計データで再現します:</p>'
+    html += '<ul class="explainer-list">'
+    html += '<li><strong>大暴落の頻度と深さ</strong> ― 「-30% の下落は10年に1回」のような感覚を数字で持つ</li>'
+    html += '<li><strong>恐怖指数 (VIX) の分布</strong> ― 今の VIX が「ほぼ毎日の値」なのか「30年に数回しかない異常値」なのか</li>'
+    html += '<li><strong>「皆が恐れている時に買えば儲かったか」の検証</strong> ― バフェットの哲学を実データで答え合わせ</li>'
+    html += '<li><strong>個別銘柄の長期成績</strong> ― 30年保有していた場合の年率リターン・最大下落幅</li>'
+    html += '</ul>'
+    html += '<p class="explainer-source">📂 データソース: Yahoo Finance (yfinance ライブラリ) で取得した S&amp;P500 (^GSPC) と VIX (^VIX) の1990年代以降の日次データ。'
+    html += '計算は <code>historical_pattern_extractor.py</code> が行い、結果を <code>data/historical_patterns.json</code> に保存しています。</p>'
+    html += '</div>'
+
     # 大暴落イベント
     crashes_data = patterns.get("major_crashes", {})
     crashes = crashes_data.get("events", [])
     if crashes:
         avg_depth = crashes_data.get("avg_depth", 0) * 100
         avg_recovery = crashes_data.get("avg_recovery_days", 0)
+        html += '<div class="explainer-box explainer-sub">'
+        html += '<div class="explainer-title">💥 「大暴落」の定義と読み方</div>'
+        html += '<p>ここでの<strong>「大暴落」</strong>とは、S&amp;P500 が <strong>60日 (約3ヶ月) 以内に高値から -15% 以上下落した</strong>イベントを指します。'
+        html += '日々のニュースで「下落」と騒がれるレベルではなく、<strong>歴史的に見て本当に痛手だった出来事</strong>のみカウントしています。</p>'
+        html += '<p>下の3つのカードの読み方:</p>'
+        html += '<ul class="explainer-list">'
+        html += '<li><strong>大暴落イベント数</strong> = 過去30年に何回起きたか。だいたい「6〜10回」が普通の数字です。'
+        html += 'つまり <strong>3〜5年に1回</strong>はこういう局面が来ます。</li>'
+        html += '<li><strong>平均深さ</strong> = 高値からどれだけ下げたか。-25% 〜 -35% 程度になることが多いです。'
+        html += 'これは「最悪の場合これくらい覚悟しておく」という心理的準備の指標。</li>'
+        html += '<li><strong>平均回復日数</strong> = 底値から元の高値まで戻るのにかかった営業日数。'
+        html += '長いほど「精神的に我慢が必要」を意味します (200営業日 = 約9ヶ月)。</li>'
+        html += '</ul>'
+        html += '<p class="explainer-takeaway">💡 <strong>長期投資家にとっての示唆</strong>: '
+        html += 'これだけ大暴落があっても、長期保有していれば指数は新高値を更新し続けてきました。'
+        html += '「いつ来るか」ではなく「来たときに売らない覚悟」が長期リターンの源泉です。</p>'
+        html += '</div>'
         html += '<div class="port-summary-grid">'
         html += f'<div class="port-metric"><div class="port-metric-label">大暴落イベント</div>'
         html += f'<div class="port-metric-value">{len(crashes)}</div>'
@@ -1409,6 +1486,18 @@ def build_history_html(results: dict) -> str:
     # 主要暴落リスト
     if crashes:
         html += '<div class="section-title" style="margin-top:20px"><span class="icon">💥</span> 過去の主要暴落 (深い順)</div>'
+        html += '<div class="explainer-text">'
+        html += '<p>過去30年で実際に起きた暴落を深さ順に並べました。'
+        html += '代表的なイベント: <strong>1987年ブラックマンデー</strong> (-22% の1日)、<strong>2000-2002年ドットコム崩壊</strong> (-49% / 約2年半)、'
+        html += '<strong>2008年リーマンショック</strong> (-57% / 約1年半)、<strong>2020年コロナショック</strong> (-34% / 約1ヶ月)。</p>'
+        html += '<p><strong>列の意味</strong>:</p>'
+        html += '<ul class="explainer-list">'
+        html += '<li><strong>概算年</strong>: 暴落が始まった年。複数の年にまたがる場合は開始年。</li>'
+        html += '<li><strong>深さ</strong>: 高値からの最大下落率 (マイナス値)。-30% なら 100万円が70万円になった意味。</li>'
+        html += '<li><strong>下落期間</strong>: 高値→底値までの営業日数。短いほど急落 (パニック型)、長いほどジワ下げ (構造的弱気相場)。</li>'
+        html += '<li><strong>回復日数</strong>: 底値→次の新高値までの日数。「未回復」なら今もまだ過去高値に戻っていない (古いデータでは稀)。</li>'
+        html += '</ul>'
+        html += '</div>'
         sorted_crashes = sorted(crashes, key=lambda c: c.get("depth", 0))[:10]
         html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
         html += '<thead><tr><th>概算年</th><th>深さ</th><th>下落期間</th><th>回復日数</th></tr></thead><tbody>'
@@ -1427,6 +1516,22 @@ def build_history_html(results: dict) -> str:
     if vix_stats:
         pct = vix_stats.get("vix_percentiles", {})
         cur_pct = vix_stats.get("current_vix_percentile", 50)
+        html += '<div class="explainer-box explainer-sub" style="margin-top:20px">'
+        html += '<div class="explainer-title">📊 VIX (恐怖指数) とは何か</div>'
+        html += '<p><strong>VIX</strong> は <strong>「向こう30日で S&amp;P500 がどれだけ大きく動くと市場が予想しているか」</strong>を、'
+        html += 'オプション市場の値段から逆算した数字です。VIX = 20 なら「年率20%の標準偏差で動くと予想」を意味します。</p>'
+        html += '<p>感覚的な目安:</p>'
+        html += '<ul class="explainer-list">'
+        html += '<li><strong>VIX 12 〜 16</strong>: 非常に平穏。投資家が安心しきっている。バフェット流では <strong>「皆が貪欲な時は恐れろ」</strong>のサイン</li>'
+        html += '<li><strong>VIX 17 〜 22</strong>: 通常レベル。これが「平常時の日常」</li>'
+        html += '<li><strong>VIX 23 〜 30</strong>: 警戒レベル。何か不穏なニュースが出ている</li>'
+        html += '<li><strong>VIX 30 〜 40</strong>: パニック開始。下落相場の中盤</li>'
+        html += '<li><strong>VIX 40+</strong>: 極度の恐怖。歴史的には買い場 (バフェットが動く局面)</li>'
+        html += '</ul>'
+        html += '<p>下のグラフは過去30年で VIX が <strong>各水準を超えた頻度</strong>です。'
+        html += '「中央値」は <strong>「だいたい毎日このあたりの値」</strong>、'
+        html += '「99%」は <strong>「30年に数日しかなかった超パニック値」</strong>を意味します。</p>'
+        html += '</div>'
         html += '<div class="sector-section" style="margin-top:20px">'
         html += '<div class="sector-title">📊 VIX 30年分布 + 現在位置</div>'
         html += '<div class="sector-bars">'
@@ -1457,7 +1562,51 @@ def build_history_html(results: dict) -> str:
     buffett = patterns.get("buffett_contrarian_validation", {})
     horizons = buffett.get("by_horizon", {})
     if horizons:
-        html += '<div class="section-title" style="margin-top:20px"><span class="icon">🎯</span> Buffett 逆張り検証 — VIX>30 で買えば...</div>'
+        html += '<div class="section-title" style="margin-top:20px"><span class="icon">🎯</span> Buffett 逆張り検証 — VIX&gt;30 で買えば...</div>'
+        html += '<div class="explainer-box">'
+        html += '<div class="explainer-title">🎯 この検証の意味 — バフェット哲学を実データで答え合わせ</div>'
+        html += '<blockquote class="explainer-quote">'
+        html += '「他の人が貪欲な時は恐れ、他の人が恐れている時に貪欲になれ」 ― ウォーレン・バフェット'
+        html += '</blockquote>'
+        html += '<p><strong>バフェットがよく言うこの言葉、実は本当に儲かるのか?</strong> — '
+        html += '過去30年のデータで以下の手順で検証しました:</p>'
+        html += '<ol class="explainer-list">'
+        html += '<li><strong>「皆が恐れている瞬間」を VIX > 30 と定義</strong> '
+        html += '(VIX 30 超えは1990年以降で全営業日の数%しか発生していない<strong>稀な恐怖局面</strong>)</li>'
+        html += '<li><strong>そういう日に S&amp;P500 を買ったと仮定</strong> '
+        html += '(2008/10/10、2020/3/16 などが該当)</li>'
+        html += '<li><strong>その後 1ヶ月 / 3ヶ月 / 1年 / 2年 / 5年 持ち続けた場合のリターンを計算</strong></li>'
+        html += '<li><strong>すべての該当日について平均値を取り、勝率 (利益が出た日の割合) を集計</strong></li>'
+        html += '</ol>'
+        html += '<p><strong>下の表の各列の読み方</strong>:</p>'
+        html += '<dl class="explainer-dl">'
+        html += '<dt>ホライズン</dt>'
+        html += '<dd>「VIX > 30 の日に買って、何日 (何ヶ月) 持ったか」を表します。'
+        html += '<strong>1ヶ月</strong> ≈ 21営業日、<strong>1年</strong> ≈ 252営業日 が目安です。</dd>'
+        html += '<dt>平均リターン</dt>'
+        html += '<dd>「該当する全ての日について、買って X 期間後に売ったとしたら平均で何%儲かったか」。'
+        html += '<strong style="color:var(--accent-green)">緑のプラス値</strong>なら「歴史的には儲かった」、'
+        html += '<strong style="color:var(--accent-red)">赤のマイナス</strong>なら「歴史的には損が出た」を意味します。</dd>'
+        html += '<dt>勝率</dt>'
+        html += '<dd>「該当する全ての日について、X 期間後にプラスで終わっていた日の割合」。'
+        html += '<strong>50%</strong>なら偶然と同じ (コイン投げと変わらない)、'
+        html += '<strong>60%超</strong>で「明らかに有利」、<strong>80%超</strong>で「ほぼ確実に勝てる」歴史的バイアスありを示します。</dd>'
+        html += '<dt>最高 / 最低</dt>'
+        html += '<dd>「全サンプルの中で一番うまくいった場合」と「一番ひどかった場合」。'
+        html += '最高値が大きいほど「うまくハマるとリターンが伸びる」、'
+        html += '最低値が浅い (マイナス幅が小さい) ほど「失敗してもダメージが限定的」を意味します。</dd>'
+        html += '<dt>サンプル</dt>'
+        html += '<dd>「VIX > 30 だった日が30年で何日あったか」。'
+        html += 'サンプルが多いほど統計の信頼性が上がります。'
+        html += '長期ホライズン (5年) では「5年経過後のデータ」が必要なので、新しい暴落 (2020年コロナなど) は<strong>サンプルから除外</strong>される点に注意 (5年ホライズンのサンプルは少なくなりがち)。</dd>'
+        html += '</dl>'
+        html += '<p class="explainer-takeaway">💡 <strong>典型的な結果のパターン</strong>: '
+        html += '1ヶ月だと勝率 50〜60% (短期はノイズが多い)、'
+        html += '<strong>1年保有すると勝率 80%超・平均 +15〜20%</strong> になることが多いです。'
+        html += '「皆が恐れる時に買って1年待つ」がバフェット哲学のコアであり、これがデータで裏付けられます。</p>'
+        html += '<p class="explainer-source">📂 計算: <code>historical_pattern_extractor.py</code> の <code>validate_buffett_contrarian()</code> 関数。'
+        html += 'データ範囲: <code>data/historical_patterns.json</code> の生成日時に依存 (毎日更新)。</p>'
+        html += '</div>'
         html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
         html += '<thead><tr><th>ホライズン</th><th>平均リターン</th><th>勝率</th><th>最高</th><th>最低</th><th>サンプル</th></tr></thead><tbody>'
         h_jp = {"30d": "1ヶ月", "90d": "3ヶ月", "252d": "1年", "504d": "2年", "1260d": "5年"}
@@ -1484,6 +1633,33 @@ def build_history_html(results: dict) -> str:
     ticker_stats = patterns.get("ticker_long_term_stats", {})
     if ticker_stats:
         html += '<div class="section-title" style="margin-top:20px"><span class="icon">📈</span> 個別銘柄 長期統計</div>'
+        html += '<div class="explainer-box explainer-sub">'
+        html += '<div class="explainer-title">📈 各銘柄を「長期で持ち続けたら」どうなったか</div>'
+        html += '<p>保有銘柄それぞれについて、<strong>過去のデータ全期間で買い持ち (Buy &amp; Hold) した場合の成績</strong>を計算しました。'
+        html += 'これはバフェット流の「長期保有が本当に報われたか」を銘柄ごとに見るためのテストです。</p>'
+        html += '<dl class="explainer-dl">'
+        html += '<dt>履歴年数</dt>'
+        html += '<dd>その銘柄の上場 (もしくは取得可能データの開始) からの年数。新しい銘柄ほど短い。'
+        html += '10年未満は「長期」と呼ぶには短いので、参考程度に。</dd>'
+        html += '<dt>年率リターン</dt>'
+        html += '<dd>1年あたり平均で何%値上がりしたか (配当除く)。<strong>S&amp;P500 の歴史的な年率リターンは約 +10%</strong>。'
+        html += 'これより高ければ市場平均超え、低ければアンダーパフォーム。</dd>'
+        html += '<dt>年率ボラ</dt>'
+        html += '<dd>年率の値動きの標準偏差。<strong>15% なら穏やか、25% で平均的、40%超でハイリスク</strong>。'
+        html += '株価の変動の激しさを表します。</dd>'
+        html += '<dt>Sharpe (シャープレシオ)</dt>'
+        html += '<dd><strong>「リスクの割にリターンが出ているか」</strong>を測る指標 = (年率リターン − 無リスク金利) ÷ 年率ボラ。'
+        html += '<strong>1.0 以上で優秀 / 2.0 超で卓越 / マイナスはリスクに見合わないリターン</strong>。'
+        html += 'この値が高いほど「効率的に儲かる銘柄」と言えます。</dd>'
+        html += '<dt>最大DD (最大ドローダウン)</dt>'
+        html += '<dd>過去の高値から最安値までの最大下落率。-50% なら「保有期間中に資産が半分になった瞬間があった」を意味します。'
+        html += '<strong>長期保有する勇気が必要な深さ</strong>を表す心理的指標です。'
+        html += 'NVDA や TSLA のような成長株は最大DDが -70% を超えることもあります。</dd>'
+        html += '</dl>'
+        html += '<p class="explainer-takeaway">💡 <strong>長期投資家の見方</strong>: '
+        html += 'Sharpe が 1.0 以上 + 年率リターン > 10% + 最大DD < -60% 程度なら「歴史的に長期保有に向いた銘柄」と言えます。'
+        html += 'ボラが高くても Sharpe が高ければ「振れ幅は大きいが、結局報われた」を意味します。</p>'
+        html += '</div>'
         html += '<div class="port-table-section"><div class="port-table-wrap"><table class="port-table">'
         html += '<thead><tr><th>銘柄</th><th>履歴年数</th><th>年率リターン</th><th>年率ボラ</th><th>Sharpe</th><th>最大DD</th></tr></thead><tbody>'
         sorted_tickers = sorted(ticker_stats.items(), key=lambda x: -x[1].get("sharpe", 0))
@@ -1512,6 +1688,44 @@ def build_strategy_lab_html(results: dict) -> str:
                 'Strategy Lab データがまだありません。次回 daily_evolution 実行後に表示されます。</p></div>')
 
     html = '<div class="section"><div class="section-title"><span class="icon">🚀</span> Strategy Lab — 学習加速 + 12項目強化</div>'
+
+    # === Strategy Lab 解説 ===
+    html += '<div class="explainer-box">'
+    html += '<div class="explainer-title">🚀 Strategy Lab とは何か</div>'
+    html += '<p>9ファクター予測 (Master Wisdom) <strong>の上に乗せる</strong>、'
+    html += '機械学習・統計学・行動ファイナンスの<strong>追加レイヤー</strong>群です。'
+    html += 'バフェット流の基本判断を、現代の数学的手法で<strong>補強・検証</strong>する役割を担います。</p>'
+    html += '<div class="explainer-title" style="margin-top:14px;font-size:14px">主要な強化項目</div>'
+    html += '<dl class="explainer-dl">'
+    html += '<dt>📊 Walk-Forward 検証</dt>'
+    html += '<dd>過去の予測を「実際にトレードしたら」と仮定して累積リターンを計算する手法。'
+    html += '<strong>「本当に儲かるか」を統計的に裏付ける</strong>もので、シャープレシオ・年率リターン・勝率を算出。'
+    html += '日々の予測の信頼度を数字で評価。</dd>'
+    html += '<dt>⚠️ 異常検知 (Anomaly Detection)</dt>'
+    html += '<dd>VIX、リターン、ボラティリティなど複数指標で <strong>「黒い白鳥イベント」</strong>の予兆を検出。'
+    html += '深刻度 (severity) が 70% 超なら防御ポジション推奨。'
+    html += '2008年・2020年のような異常局面を統計的に「平常時から逸脱」として捉える。</dd>'
+    html += '<dt>🔥 セクターローテーション</dt>'
+    html += '<dd>11業種別 ETF (XLK/XLF など) のリターン比較から、'
+    html += '<strong>勢いのあるセクター</strong>と<strong>失速しているセクター</strong>を抽出。'
+    html += '長期保有でも「業界の構造変化」は重要なシグナル。</dd>'
+    html += '<dt>🛡️ ストレステスト</dt>'
+    html += '<dd>「リーマンショック級の暴落が来たらポートフォリオは何%下落するか」を仮想シミュレーション。'
+    html += '保有銘柄ごとに過去の暴落時の値動きを当てはめ、最悪ケースの想定損失額を算出。</dd>'
+    html += '<dt>💰 税効率推奨 (Tax-Aware)</dt>'
+    html += '<dd>NISA口座と特定口座 (税繰延) の使い分けを最適化。'
+    html += '高配当・高成長銘柄を NISA に、低成長・配当少を特定に振り分ける推奨。'
+    html += '長期保有では税繰延効果が複利で効くため重要。</dd>'
+    html += '<dt>📊 実 P&amp;L フィードバック</dt>'
+    html += '<dd>実際の含み損益を AI に「成績表」として渡し、'
+    html += '当たった銘柄・外した銘柄から学習。「自分が何を間違えたか」を継続的に把握。</dd>'
+    html += '</dl>'
+    html += '<p class="explainer-takeaway">💡 <strong>長期保有との関係</strong>: '
+    html += 'Strategy Lab の出力は「日々のトレード推奨」ではなく、<strong>「保有方針の妥当性確認」</strong>です。'
+    html += '異常検知で警告が出ても全売却するのではなく、「新規買いの慎重化」「リバランスの慎重化」に使います。</p>'
+    html += '<p class="explainer-source">📂 計算: <code>prediction_enhancements.py</code> + <code>portfolio_advisor_pro.py</code> / '
+    html += '出力: <code>latest_evolution_results.enhancements</code> セクション</p>'
+    html += '</div>'
 
     # ========== 1. Walk-Forward Sharpe ==========
     wf = enh.get("walk_forward", {}) or {}
@@ -1670,6 +1884,38 @@ def build_master_wisdom_html(results: dict) -> str:
 
     html = '<div class="section"><div class="section-title"><span class="icon">🎯</span> Master Wisdom — Buffett 級9ファクター予測</div>'
 
+    # === Master Wisdom 解説 ===
+    html += '<div class="explainer-box">'
+    html += '<div class="explainer-title">🎯 Master Wisdom とは何か</div>'
+    html += '<p><strong>Master Wisdom</strong> は、バフェット流の投資哲学を <strong>9つの定量指標 (ファクター)</strong> に分解し、'
+    html += 'それぞれを 0〜100 のスコアで採点して合成する予測エンジンです。'
+    html += '人間が「なんとなく良い銘柄」と感じる判断を、再現可能な数式に落としています。</p>'
+    html += '<div class="explainer-title" style="margin-top:14px;font-size:14px">9つのファクター (3つの大カテゴリ)</div>'
+    html += '<dl class="explainer-dl">'
+    html += '<dt>① Quality (経営の質) — 2項目</dt>'
+    html += '<dd><strong>ROE (株主資本利益率)</strong>: 「株主のお金を使ってどれだけ稼げているか」。15%以上が優良。'
+    html += '<br><strong>営業利益率の質</strong>: 利益率の水準と安定性。高くて安定 = 経済的堀あり。</dd>'
+    html += '<dt>② Value (株価の妥当性) — 3項目</dt>'
+    html += '<dd><strong>Earnings Yield</strong>: 1÷PER。「株の利回り」を国債利回りと比較して割安度を測る。'
+    html += '<br><strong>FCF Yield</strong>: 自由に使えるキャッシュ÷時価総額。5%以上で割安。'
+    html += '<br><strong>Margin of Safety (安全域)</strong>: DCF (将来キャッシュフロー割引法) で算出した「本来価値」と現在株価の差。'
+    html += '20%以上安く買えればバフェット流の合格ライン。</dd>'
+    html += '<dt>③ Momentum + Contrarian + Risk — 4項目</dt>'
+    html += '<dd><strong>テクニカル統合</strong>: トレンド・移動平均・出来高など複数のテクニカル指標を統合。'
+    html += '<br><strong>Fear-Greed逆張り</strong>: VIX や Put/Call比率から市場の極端を検出。'
+    html += '<br><strong>インサイダー脈動</strong>: 経営陣の自社株買い動向 (内部者は将来情報を持つ)。'
+    html += '<br><strong>Kelly基準</strong>: 期待リターンとリスクから「適正な投資サイズ」を数学的に算出。</dd>'
+    html += '</dl>'
+    html += '<p class="explainer-takeaway">💡 <strong>9ファクターの合成方法</strong>: '
+    html += '各ファクターを [-1, +1] のスコアに正規化し、'
+    html += '<strong>市場局面 (低ボラ/移行期/危機) ごとに動的なウェイト</strong>を掛けて加重平均します。'
+    html += '例えば危機局面では「安全域」と「インサイダー脈動」が重く、'
+    html += '低ボラ局面では「テクニカル」と「Quality」が重くなります。</p>'
+    html += '<p class="explainer-source">📂 計算: <code>master_predictor.py</code> の各 <code>*_score()</code> 関数。'
+    html += 'ウェイト: <code>data/master_factor_weights.json</code> (Bayesian 学習で自動更新)。'
+    html += '学習履歴: <code>data/master_learning_journal.json</code></p>'
+    html += '</div>'
+
     # 学習サマリー
     n_total = master_learning.get("n_total_evaluated", 0)
     n_today = master_learning.get("n_evaluated", 0)
@@ -1703,6 +1949,21 @@ def build_master_wisdom_html(results: dict) -> str:
 
     # ファクター別精度 + 重み バー
     if factor_accs:
+        html += '<div class="explainer-box explainer-sub" style="margin-top:20px">'
+        html += '<div class="explainer-title">⚙️ 「学習状態」の読み方</div>'
+        html += '<p>各ファクターの右側に表示される指標:</p>'
+        html += '<ul class="explainer-list">'
+        html += '<li><strong>精度 X%</strong>: 過去の予測の方向 (上がる/下がる) が実際の値動きと一致した割合。'
+        html += '50%が偶然、60%超で「市場で本当に効いている」、70%超で「卓越」。</li>'
+        html += '<li><strong>W X.X%</strong>: そのファクターに与えられたウェイト (重み)。'
+        html += '合計100%。精度が高いファクターほど重みが大きくなり、外れ続けるとウェイトが下がる。</li>'
+        html += '<li><strong>decay X.XX (赤表示)</strong>: 直近の予測が外れているため、ウェイトが減衰中。'
+        html += '0.5 だと「半分まで縮小」、0.99 以上は通常状態。</li>'
+        html += '</ul>'
+        html += '<p class="explainer-takeaway">💡 これが <strong>「自己進化」の正体</strong>です。'
+        html += '人間がパラメータを調整するのではなく、<strong>当たれば信頼度を上げ、外れれば信頼度を下げる</strong>'
+        html += 'という Bayesian 更新を毎日繰り返しています。</p>'
+        html += '</div>'
         html += '<div class="sector-section"><div class="sector-title">⚙️ 9ファクターの学習状態</div>'
         html += '<div class="sector-bars">'
         for name in factor_accs.keys():
@@ -1798,6 +2059,44 @@ def build_advanced_signals_html(results: dict) -> str:
         return ''
 
     html = '<div class="section"><div class="section-title"><span class="icon">🔮</span> 高精度予測アンサンブル（5モデル統合）</div>'
+
+    # === Advanced AI 解説 ===
+    html += '<div class="explainer-box">'
+    html += '<div class="explainer-title">🔮 アンサンブル予測とは何か</div>'
+    html += '<p>1つの予測モデルだけに頼ると、そのモデルの<strong>得意/不得意</strong>に成績が左右されます。'
+    html += '「複数のモデルの予測を統合する」ことで <strong>「個別モデルの弱点を平均化し、当たりやすくする」</strong>のが'
+    html += 'アンサンブル (Ensemble) の発想です。</p>'
+    html += '<div class="explainer-title" style="margin-top:14px;font-size:14px">統合される5つのモデル</div>'
+    html += '<dl class="explainer-dl">'
+    html += '<dt>① Kalman Filter (カルマンフィルタ)</dt>'
+    html += '<dd>株価のノイズを除去して<strong>「真のトレンド」</strong>を抽出する状態空間モデル。'
+    html += '宇宙工学やGPSにも使われる名門アルゴリズム。'
+    html += '日々の細かい値動きに惑わされず大きな流れを掴む。</dd>'
+    html += '<dt>② Hurst指数</dt>'
+    html += '<dd>株価時系列の<strong>「持続性 vs 平均回帰性」</strong>を測る指標。'
+    html += '<strong>0.5超でトレンド継続 (順張り有利)</strong>、'
+    html += '<strong>0.5未満で平均回帰 (逆張り有利)</strong>。'
+    html += '今の銘柄が「上がり続けるタイプ」か「振動するタイプ」かを判定。</dd>'
+    html += '<dt>③ Cross-Sectional Momentum</dt>'
+    html += '<dd>同時点で複数銘柄を比較し、<strong>相対的に強い銘柄を買う</strong>戦略。'
+    html += '「絶対的に上がっているか」ではなく「他より上がっているか」で判断。'
+    html += '学術研究で長期に渡って効果が確認されている古典的アノマリー。</dd>'
+    html += '<dt>④ Mean Reversion (平均回帰)</dt>'
+    html += '<dd>「価格は長期平均に戻る」という統計的傾向を利用。'
+    html += '直近で<strong>下がりすぎた銘柄</strong>に小さく賭けるシグナル。'
+    html += '短期向けで、長期保有方針では「買いタイミング」の参考に使う。</dd>'
+    html += '<dt>⑤ Stacking Meta-Learner</dt>'
+    html += '<dd>上記4モデルの予測を入力として受け取り、'
+    html += '<strong>「どのモデルを今信じるべきか」</strong>を機械学習で学習する高位モデル。'
+    html += '局面ごとに最適なモデル組み合わせを動的に選択。</dd>'
+    html += '</dl>'
+    html += '<p class="explainer-takeaway">💡 <strong>9ファクター (Master Wisdom) との違い</strong>: '
+    html += '9ファクターは <strong>「企業の本質的な価値」</strong>を見る (財務指標中心)、'
+    html += 'アンサンブルは <strong>「価格時系列の数学的パターン」</strong>を見る (テクニカル中心)。'
+    html += '両方を組み合わせて最終判断を出します。</p>'
+    html += '<p class="explainer-source">📂 計算: <code>prediction_enhancements.py</code> の <code>train_stacking_meta()</code> など / '
+    html += '出力: <code>latest_evolution_results.advanced_signals</code></p>'
+    html += '</div>'
     html += '<div class="adv-grid">'
 
     signal_color = {
@@ -2346,6 +2645,101 @@ a:focus-visible{{
 
 /* Sections & Cards */
 .section{{margin-bottom:var(--space-5)}}
+
+/* === Explainer (読み物・解説) === */
+.explainer-box{{
+  background:linear-gradient(135deg,var(--accent-soft) 0%,var(--bg-panel) 100%);
+  border:1px solid var(--border);
+  border-left:4px solid var(--accent);
+  border-radius:var(--radius-md);
+  padding:18px 22px;
+  margin:var(--space-3) 0;
+  font-size:14px;
+  line-height:1.85;
+  color:var(--text-secondary);
+}}
+.explainer-box.explainer-sub{{
+  border-left-color:var(--accent-bright);
+  padding:14px 18px;
+  margin:var(--space-2) 0 var(--space-3) 0;
+  font-size:13.5px;
+}}
+.explainer-title{{
+  font-size:15px;
+  font-weight:700;
+  color:var(--text-primary);
+  margin-bottom:8px;
+}}
+.explainer-box p{{margin:8px 0;color:var(--text-secondary)}}
+.explainer-box strong{{color:var(--text-primary);font-weight:700}}
+.explainer-box code{{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  background:var(--bg-panel);
+  padding:1px 6px;
+  border-radius:4px;
+  color:var(--accent);
+}}
+.explainer-quote{{
+  margin:12px 0;
+  padding:10px 16px;
+  border-left:3px solid var(--accent);
+  background:var(--bg-card);
+  font-style:italic;
+  color:var(--text-primary);
+  font-size:14.5px;
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+}}
+.explainer-list{{
+  margin:8px 0;
+  padding-left:22px;
+  line-height:1.85;
+}}
+.explainer-list li{{margin-bottom:6px;color:var(--text-secondary)}}
+.explainer-dl{{
+  margin:10px 0;
+  padding:10px 0;
+  border-top:1px dashed var(--border);
+  border-bottom:1px dashed var(--border);
+}}
+.explainer-dl dt{{
+  font-weight:700;
+  color:var(--accent);
+  margin-top:10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  letter-spacing:-0.01em;
+}}
+.explainer-dl dd{{
+  margin:3px 0 0 16px;
+  padding-left:12px;
+  border-left:2px solid var(--border);
+  color:var(--text-secondary);
+  line-height:1.7;
+}}
+.explainer-takeaway{{
+  margin-top:12px !important;
+  padding:10px 14px;
+  background:rgba(26,174,57,0.08);
+  border-left:3px solid var(--accent-green);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  font-size:13.5px;
+}}
+.explainer-source{{
+  margin-top:12px !important;
+  padding-top:8px;
+  border-top:1px solid var(--border);
+  font-size:12px;
+  color:var(--text-muted);
+  font-style:italic;
+}}
+.explainer-text{{
+  margin:8px 0 12px 0;
+  font-size:13.5px;
+  color:var(--text-secondary);
+  line-height:1.8;
+}}
+.explainer-text strong{{color:var(--text-primary);font-weight:700}}
 .section-title{{
   font-family:inherit;
   font-size:22px;font-weight:700;
